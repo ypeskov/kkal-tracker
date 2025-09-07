@@ -35,7 +35,7 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 	ingredientRepo := models.NewIngredientRepository(db)
 
 	authService := services.NewAuthService(userRepo, ingredientRepo, jwtService, logger)
-	calorieService := services.NewCalorieService(calorieRepo, logger)
+	calorieService := services.NewCalorieService(calorieRepo, ingredientRepo, logger)
 
 	authHandler := api.NewAuthHandler(authService, logger)
 	calorieHandler := api.NewCalorieHandler(calorieService, logger)

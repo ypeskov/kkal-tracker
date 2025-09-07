@@ -240,3 +240,64 @@ func (r *IngredientRepository) getGlobalIngredientNames(ingredientID int) (map[s
 
 	return names, nil
 }
+
+// Create or update user ingredient (check first, then insert/update)
+func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*UserIngredient, error) {
+	// Check if ingredient already exists
+	_, err := r.GetUserIngredientByName(userID, name)
+	if err == nil {
+		// Ingredient exists, update it
+		updateQuery := `
+			UPDATE user_ingredients 
+			SET kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE user_id = ? AND name = ?
+		`
+		_, updateErr := r.db.Exec(updateQuery, kcalPer100g, fats, carbs, proteins, userID, name)
+		if updateErr != nil {
+			return nil, updateErr
+		}
+		return r.GetUserIngredientByName(userID, name)
+	}
+	
+	// Ingredient doesn't exist, create it
+	insertQuery := `
+		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	_, err = r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Get the newly created ingredient
+	return r.GetUserIngredientByName(userID, name)
+}
+
+// Get user ingredient by name
+func (r *IngredientRepository) GetUserIngredientByName(userID int, name string) (*UserIngredient, error) {
+	query := `
+		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
+		FROM user_ingredients
+		WHERE user_id = ? AND name = ?
+	`
+	
+	ingredient := &UserIngredient{}
+	err := r.db.QueryRow(query, userID, name).Scan(
+		&ingredient.ID,
+		&ingredient.UserID,
+		&ingredient.Name,
+		&ingredient.KcalPer100g,
+		&ingredient.Fats,
+		&ingredient.Carbs,
+		&ingredient.Proteins,
+		&ingredient.GlobalIngredientID,
+		&ingredient.CreatedAt,
+		&ingredient.UpdatedAt,
+	)
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return ingredient, nil
+}

@@ -57,12 +57,12 @@ class IngredientService {
     if (query.length < 2) return []
     
     const ingredients = this.getCachedIngredients()
-    if (!ingredients || ingredients.length === 0) return []
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) return []
     
     const queryLower = query.toLowerCase()
     
     return ingredients
-      .filter(ingredient => ingredient.name.toLowerCase().includes(queryLower))
+      .filter(ingredient => ingredient && ingredient.name && ingredient.name.toLowerCase().includes(queryLower))
       .slice(0, limit)
       .sort((a, b) => a.name.localeCompare(b.name))
   }
@@ -80,7 +80,15 @@ class IngredientService {
         throw new Error('Failed to search ingredients')
       }
 
-      return response.json()
+      const result = await response.json()
+      
+      // Ensure we return a valid array
+      if (!result || !Array.isArray(result)) {
+        console.warn('API returned invalid data:', result)
+        return []
+      }
+      
+      return result
     } catch (error) {
       console.error('Failed to search ingredients:', error)
       return []
@@ -89,15 +97,26 @@ class IngredientService {
 
   // Smart search: use cache first, fallback to API
   searchIngredients = async (query: string, limit: number = 10): Promise<Ingredient[]> => {
-    // First try cached search
-    const cachedResults = this.searchCachedIngredients(query, limit)
-    
-    if (cachedResults.length > 0) {
-      return cachedResults
+    try {
+      if (!query || query.length < 2) {
+        return []
+      }
+      
+      // First try cached search
+      const cachedResults = this.searchCachedIngredients(query, limit)
+      
+      if (cachedResults && Array.isArray(cachedResults) && cachedResults.length > 0) {
+        return cachedResults
+      }
+      
+      // If cache is empty or no results, try API
+      const apiResults = await this.searchIngredientsAPI(query, limit)
+      return Array.isArray(apiResults) ? apiResults : []
+      
+    } catch (error) {
+      console.error('Failed to search ingredients:', error)
+      return []
     }
-    
-    // If cache is empty or no results, try API
-    return this.searchIngredientsAPI(query, limit)
   }
 
   // Clear cached ingredients (e.g., on logout)

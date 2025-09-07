@@ -10,6 +10,11 @@ interface CalorieEntry {
   meal_datetime: string
 }
 
+interface CreateEntryResult {
+  entry: CalorieEntry
+  new_ingredient_created: boolean
+}
+
 class CalorieService {
   private getAuthHeaders = () => {
     const token = sessionStorage.getItem('token')
@@ -44,7 +49,7 @@ class CalorieService {
     return response.json()
   }
 
-  addEntry = async (entry: CalorieEntry): Promise<CalorieEntry> => {
+  addEntry = async (entry: CalorieEntry): Promise<CreateEntryResult> => {
     const response = await fetch('/api/calories', {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -55,7 +60,17 @@ class CalorieService {
       throw new Error('Failed to add entry')
     }
 
-    return response.json()
+    const result: CreateEntryResult = await response.json()
+    
+    // If a new ingredient was created, invalidate the ingredients cache
+    if (result.new_ingredient_created) {
+      const { ingredientService } = await import('./ingredients')
+      ingredientService.clearCache()
+      // Reload ingredients to refresh the cache
+      await ingredientService.loadAndCacheIngredients()
+    }
+
+    return result
   }
 
   updateEntry = async (id: number, entry: CalorieEntry): Promise<CalorieEntry> => {
