@@ -45,11 +45,7 @@ func (s *CalorieService) GetEntriesByDate(userID int, date string) ([]*models.Ca
 	return entries, nil
 }
 
-func (s *CalorieService) CreateEntry(userID int, food string, calories int, weight float64, kcalPer100g float64, date string) (*models.CalorieEntry, error) {
-	// Validate date format
-	if _, err := time.Parse("2006-01-02", date); err != nil {
-		return nil, ErrInvalidDate
-	}
+func (s *CalorieService) CreateEntry(userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
 
 	// Validate calories
 	if calories <= 0 {
@@ -71,13 +67,13 @@ func (s *CalorieService) CreateEntry(userID int, food string, calories int, weig
 		return nil, errors.New("food name is required")
 	}
 
-	entry, err := s.calorieRepo.Create(userID, food, calories, weight, kcalPer100g, date)
+	entry, err := s.calorieRepo.Create(userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime)
 	if err != nil {
 		s.logger.Error("Failed to create calorie entry", "error", err, "user_id", userID)
 		return nil, err
 	}
 
-	s.logger.Info("Calorie entry created", "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "date", date)
+	s.logger.Info("Calorie entry created", "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
 	return entry, nil
 }
 

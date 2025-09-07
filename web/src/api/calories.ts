@@ -3,8 +3,11 @@ interface CalorieEntry {
   food: string
   weight: number
   kcalPer100g: number
+  fats?: number
+  carbs?: number
+  proteins?: number
   calories: number
-  date: string
+  meal_datetime: string
 }
 
 class CalorieService {
