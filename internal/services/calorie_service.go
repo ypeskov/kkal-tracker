@@ -14,14 +14,16 @@ var (
 )
 
 type CalorieService struct {
-	calorieRepo *models.CalorieEntryRepository
-	logger      *slog.Logger
+	calorieRepo    *models.CalorieEntryRepository
+	ingredientRepo *models.IngredientRepository
+	logger         *slog.Logger
 }
 
-func NewCalorieService(calorieRepo *models.CalorieEntryRepository, logger *slog.Logger) *CalorieService {
+func NewCalorieService(calorieRepo *models.CalorieEntryRepository, ingredientRepo *models.IngredientRepository, logger *slog.Logger) *CalorieService {
 	return &CalorieService{
-		calorieRepo: calorieRepo,
-		logger:      logger,
+		calorieRepo:    calorieRepo,
+		ingredientRepo: ingredientRepo,
+		logger:         logger,
 	}
 }
 
@@ -45,7 +47,12 @@ func (s *CalorieService) GetEntriesByDate(userID int, date string) ([]*models.Ca
 	return entries, nil
 }
 
-func (s *CalorieService) CreateEntry(userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+type CreateEntryResult struct {
+	Entry            *models.CalorieEntry `json:"entry"`
+	NewIngredientCreated bool             `json:"new_ingredient_created"`
+}
+
+func (s *CalorieService) CreateEntry(userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*CreateEntryResult, error) {
 
 	// Validate calories
 	if calories <= 0 {
@@ -67,6 +74,22 @@ func (s *CalorieService) CreateEntry(userID int, food string, calories int, weig
 		return nil, errors.New("food name is required")
 	}
 
+	newIngredientCreated := false
+
+	// Check if ingredient exists, if not create it
+	_, err := s.ingredientRepo.GetUserIngredientByName(userID, food)
+	if err != nil {
+		// Ingredient doesn't exist, create it
+		_, createErr := s.ingredientRepo.CreateOrUpdateUserIngredient(userID, food, kcalPer100g, fats, carbs, proteins)
+		if createErr != nil {
+			s.logger.Error("Failed to create user ingredient", "error", createErr, "user_id", userID, "food", food)
+			// Don't fail the calorie entry creation if ingredient creation fails
+		} else {
+			s.logger.Info("New user ingredient created", "user_id", userID, "food", food, "kcalPer100g", kcalPer100g)
+			newIngredientCreated = true
+		}
+	}
+
 	entry, err := s.calorieRepo.Create(userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime)
 	if err != nil {
 		s.logger.Error("Failed to create calorie entry", "error", err, "user_id", userID)
@@ -74,7 +97,11 @@ func (s *CalorieService) CreateEntry(userID int, food string, calories int, weig
 	}
 
 	s.logger.Info("Calorie entry created", "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
-	return entry, nil
+	
+	return &CreateEntryResult{
+		Entry:                entry,
+		NewIngredientCreated: newIngredientCreated,
+	}, nil
 }
 
 func (s *CalorieService) DeleteEntry(entryID, userID int) error {

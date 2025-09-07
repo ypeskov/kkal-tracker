@@ -72,13 +72,13 @@ func (h *CalorieHandler) CreateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
 	}
 
-	entry, err := h.calorieService.CreateEntry(userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
+	result, err := h.calorieService.CreateEntry(userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
 	if err != nil {
 		h.logger.Error("Failed to create calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
-	return c.JSON(http.StatusCreated, entry)
+	return c.JSON(http.StatusCreated, result)
 }
 
 func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
