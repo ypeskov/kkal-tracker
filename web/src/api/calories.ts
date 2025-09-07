@@ -58,6 +58,20 @@ class CalorieService {
     return response.json()
   }
 
+  updateEntry = async (id: number, entry: CalorieEntry): Promise<CalorieEntry> => {
+    const response = await fetch(`/api/calories/${id}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(entry),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update entry')
+    }
+
+    return response.json()
+  }
+
   deleteEntry = async (id: number): Promise<void> => {
     const response = await fetch(`/api/calories/${id}`, {
       method: 'DELETE',

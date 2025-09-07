@@ -32,7 +32,10 @@
     "dateFrom": "From",
     "dateTo": "To",
     "applyFilter": "Apply",
-    "totalCaloriesFiltered": "Total Calories (filtered):"
+    "totalCaloriesFiltered": "Total Calories (filtered):",
+    "editEntry": "Edit Entry",
+    "updateEntry": "Update",
+    "cancel": "Cancel"
   },
   "common": {
     "loading": "Loading..."

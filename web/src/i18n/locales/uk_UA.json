@@ -32,7 +32,10 @@
     "dateFrom": "З",
     "dateTo": "До",
     "applyFilter": "Застосувати",
-    "totalCaloriesFiltered": "Всього калорій (відфільтровано):"
+    "totalCaloriesFiltered": "Всього калорій (відфільтровано):",
+    "editEntry": "Редагувати запис",
+    "updateEntry": "Оновити",
+    "cancel": "Скасувати"
   },
   "common": {
     "loading": "Завантаження..."

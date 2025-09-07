@@ -32,7 +32,10 @@
     "dateFrom": "С",
     "dateTo": "По",
     "applyFilter": "Применить",
-    "totalCaloriesFiltered": "Всего калорий (отфильтровано):"
+    "totalCaloriesFiltered": "Всего калорий (отфильтровано):",
+    "editEntry": "Редактировать запись",
+    "updateEntry": "Обновить",
+    "cancel": "Отмена"
   },
   "common": {
     "loading": "Загрузка..."
