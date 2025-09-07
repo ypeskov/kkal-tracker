@@ -34,7 +34,7 @@ func (r *CalorieEntryRepository) Create(userID int, food string, calories int, w
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	
-	now := time.Now()
+	now := time.Now().UTC()
 	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now)
 	if err != nil {
 		return nil, err
