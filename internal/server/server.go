@@ -32,12 +32,14 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 
 	userRepo := models.NewUserRepository(db)
 	calorieRepo := models.NewCalorieEntryRepository(db)
+	ingredientRepo := models.NewIngredientRepository(db)
 
-	authService := services.NewAuthService(userRepo, jwtService, logger)
+	authService := services.NewAuthService(userRepo, ingredientRepo, jwtService, logger)
 	calorieService := services.NewCalorieService(calorieRepo, logger)
 
 	authHandler := api.NewAuthHandler(authService, logger)
 	calorieHandler := api.NewCalorieHandler(calorieService, logger)
+	ingredientHandler := api.NewIngredientHandler(ingredientRepo, logger)
 
 	apiGroup := e.Group("/api")
 
@@ -46,6 +48,9 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 
 	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
 	calorieHandler.RegisterRoutes(caloriesGroup)
+
+	ingredientsGroup := apiGroup.Group("/ingredients", authMiddleware.RequireAuth)
+	ingredientHandler.RegisterRoutes(ingredientsGroup)
 
 	web.RegisterStaticRoutes(e, staticFiles)
 

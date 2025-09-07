@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"errors"
-	"log/slog"
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/models"
@@ -15,16 +14,22 @@ var (
 )
 
 type AuthService struct {
-	userRepo   *models.UserRepository
-	jwtService *auth.JWTService
-	logger     *slog.Logger
+	userRepo       *models.UserRepository
+	ingredientRepo *models.IngredientRepository
+	jwtService     *auth.JWTService
+	logger         interface {
+		Error(msg string, args ...interface{})
+	}
 }
 
-func NewAuthService(userRepo *models.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *AuthService {
+func NewAuthService(userRepo *models.UserRepository, ingredientRepo *models.IngredientRepository, jwtService *auth.JWTService, logger interface {
+	Error(msg string, args ...interface{})
+}) *AuthService {
 	return &AuthService{
-		userRepo:   userRepo,
-		jwtService: jwtService,
-		logger:     logger,
+		userRepo:       userRepo,
+		ingredientRepo: ingredientRepo,
+		jwtService:     jwtService,
+		logger:         logger,
 	}
 }
 
@@ -64,7 +69,7 @@ func (s *AuthService) GetCurrentUser(userID int) (*models.User, error) {
 	return user, nil
 }
 
-func (s *AuthService) Register(email, password string) (*models.User, string, error) {
+func (s *AuthService) Register(email, password, languageCode string) (*models.User, string, error) {
 	// Check if user already exists
 	existingUser, err := s.userRepo.GetByEmail(email)
 	if err != nil && err != sql.ErrNoRows {
@@ -81,6 +86,13 @@ func (s *AuthService) Register(email, password string) (*models.User, string, er
 	if err != nil {
 		s.logger.Error("Failed to create user", "error", err)
 		return nil, "", err
+	}
+
+	// Copy global ingredients to user ingredients in selected language
+	err = s.ingredientRepo.CopyGlobalIngredientsToUser(user.ID, languageCode)
+	if err != nil {
+		s.logger.Error("Failed to copy ingredients to new user", "error", err)
+		// Don't fail registration if ingredient copying fails, just log it
 	}
 
 	// Generate token for new user

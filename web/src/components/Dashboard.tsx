@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { calorieService } from '../api/calories'
+import { ingredientService, Ingredient } from '../api/ingredients'
+import FoodAutocomplete from './FoodAutocomplete'
 import LanguageSwitcher from './LanguageSwitcher'
 import './Dashboard.css'
 
@@ -36,6 +38,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [editCarbs, setEditCarbs] = useState('')
   const [editProteins, setEditProteins] = useState('')
   const queryClient = useQueryClient()
+
+  // Load ingredients on component mount
+  useEffect(() => {
+    const loadIngredients = async () => {
+      if (!ingredientService.hasCachedIngredients()) {
+        try {
+          await ingredientService.loadAndCacheIngredients()
+        } catch (error) {
+          console.error('Failed to load ingredients:', error)
+        }
+      }
+    }
+    
+    loadIngredients()
+  }, [])
 
   // Auto-calculate total calories
   const totalCalories = useMemo(() => {
@@ -160,6 +177,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setEditProteins(entry.proteins ? entry.proteins.toString() : '')
   }
 
+  const handleIngredientSelect = (ingredient: Ingredient) => {
+    setKcalPer100g(ingredient.kcalPer100g.toString())
+    setFats(ingredient.fats ? ingredient.fats.toString() : '')
+    setCarbs(ingredient.carbs ? ingredient.carbs.toString() : '')
+    setProteins(ingredient.proteins ? ingredient.proteins.toString() : '')
+  }
+
+  const handleLogout = () => {
+    ingredientService.clearCache()
+    onLogout()
+  }
+
   const handleUpdateSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!editFoodName || !editWeight || !editKcalPer100g || !editingEntry) return
@@ -199,7 +228,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <p>{t('auth.welcome')}, {user?.email}!</p>
         </div>
         <button 
-          onClick={onLogout}
+          onClick={handleLogout}
           className="btn"
           style={{ backgroundColor: '#dc3545' }}
         >
@@ -213,11 +242,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="foodName">{t('dashboard.foodName')}:</label>
-              <input
-                type="text"
+              <FoodAutocomplete
                 id="foodName"
                 value={foodName}
-                onChange={(e) => setFoodName(e.target.value)}
+                onChange={setFoodName}
+                onSelect={handleIngredientSelect}
+                placeholder={t('dashboard.foodName')}
                 required
               />
             </div>

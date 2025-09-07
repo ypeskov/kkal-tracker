@@ -79,6 +79,7 @@ JWT_SECRET=your-secret-key
 - **Internationalization**: Support for English (en_US), Ukrainian (uk_UA), and Russian in Ukraine (ru_UA)
 - **Development**: Uses Air for live reload, excludes `web/dist` from watching
 - **Production**: JSON logging format, structured error handling
+- **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
 
 ## Dependencies
 - Echo v4.13.4 (web framework)
