@@ -16,9 +16,11 @@ type CalorieHandler struct {
 }
 
 type CreateCalorieEntryRequest struct {
-	Food     string `json:"food" validate:"required"`
-	Calories int    `json:"calories" validate:"required,min=1"`
-	Date     string `json:"date" validate:"required"`
+	Food        string  `json:"food" validate:"required"`
+	Calories    int     `json:"calories" validate:"required,min=1"`
+	Weight      float64 `json:"weight" validate:"required,min=0.1"`
+	KcalPer100g float64 `json:"kcalPer100g" validate:"required,min=0.1"`
+	Date        string  `json:"date" validate:"required"`
 }
 
 func NewCalorieHandler(calorieService *services.CalorieService, logger *slog.Logger) *CalorieHandler {
@@ -49,7 +51,7 @@ func (h *CalorieHandler) CreateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
-	entry, err := h.calorieService.CreateEntry(userID, req.Food, req.Calories, req.Date)
+	entry, err := h.calorieService.CreateEntry(userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Date)
 	if err != nil {
 		if err == services.ErrInvalidDate {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid date format. Use YYYY-MM-DD")

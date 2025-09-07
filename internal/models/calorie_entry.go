@@ -6,12 +6,14 @@ import (
 )
 
 type CalorieEntry struct {
-	ID        int       `json:"id"`
-	UserID    int       `json:"user_id"`
-	Food      string    `json:"food"`
-	Calories  int       `json:"calories"`
-	Date      string    `json:"date"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          int       `json:"id"`
+	UserID      int       `json:"user_id"`
+	Food        string    `json:"food"`
+	Calories    int       `json:"calories"`
+	Weight      float64   `json:"weight"`
+	KcalPer100g float64   `json:"kcalPer100g"`
+	Date        string    `json:"date"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type CalorieEntryRepository struct {
@@ -22,13 +24,13 @@ func NewCalorieEntryRepository(db *sql.DB) *CalorieEntryRepository {
 	return &CalorieEntryRepository{db: db}
 }
 
-func (r *CalorieEntryRepository) Create(userID int, food string, calories int, date string) (*CalorieEntry, error) {
+func (r *CalorieEntryRepository) Create(userID int, food string, calories int, weight float64, kcalPer100g float64, date string) (*CalorieEntry, error) {
 	query := `
-		INSERT INTO calorie_entries (user_id, food, calories, date)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO calorie_entries (user_id, food, calories, weight, kcal_per_100g, date)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
 	
-	result, err := r.db.Exec(query, userID, food, calories, date)
+	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, date)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func (r *CalorieEntryRepository) Create(userID int, food string, calories int, d
 
 func (r *CalorieEntryRepository) GetByID(id int) (*CalorieEntry, error) {
 	query := `
-		SELECT id, user_id, food, calories, date, created_at
+		SELECT id, user_id, food, calories, weight, kcal_per_100g, date, created_at
 		FROM calorie_entries
 		WHERE id = ?
 	`
@@ -54,6 +56,8 @@ func (r *CalorieEntryRepository) GetByID(id int) (*CalorieEntry, error) {
 		&entry.UserID,
 		&entry.Food,
 		&entry.Calories,
+		&entry.Weight,
+		&entry.KcalPer100g,
 		&entry.Date,
 		&entry.CreatedAt,
 	)
@@ -67,7 +71,7 @@ func (r *CalorieEntryRepository) GetByID(id int) (*CalorieEntry, error) {
 
 func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error) {
 	query := `
-		SELECT id, user_id, food, calories, date, created_at
+		SELECT id, user_id, food, calories, weight, kcal_per_100g, date, created_at
 		FROM calorie_entries
 		WHERE user_id = ?
 		ORDER BY date DESC, created_at DESC
@@ -87,6 +91,8 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error
 			&entry.UserID,
 			&entry.Food,
 			&entry.Calories,
+			&entry.Weight,
+			&entry.KcalPer100g,
 			&entry.Date,
 			&entry.CreatedAt,
 		)
@@ -101,7 +107,7 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error
 
 func (r *CalorieEntryRepository) GetByUserIDAndDate(userID int, date string) ([]*CalorieEntry, error) {
 	query := `
-		SELECT id, user_id, food, calories, date, created_at
+		SELECT id, user_id, food, calories, weight, kcal_per_100g, date, created_at
 		FROM calorie_entries
 		WHERE user_id = ? AND date = ?
 		ORDER BY created_at DESC
@@ -121,6 +127,8 @@ func (r *CalorieEntryRepository) GetByUserIDAndDate(userID int, date string) ([]
 			&entry.UserID,
 			&entry.Food,
 			&entry.Calories,
+			&entry.Weight,
+			&entry.KcalPer100g,
 			&entry.Date,
 			&entry.CreatedAt,
 		)
