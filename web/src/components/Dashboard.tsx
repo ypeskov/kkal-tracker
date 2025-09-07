@@ -73,9 +73,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     queryFn: () => calorieService.getEntries(getDateParams),
   })
 
-  // Calculate total calories for filtered results
-  const totalFilteredCalories = useMemo(() => {
-    return entries?.reduce((sum, entry) => sum + entry.calories, 0) || 0
+  // Calculate totals for filtered results
+  const nutritionTotals = useMemo(() => {
+    if (!entries || entries.length === 0) {
+      return { calories: 0, fats: 0, carbs: 0, proteins: 0 }
+    }
+    
+    return entries.reduce((totals, entry) => ({
+      calories: totals.calories + entry.calories,
+      fats: totals.fats + (entry.fats || 0),
+      carbs: totals.carbs + (entry.carbs || 0),
+      proteins: totals.proteins + (entry.proteins || 0)
+    }), { calories: 0, fats: 0, carbs: 0, proteins: 0 })
   }, [entries])
 
   const addEntryMutation = useMutation({
@@ -286,9 +295,24 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           )}
           
-          {/* Total calories display */}
+          {/* Nutrition totals display */}
           <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#e8f5e8', borderRadius: '4px', fontWeight: 'bold', color: '#2d5016' }}>
-            {t('dashboard.totalCaloriesFiltered')} {totalFilteredCalories} {t('dashboard.kcal')}
+            <div style={{ marginBottom: '0.5rem' }}>
+              {t('dashboard.totalCaloriesFiltered')} {nutritionTotals.calories} {t('dashboard.kcal')}
+            </div>
+            {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0) && (
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9em', flexWrap: 'wrap' }}>
+                {nutritionTotals.fats > 0 && (
+                  <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)}g</span>
+                )}
+                {nutritionTotals.carbs > 0 && (
+                  <span>{t('dashboard.carbs')}: {nutritionTotals.carbs.toFixed(1)}g</span>
+                )}
+                {nutritionTotals.proteins > 0 && (
+                  <span>{t('dashboard.proteins')}: {nutritionTotals.proteins.toFixed(1)}g</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
         {isLoading ? (
