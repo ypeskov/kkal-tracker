@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { calorieService } from '../api/calories'
+import LanguageSwitcher from './LanguageSwitcher'
 
 interface User {
   id: number
@@ -13,6 +15,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
+  const { t } = useTranslation()
   const [food, setFood] = useState('')
   const [calories, setCalories] = useState('')
   const queryClient = useQueryClient()
@@ -42,25 +45,26 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   return (
     <div className="dashboard-container">
+      <LanguageSwitcher />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>Calorie Tracker</h1>
-          <p>Welcome, {user?.email}!</p>
+          <h1>{t('dashboard.title')}</h1>
+          <p>{t('auth.welcome')}, {user?.email}!</p>
         </div>
         <button 
           onClick={onLogout}
           className="btn"
           style={{ backgroundColor: '#dc3545' }}
         >
-          Logout
+          {t('auth.logout')}
         </button>
       </header>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2>Add Food Entry</h2>
+        <h2>{t('dashboard.addFoodEntry')}</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
           <div className="form-group">
-            <label htmlFor="food">Food:</label>
+            <label htmlFor="food">{t('dashboard.food')}:</label>
             <input
               type="text"
               id="food"
@@ -71,7 +75,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="calories">Calories:</label>
+            <label htmlFor="calories">{t('dashboard.calories')}:</label>
             <input
               type="number"
               id="calories"
@@ -86,19 +90,19 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             className="btn"
             disabled={addEntryMutation.isPending}
           >
-            Add Entry
+            {t('dashboard.addEntry')}
           </button>
         </form>
       </section>
 
       <section>
-        <h2>Today's Entries</h2>
+        <h2>{t('dashboard.todayEntries')}</h2>
         {isLoading ? (
-          <p>Loading entries...</p>
+          <p>{t('common.loading')}</p>
         ) : (
           <div>
             {entries?.length === 0 ? (
-              <p>No entries yet today.</p>
+              <p>{t('dashboard.noEntries')}</p>
             ) : (
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {entries?.map((entry: any) => (
@@ -114,14 +118,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     }}
                   >
                     <span>{entry.food}</span>
-                    <span>{entry.calories} kcal</span>
+                    <span>{entry.calories} {t('dashboard.kcal')}</span>
                   </li>
                 ))}
               </ul>
             )}
             {entries && entries.length > 0 && (
               <div style={{ marginTop: '1rem', fontWeight: 'bold' }}>
-                Total: {entries.reduce((sum: number, entry: any) => sum + entry.calories, 0)} kcal
+                {t('dashboard.total')}: {entries.reduce((sum: number, entry: any) => sum + entry.calories, 0)} {t('dashboard.kcal')}
               </div>
             )}
           </div>

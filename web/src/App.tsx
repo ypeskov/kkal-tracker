@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
 import { authService } from './api/auth'
@@ -11,6 +12,7 @@ interface User {
 }
 
 function App() {
+  const { t } = useTranslation()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
 
@@ -44,7 +46,7 @@ function App() {
   }
 
   if (isInitializing || isLoading) {
-    return <div>Loading...</div>
+    return <div>{t('common.loading')}</div>
   }
 
   return (

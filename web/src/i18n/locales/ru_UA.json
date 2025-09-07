@@ -1,0 +1,32 @@
+{
+  "auth": {
+    "login": "Войти",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "loginButton": "Войти",
+    "loggingIn": "Входим...",
+    "loginFailed": "Ошибка входа. Проверьте ваши учётные данные.",
+    "logout": "Выйти",
+    "welcome": "Добро пожаловать"
+  },
+  "dashboard": {
+    "title": "Учёт калорий",
+    "addFoodEntry": "Добавить запись о еде",
+    "food": "Еда",
+    "calories": "Калории",
+    "addEntry": "Добавить запись",
+    "todayEntries": "Сегодняшние записи",
+    "noEntries": "Пока нет записей на сегодня.",
+    "total": "Всего",
+    "kcal": "ккал"
+  },
+  "common": {
+    "loading": "Загрузка..."
+  },
+  "language": {
+    "select": "Язык",
+    "en_US": "English (US)",
+    "uk_UA": "Українська (UA)",
+    "ru_UA": "Русский (UA)"
+  }
+}

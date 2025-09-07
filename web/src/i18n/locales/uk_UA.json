@@ -1,0 +1,32 @@
+{
+  "auth": {
+    "login": "Увійти",
+    "email": "Електронна пошта",
+    "password": "Пароль",
+    "loginButton": "Увійти",
+    "loggingIn": "Входимо...",
+    "loginFailed": "Помилка входу. Перевірте ваші облікові дані.",
+    "logout": "Вийти",
+    "welcome": "Вітаємо"
+  },
+  "dashboard": {
+    "title": "Підрахунок калорій",
+    "addFoodEntry": "Додати запис їжі",
+    "food": "Їжа",
+    "calories": "Калорії",
+    "addEntry": "Додати запис",
+    "todayEntries": "Сьогоднішні записи",
+    "noEntries": "Поки що немає записів на сьогодні.",
+    "total": "Всього",
+    "kcal": "ккал"
+  },
+  "common": {
+    "loading": "Завантаження..."
+  },
+  "language": {
+    "select": "Мова",
+    "en_US": "English (US)",
+    "uk_UA": "Українська (UA)",
+    "ru_UA": "Русский (UA)"
+  }
+}

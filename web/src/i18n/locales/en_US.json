@@ -1,0 +1,32 @@
+{
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "logout": "Logout",
+    "welcome": "Welcome"
+  },
+  "dashboard": {
+    "title": "Calorie Tracker",
+    "addFoodEntry": "Add Food Entry",
+    "food": "Food",
+    "calories": "Calories",
+    "addEntry": "Add Entry",
+    "todayEntries": "Today's Entries",
+    "noEntries": "No entries yet today.",
+    "total": "Total",
+    "kcal": "kcal"
+  },
+  "common": {
+    "loading": "Loading..."
+  },
+  "language": {
+    "select": "Language",
+    "en_US": "English (US)",
+    "uk_UA": "Українська (UA)",
+    "ru_UA": "Русский (UA)"
+  }
+}
