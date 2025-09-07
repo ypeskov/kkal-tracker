@@ -4,8 +4,8 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-    updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
+    created_at DATETIME DEFAULT (datetime('now')),
+    updated_at DATETIME DEFAULT (datetime('now'))
 );
 
 CREATE TABLE calorie_entries (
@@ -20,7 +20,7 @@ CREATE TABLE calorie_entries (
     proteins REAL,
     meal_datetime DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+    created_at DATETIME DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 -- +goose StatementEnd

@@ -20,10 +20,22 @@
     "proteins": "Proteins (g)",
     "totalCalories": "Total Calories",
     "addEntry": "Add",
-    "todayEntries": "Today's Entries",
-    "noEntries": "No entries yet today.",
+    "todayEntries": "Entries",
+    "noEntries": "No entries found.",
     "total": "Total",
-    "kcal": "kcal"
+    "kcal": "kcal",
+    "filterBy": "Filter by",
+    "today": "Today",
+    "lastWeek": "Last 7 days",
+    "lastMonth": "Last 30 days",
+    "customRange": "Custom range",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "applyFilter": "Apply",
+    "totalCaloriesFiltered": "Total Calories (filtered):",
+    "editEntry": "Edit Entry",
+    "updateEntry": "Update",
+    "cancel": "Cancel"
   },
   "common": {
     "loading": "Loading..."

@@ -124,3 +124,49 @@ func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[strin
 
 	return stats, nil
 }
+
+func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
+	entries, err := s.calorieRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
+	if err != nil {
+		s.logger.Error("Failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
+		return nil, err
+	}
+
+	// Return empty slice instead of nil for better API responses
+	if entries == nil {
+		entries = []*models.CalorieEntry{}
+	}
+
+	return entries, nil
+}
+
+func (s *CalorieService) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+	// Validate calories
+	if calories <= 0 {
+		return nil, errors.New("calories must be greater than 0")
+	}
+
+	// Validate weight
+	if weight <= 0 {
+		return nil, errors.New("weight must be greater than 0")
+	}
+
+	// Validate kcal per 100g
+	if kcalPer100g <= 0 {
+		return nil, errors.New("kcal per 100g must be greater than 0")
+	}
+
+	// Validate food name
+	if food == "" {
+		return nil, errors.New("food name is required")
+	}
+
+	entry, err := s.calorieRepo.Update(entryID, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime)
+	if err != nil {
+		s.logger.Error("Failed to update calorie entry", "error", err, "entry_id", entryID, "user_id", userID)
+		return nil, err
+	}
+
+	s.logger.Info("Calorie entry updated", "entry_id", entryID, "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
+	return entry, nil
+}

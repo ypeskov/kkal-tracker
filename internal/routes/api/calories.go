@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/services"
 
 	"github.com/labstack/echo/v4"
@@ -37,8 +38,18 @@ func NewCalorieHandler(calorieService *services.CalorieService, logger *slog.Log
 func (h *CalorieHandler) GetEntries(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	date := c.QueryParam("date")
+	dateFrom := c.QueryParam("dateFrom")
+	dateTo := c.QueryParam("dateTo")
 
-	entries, err := h.calorieService.GetEntriesByDate(userID, date)
+	var entries []*models.CalorieEntry
+	var err error
+
+	if dateFrom != "" && dateTo != "" {
+		entries, err = h.calorieService.GetEntriesByDateRange(userID, dateFrom, dateTo)
+	} else {
+		entries, err = h.calorieService.GetEntriesByDate(userID, date)
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to get calorie entries", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -88,8 +99,38 @@ func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	
+	idParam := c.Param("id")
+	entryID, err := strconv.Atoi(idParam)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid entry ID")
+	}
+
+	var req CreateCalorieEntryRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	// Parse the meal datetime
+	mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
+	}
+
+	entry, err := h.calorieService.UpdateEntry(entryID, userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
+	if err != nil {
+		h.logger.Error("Failed to update calorie entry", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusOK, entry)
+}
+
 func (h *CalorieHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.GetEntries)
 	g.POST("", h.CreateEntry)
+	g.PUT("/:id", h.UpdateEntry)
 	g.DELETE("/:id", h.DeleteEntry)
 }

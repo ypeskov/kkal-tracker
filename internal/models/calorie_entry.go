@@ -34,7 +34,7 @@ func (r *CalorieEntryRepository) Create(userID int, food string, calories int, w
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	
-	now := time.Now()
+	now := time.Now().UTC()
 	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now)
 	if err != nil {
 		return nil, err
@@ -118,6 +118,22 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error
 	return entries, nil
 }
 
+func (r *CalorieEntryRepository) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*CalorieEntry, error) {
+	query := `
+		UPDATE calorie_entries 
+		SET food = ?, calories = ?, weight = ?, kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, meal_datetime = ?, updated_at = ?
+		WHERE id = ? AND user_id = ?
+	`
+	
+	now := time.Now().UTC()
+	_, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetByID(id)
+}
+
 func (r *CalorieEntryRepository) GetByUserIDAndDate(userID int, date string) ([]*CalorieEntry, error) {
 	query := `
 		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
@@ -166,4 +182,44 @@ func (r *CalorieEntryRepository) Delete(id, userID int) error {
 	
 	_, err := r.db.Exec(query, id, userID)
 	return err
+}
+
+func (r *CalorieEntryRepository) GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*CalorieEntry, error) {
+	query := `
+		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
+		FROM calorie_entries
+		WHERE user_id = ? AND date(meal_datetime) BETWEEN ? AND ?
+		ORDER BY meal_datetime DESC
+	`
+	
+	rows, err := r.db.Query(query, userID, dateFrom, dateTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []*CalorieEntry
+	for rows.Next() {
+		entry := &CalorieEntry{}
+		err := rows.Scan(
+			&entry.ID,
+			&entry.UserID,
+			&entry.Food,
+			&entry.Calories,
+			&entry.Weight,
+			&entry.KcalPer100g,
+			&entry.Fats,
+			&entry.Carbs,
+			&entry.Proteins,
+			&entry.MealDatetime,
+			&entry.UpdatedAt,
+			&entry.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
 }
