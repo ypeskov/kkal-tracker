@@ -26,6 +26,7 @@
     "kcal": "ккал",
     "filterBy": "Фільтр за",
     "today": "Сьогодні",
+    "yesterday": "Вчора",
     "lastWeek": "Останні 7 днів",
     "lastMonth": "Останні 30 днів",
     "customRange": "Власний період",
@@ -35,7 +36,9 @@
     "totalCaloriesFiltered": "Всього калорій (відфільтровано):",
     "editEntry": "Редагувати запис",
     "updateEntry": "Оновити",
-    "cancel": "Скасувати"
+    "cancel": "Скасувати",
+    "date": "Дата",
+    "time": "Час"
   },
   "common": {
     "loading": "Завантаження..."

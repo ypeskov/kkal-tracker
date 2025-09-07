@@ -26,6 +26,7 @@
     "kcal": "ккал",
     "filterBy": "Фильтр по",
     "today": "Сегодня",
+    "yesterday": "Вчера",
     "lastWeek": "Последние 7 дней",
     "lastMonth": "Последние 30 дней",
     "customRange": "Произвольный период",
@@ -35,7 +36,9 @@
     "totalCaloriesFiltered": "Всего калорий (отфильтровано):",
     "editEntry": "Редактировать запись",
     "updateEntry": "Обновить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "date": "Дата",
+    "time": "Время"
   },
   "common": {
     "loading": "Загрузка..."
