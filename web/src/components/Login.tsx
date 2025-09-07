@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { authService } from '../api/auth'
+import LanguageSwitcher from './LanguageSwitcher'
 
 interface LoginProps {
   onLogin: () => void
 }
 
 export default function Login({ onLogin }: LoginProps) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -24,10 +27,11 @@ export default function Login({ onLogin }: LoginProps) {
 
   return (
     <div className="login-container">
-      <h2>Login to Calorie Tracker</h2>
+      <LanguageSwitcher />
+      <h2>{t('auth.login')} - {t('dashboard.title')}</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="email">Email:</label>
+          <label htmlFor="email">{t('auth.email')}:</label>
           <input
             type="email"
             id="email"
@@ -38,7 +42,7 @@ export default function Login({ onLogin }: LoginProps) {
         </div>
         
         <div className="form-group">
-          <label htmlFor="password">Password:</label>
+          <label htmlFor="password">{t('auth.password')}:</label>
           <input
             type="password"
             id="password"
@@ -53,12 +57,12 @@ export default function Login({ onLogin }: LoginProps) {
           className="btn"
           disabled={loginMutation.isPending}
         >
-          {loginMutation.isPending ? 'Logging in...' : 'Login'}
+          {loginMutation.isPending ? t('auth.loggingIn') : t('auth.loginButton')}
         </button>
 
         {loginMutation.error && (
           <div className="error">
-            Login failed. Please check your credentials.
+            {t('auth.loginFailed')}
           </div>
         )}
       </form>

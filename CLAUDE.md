@@ -7,7 +7,8 @@ A Go/Echo web application for calorie tracking with React/TanStack frontend. Bui
 - **Backend**: Go with Echo framework v4.13.4
 - **Frontend**: React 18 with TanStack Query, TypeScript, Vite
 - **Database**: SQLite with Goose migrations v3.25.0
-- **Auth**: JWT with bcrypt password hashing
+- **Auth**: JWT with bcrypt password hashing, sessionStorage persistence
+- **I18n**: react-i18next with en_US, uk_UA, ru_UA locales
 - **Logging**: Structured logging with slog
 - **Dev Tools**: Air for live reload
 
@@ -45,11 +46,17 @@ go mod tidy       # Clean up dependencies
 │   ├── server/server.go         # Echo server setup
 │   ├── handlers/                # HTTP handlers
 │   ├── middleware/              # Custom middleware
-│   └── models/                  # Data models
+│   ├── routes/api/              # API route handlers
+│   ├── services/                # Business logic services
+│   └── models/                  # Data models & repositories
 ├── migrations/                  # Goose SQL migrations
 ├── web/                         # React frontend
 │   ├── src/
+│   │   ├── api/                 # API service classes
+│   │   ├── components/          # React components
+│   │   └── i18n/                # Internationalization
 │   ├── dist/                    # Built frontend assets
+│   ├── embed.go                 # Go embedded filesystem
 │   └── package.json
 ├── .air.toml                    # Air live reload config
 └── Makefile                     # Build automation
@@ -66,8 +73,10 @@ JWT_SECRET=your-secret-key
 
 ## Important Notes
 - **No auto-migrations**: Migrations must be run manually for production safety
-- **Embedded assets**: Frontend dist files are embedded in Go binary
+- **Embedded assets**: Frontend dist files are embedded in Go binary via `web/embed.go`
 - **API routes**: All API endpoints under `/api` prefix
+- **Authentication**: JWT tokens stored in sessionStorage, persist across page reloads
+- **Internationalization**: Support for English (en_US), Ukrainian (uk_UA), and Russian in Ukraine (ru_UA)
 - **Development**: Uses Air for live reload, excludes `web/dist` from watching
 - **Production**: JSON logging format, structured error handling
 
@@ -78,9 +87,18 @@ JWT_SECRET=your-secret-key
 - JWT-Go v5.3.0 (authentication)
 - Air v1.61.5 (live reload)
 - React 18 + TanStack Query (frontend)
+- react-i18next (internationalization)
 
 ## Build Process
 1. Frontend builds to `web/dist/`
-2. Go embeds `web/dist` files
+2. Go embeds `web/dist` files via `web/embed.go`
 3. Single binary serves both API and static files
 4. Air watches Go files and triggers rebuilds (excludes `web/dist`)
+
+## Features
+- **User Authentication**: JWT-based login/logout with bcrypt password hashing
+- **Calorie Tracking**: Add food entries with name, weight, kcal/100g, auto-calculated totals
+- **Dashboard**: View today's entries with total calorie count
+- **Internationalization**: Full i18n support with language switcher
+- **Persistent Sessions**: JWT tokens stored in sessionStorage
+- **Responsive UI**: Clean, modern interface with proper form validation

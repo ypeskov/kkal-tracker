@@ -1,20 +1,25 @@
 interface CalorieEntry {
   id?: number
   food: string
+  weight: number
+  kcalPer100g: number
+  fats?: number
+  carbs?: number
+  proteins?: number
   calories: number
-  date: string
+  meal_datetime: string
 }
 
 class CalorieService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('token')
+  private getAuthHeaders = () => {
+    const token = sessionStorage.getItem('token')
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     }
   }
 
-  async getEntries(): Promise<CalorieEntry[]> {
+  getEntries = async (): Promise<CalorieEntry[]> => {
     const response = await fetch('/api/calories', {
       headers: this.getAuthHeaders(),
     })
@@ -26,7 +31,7 @@ class CalorieService {
     return response.json()
   }
 
-  async addEntry(entry: CalorieEntry): Promise<CalorieEntry> {
+  addEntry = async (entry: CalorieEntry): Promise<CalorieEntry> => {
     const response = await fetch('/api/calories', {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -40,7 +45,7 @@ class CalorieService {
     return response.json()
   }
 
-  async deleteEntry(id: number): Promise<void> {
+  deleteEntry = async (id: number): Promise<void> => {
     const response = await fetch(`/api/calories/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),

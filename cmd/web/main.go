@@ -7,6 +7,7 @@ import (
 	"ypeskov/kkal-tracker/internal/database"
 	"ypeskov/kkal-tracker/internal/logger"
 	"ypeskov/kkal-tracker/internal/server"
+	"ypeskov/kkal-tracker/web"
 
 	"github.com/joho/godotenv"
 )
@@ -32,7 +33,7 @@ func main() {
 	}
 	defer db.Close()
 
-	srv := server.New(cfg, log, db)
+	srv := server.New(cfg, log, db, web.StaticFiles)
 
 	log.Info("Starting server", "port", cfg.Port)
 	if err := srv.ListenAndServe(); err != nil {

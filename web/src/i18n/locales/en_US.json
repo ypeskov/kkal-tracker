@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "logout": "Logout",
+    "welcome": "Welcome"
+  },
+  "dashboard": {
+    "title": "Calorie Tracker",
+    "addFoodEntry": "Add Food Entry",
+    "foodName": "Food Name",
+    "weight": "Weight (g)",
+    "kcalPer100g": "kcal per 100g",
+    "fats": "Fats (g)",
+    "carbs": "Carbs (g)",
+    "proteins": "Proteins (g)",
+    "totalCalories": "Total Calories",
+    "addEntry": "Add",
+    "todayEntries": "Today's Entries",
+    "noEntries": "No entries yet today.",
+    "total": "Total",
+    "kcal": "kcal"
+  },
+  "common": {
+    "loading": "Loading..."
+  },
+  "language": {
+    "select": "Language",
+    "en_US": "English (US)",
+    "uk_UA": "Українська (UA)",
+    "ru_UA": "Русский (UA)"
+  }
+}

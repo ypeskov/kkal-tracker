@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,7 @@ import (
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
-func New(cfg *config.Config, logger *slog.Logger, db *sql.DB) *http.Server {
+func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.FS) *http.Server {
 	e := echo.New()
 	//e.HideBanner = true
 
@@ -46,7 +47,7 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB) *http.Server {
 	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
 	calorieHandler.RegisterRoutes(caloriesGroup)
 
-	web.RegisterStaticRoutes(e)
+	web.RegisterStaticRoutes(e, staticFiles)
 
 	logger.Info("Server configured", "port", cfg.Port)
 
