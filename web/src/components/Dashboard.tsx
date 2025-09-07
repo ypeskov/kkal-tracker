@@ -9,9 +9,10 @@ interface User {
 
 interface DashboardProps {
   user?: User
+  onLogout: () => void
 }
 
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [food, setFood] = useState('')
   const [calories, setCalories] = useState('')
   const queryClient = useQueryClient()
@@ -41,9 +42,18 @@ export default function Dashboard({ user }: DashboardProps) {
 
   return (
     <div className="dashboard-container">
-      <header>
-        <h1>Calorie Tracker</h1>
-        <p>Welcome, {user?.email}!</p>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1>Calorie Tracker</h1>
+          <p>Welcome, {user?.email}!</p>
+        </div>
+        <button 
+          onClick={onLogout}
+          className="btn"
+          style={{ backgroundColor: '#dc3545' }}
+        >
+          Logout
+        </button>
       </header>
 
       <section style={{ marginBottom: '2rem' }}>

@@ -77,16 +77,8 @@ func (s *AuthService) Register(email, password string) (*models.User, string, er
 	}
 
 	// Create new user
-	user := &models.User{
-		Email: email,
-	}
-	
-	if err := user.SetPassword(password); err != nil {
-		s.logger.Error("Failed to hash password", "error", err)
-		return nil, "", err
-	}
-
-	if err := s.userRepo.Create(user); err != nil {
+	user, err := s.userRepo.Create(email, password)
+	if err != nil {
 		s.logger.Error("Failed to create user", "error", err)
 		return nil, "", err
 	}

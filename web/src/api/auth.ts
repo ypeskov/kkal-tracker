@@ -23,12 +23,12 @@ class AuthService {
     }
 
     const data = await response.json()
-    localStorage.setItem('token', data.token)
+    sessionStorage.setItem('token', data.token)
     return data
   }
 
   async getCurrentUser(): Promise<User> {
-    const token = localStorage.getItem('token')
+    const token = sessionStorage.getItem('token')
     if (!token) {
       throw new Error('No token found')
     }
@@ -47,7 +47,11 @@ class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
+  }
+
+  getToken(): string | null {
+    return sessionStorage.getItem('token')
   }
 }
 
