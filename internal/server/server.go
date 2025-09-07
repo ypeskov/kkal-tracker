@@ -1,0 +1,57 @@
+package server
+
+import (
+	"database/sql"
+	"fmt"
+	"log/slog"
+	"net/http"
+
+	"ypeskov/kkal-tracker/internal/auth"
+	"ypeskov/kkal-tracker/internal/config"
+	"ypeskov/kkal-tracker/internal/middleware"
+	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/routes/api"
+	"ypeskov/kkal-tracker/internal/routes/web"
+	"ypeskov/kkal-tracker/internal/services"
+
+	"github.com/labstack/echo/v4"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
+)
+
+func New(cfg *config.Config, logger *slog.Logger, db *sql.DB) *http.Server {
+	e := echo.New()
+	//e.HideBanner = true
+
+	e.Use(middleware.Logger(logger))
+	e.Use(echomiddleware.Recover())
+	e.Use(echomiddleware.CORS())
+
+	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService, logger)
+
+	userRepo := models.NewUserRepository(db)
+	calorieRepo := models.NewCalorieEntryRepository(db)
+
+	authService := services.NewAuthService(userRepo, jwtService, logger)
+	calorieService := services.NewCalorieService(calorieRepo, logger)
+
+	authHandler := api.NewAuthHandler(authService, logger)
+	calorieHandler := api.NewCalorieHandler(calorieService, logger)
+
+	apiGroup := e.Group("/api")
+
+	authGroup := apiGroup.Group("/auth")
+	authHandler.RegisterRoutes(authGroup, authMiddleware)
+
+	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
+	calorieHandler.RegisterRoutes(caloriesGroup)
+
+	web.RegisterStaticRoutes(e)
+
+	logger.Info("Server configured", "port", cfg.Port)
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%s", cfg.Port),
+		Handler: e,
+	}
+}
