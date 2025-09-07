@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/services"
 
 	"github.com/labstack/echo/v4"
@@ -37,8 +38,18 @@ func NewCalorieHandler(calorieService *services.CalorieService, logger *slog.Log
 func (h *CalorieHandler) GetEntries(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	date := c.QueryParam("date")
+	dateFrom := c.QueryParam("dateFrom")
+	dateTo := c.QueryParam("dateTo")
 
-	entries, err := h.calorieService.GetEntriesByDate(userID, date)
+	var entries []*models.CalorieEntry
+	var err error
+
+	if dateFrom != "" && dateTo != "" {
+		entries, err = h.calorieService.GetEntriesByDateRange(userID, dateFrom, dateTo)
+	} else {
+		entries, err = h.calorieService.GetEntriesByDate(userID, date)
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to get calorie entries", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")

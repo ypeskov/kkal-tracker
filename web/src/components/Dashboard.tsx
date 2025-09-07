@@ -15,6 +15,8 @@ interface DashboardProps {
   onLogout: () => void
 }
 
+type FilterType = 'today' | 'lastWeek' | 'lastMonth' | 'customRange'
+
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const { t } = useTranslation()
   const [foodName, setFoodName] = useState('')
@@ -23,6 +25,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [fats, setFats] = useState('')
   const [carbs, setCarbs] = useState('')
   const [proteins, setProteins] = useState('')
+  const [filterType, setFilterType] = useState<FilterType>('today')
+  const [customDateFrom, setCustomDateFrom] = useState('')
+  const [customDateTo, setCustomDateTo] = useState('')
   const queryClient = useQueryClient()
 
   // Auto-calculate total calories
@@ -32,10 +37,46 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     return Math.round((weightNum * kcalNum) / 100)
   }, [weight, kcalPer100g])
 
+  // Calculate date range based on filter type
+  const getDateParams = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    switch (filterType) {
+      case 'today':
+        return { date: today }
+      case 'lastWeek':
+        const weekAgo = new Date()
+        weekAgo.setDate(weekAgo.getDate() - 7)
+        return { 
+          dateFrom: weekAgo.toISOString().split('T')[0], 
+          dateTo: today 
+        }
+      case 'lastMonth':
+        const monthAgo = new Date()
+        monthAgo.setDate(monthAgo.getDate() - 30)
+        return { 
+          dateFrom: monthAgo.toISOString().split('T')[0], 
+          dateTo: today 
+        }
+      case 'customRange':
+        if (customDateFrom && customDateTo) {
+          return { dateFrom: customDateFrom, dateTo: customDateTo }
+        }
+        return { date: today }
+      default:
+        return { date: today }
+    }
+  }, [filterType, customDateFrom, customDateTo])
+
   const { data: entries, isLoading } = useQuery({
-    queryKey: ['calories'],
-    queryFn: calorieService.getEntries,
+    queryKey: ['calories', getDateParams],
+    queryFn: () => calorieService.getEntries(getDateParams),
   })
+
+  // Calculate total calories for filtered results
+  const totalFilteredCalories = useMemo(() => {
+    return entries?.reduce((sum, entry) => sum + entry.calories, 0) || 0
+  }, [entries])
 
   const addEntryMutation = useMutation({
     mutationFn: calorieService.addEntry,
@@ -196,6 +237,60 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
       <section>
         <h2>{t('dashboard.todayEntries')}</h2>
+        
+        {/* Filter Section */}
+        <div className="filter-section" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <label htmlFor="filterType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              {t('dashboard.filterBy')}:
+            </label>
+            <select 
+              id="filterType"
+              value={filterType} 
+              onChange={(e) => setFilterType(e.target.value as FilterType)}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', marginRight: '1rem' }}
+            >
+              <option value="today">{t('dashboard.today')}</option>
+              <option value="lastWeek">{t('dashboard.lastWeek')}</option>
+              <option value="lastMonth">{t('dashboard.lastMonth')}</option>
+              <option value="customRange">{t('dashboard.customRange')}</option>
+            </select>
+          </div>
+          
+          {filterType === 'customRange' && (
+            <div className="custom-date-range" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div>
+                <label htmlFor="dateFrom" style={{ display: 'block', marginBottom: '0.25rem' }}>
+                  {t('dashboard.dateFrom')}:
+                </label>
+                <input
+                  type="date"
+                  id="dateFrom"
+                  value={customDateFrom}
+                  onChange={(e) => setCustomDateFrom(e.target.value)}
+                  style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                />
+              </div>
+              <div>
+                <label htmlFor="dateTo" style={{ display: 'block', marginBottom: '0.25rem' }}>
+                  {t('dashboard.dateTo')}:
+                </label>
+                <input
+                  type="date"
+                  id="dateTo"
+                  value={customDateTo}
+                  onChange={(e) => setCustomDateTo(e.target.value)}
+                  style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Total calories display */}
+          <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#e8f5e8', borderRadius: '4px', fontWeight: 'bold', color: '#2d5016' }}>
+            {t('dashboard.totalCaloriesFiltered')} {totalFilteredCalories} {t('dashboard.kcal')}
+          </div>
+        </div>
         {isLoading ? (
           <p>{t('common.loading')}</p>
         ) : (
@@ -220,11 +315,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </li>
                 ))}
               </ul>
-            )}
-            {entries && entries.length > 0 && (
-              <div className="total-calories">
-                {t('dashboard.total')}: {entries.reduce((sum: number, entry: any) => sum + entry.calories, 0)} {t('dashboard.kcal')}
-              </div>
             )}
           </div>
         )}

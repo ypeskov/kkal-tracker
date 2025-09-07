@@ -124,3 +124,18 @@ func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[strin
 
 	return stats, nil
 }
+
+func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
+	entries, err := s.calorieRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
+	if err != nil {
+		s.logger.Error("Failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
+		return nil, err
+	}
+
+	// Return empty slice instead of nil for better API responses
+	if entries == nil {
+		entries = []*models.CalorieEntry{}
+	}
+
+	return entries, nil
+}

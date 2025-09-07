@@ -19,8 +19,21 @@ class CalorieService {
     }
   }
 
-  getEntries = async (): Promise<CalorieEntry[]> => {
-    const response = await fetch('/api/calories', {
+  getEntries = async (params?: { date?: string; dateFrom?: string; dateTo?: string }): Promise<CalorieEntry[]> => {
+    const searchParams = new URLSearchParams()
+    
+    if (params?.date) {
+      searchParams.append('date', params.date)
+    }
+    
+    if (params?.dateFrom && params?.dateTo) {
+      searchParams.append('dateFrom', params.dateFrom)
+      searchParams.append('dateTo', params.dateTo)
+    }
+
+    const url = `/api/calories${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+    
+    const response = await fetch(url, {
       headers: this.getAuthHeaders(),
     })
 

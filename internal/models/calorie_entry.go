@@ -167,3 +167,43 @@ func (r *CalorieEntryRepository) Delete(id, userID int) error {
 	_, err := r.db.Exec(query, id, userID)
 	return err
 }
+
+func (r *CalorieEntryRepository) GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*CalorieEntry, error) {
+	query := `
+		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
+		FROM calorie_entries
+		WHERE user_id = ? AND date(meal_datetime) BETWEEN ? AND ?
+		ORDER BY meal_datetime DESC
+	`
+	
+	rows, err := r.db.Query(query, userID, dateFrom, dateTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []*CalorieEntry
+	for rows.Next() {
+		entry := &CalorieEntry{}
+		err := rows.Scan(
+			&entry.ID,
+			&entry.UserID,
+			&entry.Food,
+			&entry.Calories,
+			&entry.Weight,
+			&entry.KcalPer100g,
+			&entry.Fats,
+			&entry.Carbs,
+			&entry.Proteins,
+			&entry.MealDatetime,
+			&entry.UpdatedAt,
+			&entry.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}

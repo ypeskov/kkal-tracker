@@ -20,10 +20,19 @@
     "proteins": "Білки (г)",
     "totalCalories": "Всього калорій",
     "addEntry": "Додати",
-    "todayEntries": "Сьогоднішні записи",
-    "noEntries": "Поки що немає записів на сьогодні.",
+    "todayEntries": "Записи",
+    "noEntries": "Записів не знайдено.",
     "total": "Всього",
-    "kcal": "ккал"
+    "kcal": "ккал",
+    "filterBy": "Фільтр за",
+    "today": "Сьогодні",
+    "lastWeek": "Останні 7 днів",
+    "lastMonth": "Останні 30 днів",
+    "customRange": "Власний період",
+    "dateFrom": "З",
+    "dateTo": "До",
+    "applyFilter": "Застосувати",
+    "totalCaloriesFiltered": "Всього калорій (відфільтровано):"
   },
   "common": {
     "loading": "Завантаження..."

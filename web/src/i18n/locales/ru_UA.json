@@ -20,10 +20,19 @@
     "proteins": "Белки (г)",
     "totalCalories": "Всего калорий",
     "addEntry": "Добавить",
-    "todayEntries": "Сегодняшние записи",
-    "noEntries": "Пока нет записей на сегодня.",
+    "todayEntries": "Записи",
+    "noEntries": "Записи не найдены.",
     "total": "Всего",
-    "kcal": "ккал"
+    "kcal": "ккал",
+    "filterBy": "Фильтр по",
+    "today": "Сегодня",
+    "lastWeek": "Последние 7 дней",
+    "lastMonth": "Последние 30 дней",
+    "customRange": "Произвольный период",
+    "dateFrom": "С",
+    "dateTo": "По",
+    "applyFilter": "Применить",
+    "totalCaloriesFiltered": "Всего калорий (отфильтровано):"
   },
   "common": {
     "loading": "Загрузка..."
