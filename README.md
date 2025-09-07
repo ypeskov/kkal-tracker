@@ -63,7 +63,11 @@ make seed
 
 4. Create a test user:
 ```bash
+# Default (English ingredients)
 go run scripts/create_user.go user@example.com password123
+
+# With specific language (en_US, uk_UA, or ru_UA)
+go run scripts/create_user.go user@example.com password123 ru_UA
 ```
 
 5. Build and run:
@@ -197,6 +201,13 @@ CMD sh -c "if [ \"$SEED_DB\" = \"true\" ]; then go run cmd/seed/main.go; fi && .
 - Passwords are hashed using bcrypt
 - JWT tokens are valid for 24 hours
 - Protected routes require `Authorization: Bearer <token>` header
+
+### User Creation
+
+When creating users with `scripts/create_user.go`:
+- Global ingredients are automatically copied to user's personal ingredients
+- Language can be specified (en_US, uk_UA, ru_UA) to copy ingredients with appropriate translations
+- Default language is en_US if not specified
 
 ## Tech Stack
 

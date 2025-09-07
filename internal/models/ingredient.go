@@ -49,7 +49,7 @@ func (r *IngredientRepository) SearchUserIngredients(userID int, query string, l
 		LIMIT ?
 	`
 	
-	rows, err := r.db.Query(sqlQuery, userID, query+"%", limit)
+	rows, err := r.db.Query(sqlQuery, userID, "%"+query+"%", limit)
 	if err != nil {
 		return nil, err
 	}

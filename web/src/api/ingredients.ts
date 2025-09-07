@@ -57,10 +57,12 @@ class IngredientService {
     if (query.length < 2) return []
     
     const ingredients = this.getCachedIngredients()
+    if (!ingredients || ingredients.length === 0) return []
+    
     const queryLower = query.toLowerCase()
     
     return ingredients
-      .filter(ingredient => ingredient.name.toLowerCase().startsWith(queryLower))
+      .filter(ingredient => ingredient.name.toLowerCase().includes(queryLower))
       .slice(0, limit)
       .sort((a, b) => a.name.localeCompare(b.name))
   }
@@ -105,8 +107,14 @@ class IngredientService {
 
   // Check if ingredients are cached
   hasCachedIngredients = (): boolean => {
-    const cached = sessionStorage.getItem(this.STORAGE_KEY)
-    return !!(cached && JSON.parse(cached).length > 0)
+    try {
+      const cached = sessionStorage.getItem(this.STORAGE_KEY)
+      if (!cached) return false
+      const parsed = JSON.parse(cached)
+      return Array.isArray(parsed) && parsed.length > 0
+    } catch (error) {
+      return false
+    }
   }
 }
 

@@ -39,7 +39,7 @@
 
 .suggestion-item:hover,
 .suggestion-item.selected {
-  background-color: #f8f9fa;
+  background-color: #e9ecef;
 }
 
 .suggestion-name {
