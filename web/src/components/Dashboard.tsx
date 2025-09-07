@@ -20,7 +20,7 @@ interface DashboardProps {
 type FilterType = 'today' | 'lastWeek' | 'lastMonth' | 'customRange'
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [foodName, setFoodName] = useState('')
   const [weight, setWeight] = useState('')
   const [kcalPer100g, setKcalPer100g] = useState('')
@@ -37,6 +37,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [editFats, setEditFats] = useState('')
   const [editCarbs, setEditCarbs] = useState('')
   const [editProteins, setEditProteins] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editTime, setEditTime] = useState('')
   const queryClient = useQueryClient()
 
   // Load ingredients on component mount
@@ -104,6 +106,30 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     queryFn: () => calorieService.getEntries(getDateParams),
   })
 
+  // Group entries by date
+  const entriesByDate = useMemo(() => {
+    if (!entries || entries.length === 0) {
+      return {}
+    }
+    
+    const grouped: { [date: string]: any[] } = {}
+    
+    entries.forEach(entry => {
+      const date = new Date(entry.meal_datetime).toISOString().split('T')[0]
+      if (!grouped[date]) {
+        grouped[date] = []
+      }
+      grouped[date].push(entry)
+    })
+    
+    // Sort entries within each date by time
+    Object.keys(grouped).forEach(date => {
+      grouped[date].sort((a, b) => new Date(a.meal_datetime).getTime() - new Date(b.meal_datetime).getTime())
+    })
+    
+    return grouped
+  }, [entries])
+
   // Calculate totals for filtered results
   const nutritionTotals = useMemo(() => {
     if (!entries || entries.length === 0) {
@@ -117,6 +143,51 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       proteins: totals.proteins + (entry.proteins || 0)
     }), { calories: 0, fats: 0, carbs: 0, proteins: 0 })
   }, [entries])
+
+  // Format date for display
+  const formatDateHeader = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    const dateOnly = date.toISOString().split('T')[0]
+    const todayOnly = today.toISOString().split('T')[0]
+    const yesterdayOnly = yesterday.toISOString().split('T')[0]
+    
+    // Get current language and map to locale
+    const currentLang = i18n.language
+    const locale = currentLang === 'uk-UA' ? 'uk-UA' : currentLang === 'ru-UA' ? 'ru-RU' : 'en-US'
+    
+    if (dateOnly === todayOnly) {
+      return t('dashboard.today') + ' (' + date.toLocaleDateString(locale) + ')'
+    } else if (dateOnly === yesterdayOnly) {
+      return t('dashboard.yesterday') + ' (' + date.toLocaleDateString(locale) + ')'
+    } else {
+      return date.toLocaleDateString(locale)
+    }
+  }
+
+  // Format time for display
+  const formatTime = (datetimeString: string) => {
+    const date = new Date(datetimeString)
+    
+    // Get current language and map to locale
+    const currentLang = i18n.language
+    const locale = currentLang === 'uk-UA' ? 'uk-UA' : currentLang === 'ru-UA' ? 'ru-RU' : 'en-US'
+    
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Calculate daily totals for a given date's entries
+  const calculateDailyTotals = (dateEntries: any[]) => {
+    return dateEntries.reduce((totals, entry) => ({
+      calories: totals.calories + (entry.calories || 0),
+      fats: totals.fats + (entry.fats || 0),
+      carbs: totals.carbs + (entry.carbs || 0),
+      proteins: totals.proteins + (entry.proteins || 0)
+    }), { calories: 0, fats: 0, carbs: 0, proteins: 0 })
+  }
 
   const addEntryMutation = useMutation({
     mutationFn: calorieService.addEntry,
@@ -142,6 +213,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       setEditFats('')
       setEditCarbs('')
       setEditProteins('')
+      setEditDate('')
+      setEditTime('')
     },
   })
 
@@ -175,6 +248,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setEditFats(entry.fats ? entry.fats.toString() : '')
     setEditCarbs(entry.carbs ? entry.carbs.toString() : '')
     setEditProteins(entry.proteins ? entry.proteins.toString() : '')
+    
+    // Parse the meal_datetime to separate date and time
+    const mealDate = new Date(entry.meal_datetime)
+    const dateString = mealDate.toISOString().split('T')[0] // YYYY-MM-DD
+    const timeString = mealDate.toTimeString().split(' ')[0].substring(0, 5) // HH:MM
+    setEditDate(dateString)
+    setEditTime(timeString)
   }
 
   const handleIngredientSelect = (ingredient: Ingredient) => {
@@ -191,14 +271,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const handleUpdateSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editFoodName || !editWeight || !editKcalPer100g || !editingEntry) return
+    if (!editFoodName || !editWeight || !editKcalPer100g || !editingEntry || !editDate || !editTime) return
+    
+    // Combine date and time to create the meal_datetime
+    const mealDateTime = new Date(`${editDate}T${editTime}:00`).toISOString()
     
     const entryData: any = {
       food: editFoodName,
       weight: parseFloat(editWeight),
       kcalPer100g: parseFloat(editKcalPer100g),
       calories: editTotalCalories,
-      meal_datetime: editingEntry.meal_datetime,
+      meal_datetime: mealDateTime,
     }
     
     // Only include nutritional fields if they have values
@@ -217,6 +300,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setEditFats('')
     setEditCarbs('')
     setEditProteins('')
+    setEditDate('')
+    setEditTime('')
   }
 
   return (
@@ -420,23 +505,89 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             {entries?.length === 0 ? (
               <p>{t('dashboard.noEntries')}</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {entries?.map((entry: any) => (
-                  <li key={entry.id} className="entry-item" onClick={() => handleEdit(entry)} style={{ cursor: 'pointer' }}>
-                    <div className="entry-header">
-                      <strong>{entry.food}</strong>
-                      <strong>{entry.calories} {t('dashboard.kcal')}</strong>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {Object.keys(entriesByDate)
+                  .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // Sort dates desc (newest first)
+                  .map((dateKey) => (
+                    <div key={dateKey}>
+                      {/* Date header - only show if period > 1 day or when filtering by range */}
+                      {(filterType !== 'today' || Object.keys(entriesByDate).length > 1) && (
+                        <h3 style={{ 
+                          margin: '0 0 1rem 0', 
+                          padding: '0.5rem 0', 
+                          fontSize: '1.1rem',
+                          color: '#495057',
+                          borderBottom: '2px solid #e9ecef'
+                        }}>
+                          {formatDateHeader(dateKey)}
+                        </h3>
+                      )}
+                      
+                      {/* Entries for this date */}
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {entriesByDate[dateKey].map((entry: any) => (
+                          <li key={entry.id} className="entry-item" onClick={() => handleEdit(entry)} style={{ cursor: 'pointer' }}>
+                            <div className="entry-header">
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ 
+                                  fontSize: '0.85rem', 
+                                  color: '#6c757d',
+                                  minWidth: '55px',
+                                  fontWeight: 'normal'
+                                }}>
+                                  {formatTime(entry.meal_datetime)}
+                                </span>
+                                <strong>{entry.food}</strong>
+                              </div>
+                              <strong>{entry.calories} {t('dashboard.kcal')}</strong>
+                            </div>
+                            <div className="entry-details" style={{ marginLeft: '60px' }}>
+                              <span>{t('dashboard.weight')}: {entry.weight}g</span>
+                              <span>{t('dashboard.kcalPer100g')}: {entry.kcalPer100g}</span>
+                              {entry.fats && <span>{t('dashboard.fats')}: {entry.fats}g</span>}
+                              {entry.carbs && <span>{t('dashboard.carbs')}: {entry.carbs}g</span>}
+                              {entry.proteins && <span>{t('dashboard.proteins')}: {entry.proteins}g</span>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Daily totals - only show when there are multiple days */}
+                      {Object.keys(entriesByDate).length > 1 && (() => {
+                        const dailyTotals = calculateDailyTotals(entriesByDate[dateKey])
+                        return (
+                          <div style={{ 
+                            marginTop: '1rem', 
+                            padding: '0.75rem', 
+                            backgroundColor: '#f8f9fa', 
+                            borderRadius: '5px',
+                            border: '1px solid #dee2e6'
+                          }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '1rem',
+                              fontWeight: 'bold',
+                              fontSize: '0.9rem'
+                            }}>
+                              <span style={{ color: '#495057' }}>{t('dashboard.total')}:</span>
+                              <span>{dailyTotals.calories} {t('dashboard.kcal')}</span>
+                              {dailyTotals.fats > 0 && (
+                                <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                              )}
+                              {dailyTotals.carbs > 0 && (
+                                <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                              )}
+                              {dailyTotals.proteins > 0 && (
+                                <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
-                    <div className="entry-details">
-                      <span>{t('dashboard.weight')}: {entry.weight}g</span>
-                      <span>{t('dashboard.kcalPer100g')}: {entry.kcalPer100g}</span>
-                      {entry.fats && <span>{t('dashboard.fats')}: {entry.fats}g</span>}
-                      {entry.carbs && <span>{t('dashboard.carbs')}: {entry.carbs}g</span>}
-                      {entry.proteins && <span>{t('dashboard.proteins')}: {entry.proteins}g</span>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                  ))}
+              </div>
             )}
           </div>
         )}
@@ -477,6 +628,30 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     id="editFoodName"
                     value={editFoodName}
                     onChange={(e) => setEditFoodName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="editDate">{t('dashboard.date')}:</label>
+                  <input
+                    type="date"
+                    id="editDate"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="editTime">{t('dashboard.time')}:</label>
+                  <input
+                    type="time"
+                    id="editTime"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
                     required
                   />
                 </div>

@@ -70,6 +70,15 @@ go run scripts/create_user.go user@example.com password123
 go run scripts/create_user.go user@example.com password123 ru_UA
 ```
 
+## Demo User
+
+For quick testing, there's a demo user created during database seeding:
+
+**Email**: `example@example.com`  
+**Password**: `password123`
+
+You can login immediately after running `make seed` without creating additional users.
+
 5. Build and run:
 ```bash
 make run

@@ -26,6 +26,7 @@
     "kcal": "kcal",
     "filterBy": "Filter by",
     "today": "Today",
+    "yesterday": "Yesterday",
     "lastWeek": "Last 7 days",
     "lastMonth": "Last 30 days",
     "customRange": "Custom range",
@@ -35,7 +36,9 @@
     "totalCaloriesFiltered": "Total Calories (filtered):",
     "editEntry": "Edit Entry",
     "updateEntry": "Update",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "date": "Date",
+    "time": "Time"
   },
   "common": {
     "loading": "Loading..."
