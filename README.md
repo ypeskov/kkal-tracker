@@ -56,12 +56,21 @@ make install-deps
 make migrate-up
 ```
 
-3. Create a test user:
+3. Seed database with sample ingredients (optional):
 ```bash
-go run scripts/create_user.go user@example.com password123
+make seed
 ```
 
-4. Build and run:
+4. Create a test user:
+```bash
+# Default (English ingredients)
+go run scripts/create_user.go user@example.com password123
+
+# With specific language (en_US, uk_UA, or ru_UA)
+go run scripts/create_user.go user@example.com password123 ru_UA
+```
+
+5. Build and run:
 ```bash
 make run
 ```
@@ -119,6 +128,10 @@ make migrate-up     # Run pending migrations
 make migrate-down   # Rollback last migration
 make migrate-status # Check migration status
 make migrate-create NAME=migration_name # Create new migration
+
+# Database Seeding  
+make seed           # Seed database with sample data
+make seed-clean     # Clean and re-seed database
 ```
 
 ### Live Reload Development
@@ -159,11 +172,42 @@ make migrate-up
 make run
 ```
 
+#### Database Seeding
+
+The project includes a seeding system to populate the database with sample ingredients data:
+
+- **Seed location**: SQL files in `cmd/seed/sql/` directory
+- **Seed command**: `make seed` - Executes all SQL files in alphabetical order
+- **Clean and reseed**: `make seed-clean` - Removes existing data and re-seeds
+
+The seeding system:
+- Reads all `.sql` files from `cmd/seed/sql/`
+- Executes them in alphabetical order (name files like `01_ingredients.sql`, `02_categories.sql`)
+- Uses transactions for safety
+- Supports idempotent operations with `INSERT OR REPLACE`
+
+For production Docker deployments:
+```dockerfile
+# Option 1: During build
+RUN go run cmd/seed/main.go
+
+# Option 2: With environment variable
+ENV SEED_DB=true
+CMD sh -c "if [ \"$SEED_DB\" = \"true\" ]; then go run cmd/seed/main.go; fi && ./main"
+```
+
 ### Authentication
 
 - Passwords are hashed using bcrypt
 - JWT tokens are valid for 24 hours
 - Protected routes require `Authorization: Bearer <token>` header
+
+### User Creation
+
+When creating users with `scripts/create_user.go`:
+- Global ingredients are automatically copied to user's personal ingredients
+- Language can be specified (en_US, uk_UA, ru_UA) to copy ingredients with appropriate translations
+- Default language is en_US if not specified
 
 ## Tech Stack
 

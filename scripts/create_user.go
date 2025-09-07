@@ -13,13 +13,18 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Printf("Usage: %s <email> <password>\n", os.Args[0])
+	if len(os.Args) < 3 || len(os.Args) > 4 {
+		fmt.Printf("Usage: %s <email> <password> [language_code]\n", os.Args[0])
+		fmt.Printf("Language codes: en_US, uk_UA, ru_UA (default: en_US)\n")
 		os.Exit(1)
 	}
 
 	email := os.Args[1]
 	password := os.Args[2]
+	languageCode := "en_US"
+	if len(os.Args) == 4 {
+		languageCode = os.Args[3]
+	}
 
 	err := godotenv.Load()
 	if err != nil {
@@ -41,10 +46,10 @@ func main() {
 
 	userRepo := models.NewUserRepository(db)
 
-	user, err := userRepo.Create(email, password)
+	user, err := userRepo.CreateWithLanguage(email, password, languageCode)
 	if err != nil {
 		log.Fatal("Failed to create user:", err)
 	}
 
-	fmt.Printf("User created successfully: ID=%d, Email=%s\n", user.ID, user.Email)
+	fmt.Printf("User created successfully: ID=%d, Email=%s, Language=%s\n", user.ID, user.Email, languageCode)
 }

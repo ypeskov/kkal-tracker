@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log/slog"
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/middleware"
@@ -13,7 +12,9 @@ import (
 
 type AuthHandler struct {
 	authService *services.AuthService
-	logger      *slog.Logger
+	logger      interface {
+		Error(msg string, args ...interface{})
+	}
 }
 
 type LoginRequest struct {
@@ -21,12 +22,20 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type RegisterRequest struct {
+	Email        string `json:"email" validate:"required,email"`
+	Password     string `json:"password" validate:"required,min=6"`
+	LanguageCode string `json:"language_code" validate:"required"`
+}
+
 type LoginResponse struct {
 	Token string      `json:"token"`
 	User  models.User `json:"user"`
 }
 
-func NewAuthHandler(authService *services.AuthService, logger *slog.Logger) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, logger interface {
+	Error(msg string, args ...interface{})
+}) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		logger:      logger,
@@ -54,6 +63,27 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	})
 }
 
+func (h *AuthHandler) Register(c echo.Context) error {
+	var req RegisterRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	user, token, err := h.authService.Register(req.Email, req.Password, req.LanguageCode)
+	if err != nil {
+		if err.Error() == "user already exists" {
+			return echo.NewHTTPError(http.StatusConflict, "User already exists")
+		}
+		h.logger.Error("Registration failed", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusCreated, LoginResponse{
+		Token: token,
+		User:  *user,
+	})
+}
+
 func (h *AuthHandler) GetCurrentUser(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
@@ -71,5 +101,6 @@ func (h *AuthHandler) GetCurrentUser(c echo.Context) error {
 
 func (h *AuthHandler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware) {
 	g.POST("/login", h.Login)
+	g.POST("/register", h.Register)
 	g.GET("/me", h.GetCurrentUser, authMiddleware.RequireAuth)
 }

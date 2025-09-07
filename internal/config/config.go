@@ -1,7 +1,9 @@
 package config
 
 import (
+	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -14,8 +16,17 @@ type Config struct {
 }
 
 func New() *Config {
+	databasePath := getEnv("DATABASE_PATH", "./data/kkal_tracker.db")
+	
+	// Ensure the database directory exists
+	if dir := filepath.Dir(databasePath); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			log.Fatalf("Failed to create database directory %s: %v", dir, err)
+		}
+	}
+	
 	return &Config{
-		DatabasePath: getEnv("DATABASE_PATH", "./data/kkal_tracker.db"),
+		DatabasePath: databasePath,
 		Port:         getEnv("PORT", "8080"),
 		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"),
 		LogLevel:     getEnv("LOG_LEVEL", "info"),

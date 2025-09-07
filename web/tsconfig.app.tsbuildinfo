@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/api/auth.ts","./src/api/calories.ts","./src/components/dashboard.tsx","./src/components/languageswitcher.tsx","./src/components/login.tsx","./src/i18n/index.ts"],"version":"5.6.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/auth.ts","./src/api/calories.ts","./src/api/ingredients.ts","./src/components/dashboard.tsx","./src/components/foodautocomplete.tsx","./src/components/languageswitcher.tsx","./src/components/login.tsx","./src/i18n/index.ts"],"version":"5.6.3"}

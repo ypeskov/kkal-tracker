@@ -1,7 +1,7 @@
 BINARY_NAME=kkal-tracker
 WEB_DIR=web
 
-.PHONY: build run clean dev install-deps build-frontend watch migrate-up migrate-down migrate-status migrate-create
+.PHONY: build run clean dev install-deps build-frontend watch migrate-up migrate-down migrate-status migrate-create seed
 
 build: build-frontend
 	@echo "Building..."
@@ -83,5 +83,15 @@ migrate-create:
 		go install github.com/pressly/goose/v3/cmd/goose@latest; \
 		goose -dir migrations create $(NAME) sql; \
 	fi
+
+# Database Seeding
+seed:
+	@echo "Seeding database..."
+	@go run cmd/seed/main.go
+
+seed-clean:
+	@echo "Cleaning and re-seeding database..."
+	@sqlite3 ./data/app.db "DELETE FROM global_ingredients; DELETE FROM global_ingredient_names;"
+	@go run cmd/seed/main.go
 
 .DEFAULT_GOAL := build
