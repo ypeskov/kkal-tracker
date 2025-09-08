@@ -66,13 +66,17 @@ func (h *CalorieHandler) CreateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
-	// Parse the meal datetime
-	mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
+	// Parse the meal datetime and format for storage
+	parsedTime, err := time.Parse(time.RFC3339, req.MealDatetime)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
 	}
+	// Format as string without timezone (YYYY-MM-DD HH:MM:SS)
+	mealDatetimeStr := parsedTime.UTC().Format("2006-01-02 15:04:05")
 
-	result, err := h.calorieService.CreateEntry(userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
+	result, err := h.calorieService.CreateEntry(userID,
+		req.Food, req.Calories, req.Weight, req.KcalPer100g,
+		req.Fats, req.Carbs, req.Proteins, mealDatetimeStr)
 	if err != nil {
 		h.logger.Error("Failed to create calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -83,7 +87,7 @@ func (h *CalorieHandler) CreateEntry(c echo.Context) error {
 
 func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
 	userID := c.Get("user_id").(int)
-	
+
 	idParam := c.Param("id")
 	entryID, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -101,7 +105,7 @@ func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
 
 func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
 	userID := c.Get("user_id").(int)
-	
+
 	idParam := c.Param("id")
 	entryID, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -113,11 +117,13 @@ func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
-	// Parse the meal datetime
-	mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
+	// Parse the meal datetime and format for storage
+	parsedTime, err := time.Parse(time.RFC3339, req.MealDatetime)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
 	}
+	// Create a new time in the desired format (YYYY-MM-DD HH:MM:SS)
+	mealDatetime, _ := time.Parse("2006-01-02 15:04:05", parsedTime.UTC().Format("2006-01-02 15:04:05"))
 
 	entry, err := h.calorieService.UpdateEntry(entryID, userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
 	if err != nil {

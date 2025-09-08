@@ -23,7 +23,7 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 	e := echo.New()
 	//e.HideBanner = true
 
-	e.Use(middleware.Logger(logger))
+	//e.Use(middleware.Logger(logger))
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.CORS())
 
@@ -31,7 +31,7 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, logger)
 
 	userRepo := models.NewUserRepository(db)
-	calorieRepo := models.NewCalorieEntryRepository(db)
+	calorieRepo := models.NewCalorieEntryRepository(db, logger)
 	ingredientRepo := models.NewIngredientRepository(db)
 
 	authService := services.NewAuthService(userRepo, ingredientRepo, jwtService, logger)
