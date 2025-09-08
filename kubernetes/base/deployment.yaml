@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kkal-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kkal-tracker
+  template:
+    metadata:
+      labels:
+        app: kkal-tracker
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kkal-tracker-pvc
+      containers:
+        - name: kkal-tracker
+          image: ypeskov/kcal-tracker:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: kkal-tracker-env
+          volumeMounts:
+            - name: data
+              mountPath: /data
