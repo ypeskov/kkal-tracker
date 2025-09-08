@@ -17,7 +17,7 @@ interface DashboardProps {
   onLogout: () => void
 }
 
-type FilterType = 'today' | 'lastWeek' | 'lastMonth' | 'customRange'
+type FilterType = 'today' | 'yesterday' | 'lastWeek' | 'lastMonth' | 'customRange'
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const { t, i18n } = useTranslation()
@@ -77,6 +77,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     switch (filterType) {
       case 'today':
         return { date: today }
+      case 'yesterday':
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        return { date: yesterday.toISOString().split('T')[0] }
       case 'lastWeek':
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
@@ -478,6 +482,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', marginRight: '1rem' }}
             >
               <option value="today">{t('dashboard.today')}</option>
+              <option value="yesterday">{t('dashboard.yesterday')}</option>
               <option value="lastWeek">{t('dashboard.lastWeek')}</option>
               <option value="lastMonth">{t('dashboard.lastMonth')}</option>
               <option value="customRange">{t('dashboard.customRange')}</option>

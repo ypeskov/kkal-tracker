@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/middleware"
@@ -12,9 +13,7 @@ import (
 
 type AuthHandler struct {
 	authService *services.AuthService
-	logger      interface {
-		Error(msg string, args ...interface{})
-	}
+	logger      *slog.Logger
 }
 
 type LoginRequest struct {
@@ -33,9 +32,7 @@ type LoginResponse struct {
 	User  models.User `json:"user"`
 }
 
-func NewAuthHandler(authService *services.AuthService, logger interface {
-	Error(msg string, args ...interface{})
-}) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, logger *slog.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		logger:      logger,

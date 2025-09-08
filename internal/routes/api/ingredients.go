@@ -1,24 +1,21 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
-	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/repositories"
 
 	"github.com/labstack/echo/v4"
 )
 
 type IngredientHandler struct {
-	ingredientRepo *models.IngredientRepository
-	logger         interface {
-		Error(msg string, args ...interface{})
-	}
+	ingredientRepo repositories.IngredientRepository
+	logger         *slog.Logger
 }
 
-func NewIngredientHandler(ingredientRepo *models.IngredientRepository, logger interface {
-	Error(msg string, args ...interface{})
-}) *IngredientHandler {
+func NewIngredientHandler(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *IngredientHandler {
 	return &IngredientHandler{
 		ingredientRepo: ingredientRepo,
 		logger:         logger,

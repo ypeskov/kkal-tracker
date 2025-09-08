@@ -3,9 +3,12 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 
+	"golang.org/x/crypto/bcrypt"
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/repositories"
 )
 
 var (
@@ -14,17 +17,13 @@ var (
 )
 
 type AuthService struct {
-	userRepo       *models.UserRepository
-	ingredientRepo *models.IngredientRepository
+	userRepo       repositories.UserRepository
+	ingredientRepo repositories.IngredientRepository
 	jwtService     *auth.JWTService
-	logger         interface {
-		Error(msg string, args ...interface{})
-	}
+	logger         *slog.Logger
 }
 
-func NewAuthService(userRepo *models.UserRepository, ingredientRepo *models.IngredientRepository, jwtService *auth.JWTService, logger interface {
-	Error(msg string, args ...interface{})
-}) *AuthService {
+func NewAuthService(userRepo repositories.UserRepository, ingredientRepo repositories.IngredientRepository, jwtService *auth.JWTService, logger *slog.Logger) *AuthService {
 	return &AuthService{
 		userRepo:       userRepo,
 		ingredientRepo: ingredientRepo,
@@ -81,19 +80,23 @@ func (s *AuthService) Register(email, password, languageCode string) (*models.Us
 		return nil, "", errors.New("user already exists")
 	}
 
-	// Create new user
-	user, err := s.userRepo.Create(email, password)
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash password", "error", err)
+		return nil, "", err
+	}
+
+	// Create new user with hashed password
+	user, err := s.userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode)
 	if err != nil {
 		s.logger.Error("Failed to create user", "error", err)
 		return nil, "", err
 	}
 
-	// Copy global ingredients to user ingredients in selected language
-	err = s.ingredientRepo.CopyGlobalIngredientsToUser(user.ID, languageCode)
-	if err != nil {
-		s.logger.Error("Failed to copy ingredients to new user", "error", err)
-		// Don't fail registration if ingredient copying fails, just log it
-	}
+	// Note: CreateWithLanguage already copies ingredients, so we don't need to do it again
+	// The ingredient copying is handled in the repository transaction
+	// Ingredient copying is now handled in CreateWithLanguage
 
 	// Generate token for new user
 	token, err := s.jwtService.GenerateToken(user.ID, user.Email)
