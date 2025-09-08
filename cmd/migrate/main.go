@@ -8,6 +8,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/database"
+	"ypeskov/kkal-tracker/internal/logger"
 
 	"github.com/joho/godotenv"
 )
@@ -24,6 +25,10 @@ func main() {
 
 	cfg := config.New()
 
+	appLogger := logger.New(cfg)
+	appLogger.Info("Loaded config", "config", cfg)
+	fmt.Println("--------------------")
+
 	db, err := database.New(cfg.DatabasePath)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
@@ -38,7 +43,7 @@ func main() {
 			log.Fatal("Failed to run migrations:", err)
 		}
 		fmt.Println("Migrations completed successfully!")
-	
+
 	case "down":
 		fmt.Println("Rolling back last migration...")
 		err = database.MigrateDown(db)
@@ -46,14 +51,14 @@ func main() {
 			log.Fatal("Failed to rollback migration:", err)
 		}
 		fmt.Println("Rollback completed successfully!")
-	
+
 	case "status":
 		fmt.Println("Migration status:")
 		err = database.MigrateStatus(db)
 		if err != nil {
 			log.Fatal("Failed to get migration status:", err)
 		}
-	
+
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		fmt.Println("Available commands: up, down, status")

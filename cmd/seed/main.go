@@ -21,6 +21,8 @@ func main() {
 
 	// Initialize logger
 	appLogger := logger.New(cfg)
+	appLogger.Info("Loaded config", "config", cfg)
+	fmt.Println("--------------------")
 
 	// Initialize database
 	db, err := database.New(cfg.DatabasePath)
@@ -49,12 +51,12 @@ func main() {
 	// Execute each SQL file
 	for _, file := range sqlFiles {
 		appLogger.Info("Executing SQL file", "file", file.name)
-		
+
 		if err := executeSQLFile(db, file.content); err != nil {
 			appLogger.Error("Failed to execute SQL file", "file", file.name, "error", err)
 			log.Fatalf("Seeding failed: %v", err)
 		}
-		
+
 		appLogger.Info("Successfully executed SQL file", "file", file.name)
 	}
 
