@@ -22,7 +22,7 @@ func NewIngredientRepository(db *sql.DB, logger *slog.Logger) *IngredientReposit
 
 // Search user ingredients for autocomplete
 func (r *IngredientRepository) SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error) {
-	r.logger.Debug("Searching user ingredients", 
+	r.logger.Debug("Searching user ingredients",
 		slog.Int("user_id", userID),
 		slog.String("query", query),
 		slog.Int("limit", limit))
@@ -34,7 +34,7 @@ func (r *IngredientRepository) SearchUserIngredients(userID int, query string, l
 		ORDER BY name
 		LIMIT ?
 	`
-	
+
 	rows, err := r.db.Query(sqlQuery, userID, "%"+query+"%", limit)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (r *IngredientRepository) GetAllUserIngredients(userID int) ([]*models.User
 		WHERE user_id = ?
 		ORDER BY name
 	`
-	
+
 	rows, err := r.db.Query(sqlQuery, userID)
 	if err != nil {
 		return nil, err
@@ -106,14 +106,14 @@ func (r *IngredientRepository) GetAllUserIngredients(userID int) ([]*models.User
 	return ingredients, nil
 }
 
-// Get user ingredient by name
+// GetUserIngredientByName Get user ingredient by name
 func (r *IngredientRepository) GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error) {
 	query := `
 		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
 		FROM user_ingredients
 		WHERE user_id = ? AND name = ?
 	`
-	
+
 	ingredient := &models.UserIngredient{}
 	err := r.db.QueryRow(query, userID, name).Scan(
 		&ingredient.ID,
@@ -127,17 +127,17 @@ func (r *IngredientRepository) GetUserIngredientByName(userID int, name string) 
 		&ingredient.CreatedAt,
 		&ingredient.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return ingredient, nil
 }
 
-// Create or update user ingredient (check first, then insert/update)
+// CreateOrUpdateUserIngredient Create or update user ingredient (check first, then insert/update)
 func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
-	r.logger.Debug("Creating or updating user ingredient", 
+	r.logger.Debug("Creating or updating user ingredient",
 		slog.Int("user_id", userID),
 		slog.String("name", name),
 		slog.Float64("kcal_per_100g", kcalPer100g))
@@ -157,7 +157,7 @@ func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name str
 		}
 		return r.GetUserIngredientByName(userID, name)
 	}
-	
+
 	// Ingredient doesn't exist, create it
 	insertQuery := `
 		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins)
@@ -167,14 +167,14 @@ func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name str
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Get the newly created ingredient
 	return r.GetUserIngredientByName(userID, name)
 }
 
 // Copy global ingredients to user ingredients table in specified language
 func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageCode string) error {
-	r.logger.Debug("Copying global ingredients to user", 
+	r.logger.Debug("Copying global ingredients to user",
 		slog.Int("user_id", userID),
 		slog.String("language", languageCode))
 
@@ -247,7 +247,7 @@ func (r *IngredientRepository) GetGlobalIngredientByID(id int) (*models.GlobalIn
 		FROM global_ingredients
 		WHERE id = ?
 	`
-	
+
 	ingredient := &models.GlobalIngredient{}
 	err := r.db.QueryRow(query, id).Scan(
 		&ingredient.ID,
@@ -258,7 +258,7 @@ func (r *IngredientRepository) GetGlobalIngredientByID(id int) (*models.GlobalIn
 		&ingredient.CreatedAt,
 		&ingredient.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (r *IngredientRepository) GetGlobalIngredientByID(id int) (*models.GlobalIn
 		return nil, err
 	}
 	ingredient.Names = names
-	
+
 	return ingredient, nil
 }
 
@@ -279,7 +279,7 @@ func (r *IngredientRepository) getGlobalIngredientNames(ingredientID int) (map[s
 		FROM global_ingredient_names
 		WHERE ingredient_id = ?
 	`
-	
+
 	rows, err := r.db.Query(query, ingredientID)
 	if err != nil {
 		return nil, err

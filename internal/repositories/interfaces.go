@@ -29,7 +29,7 @@ type CalorieEntryRepository interface {
 
 // IngredientRepository defines the contract for ingredient data access
 type IngredientRepository interface {
-	// User ingredients
+	// SearchUserIngredients User ingredients
 	SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error)
 	GetAllUserIngredients(userID int) ([]*models.UserIngredient, error)
 	GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error)
@@ -37,7 +37,7 @@ type IngredientRepository interface {
 		fats, carbs, proteins *float64) (*models.UserIngredient, error)
 	CopyGlobalIngredientsToUser(userID int, languageCode string) error
 
-	// Global ingredients (admin)
+	// CreateGlobalIngredient Global ingredients (admin)
 	CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins *float64,
 		names map[string]string) (*models.GlobalIngredient, error)
 	GetGlobalIngredientByID(id int) (*models.GlobalIngredient, error)
