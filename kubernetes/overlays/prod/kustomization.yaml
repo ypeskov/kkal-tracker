@@ -4,7 +4,7 @@ resources:
 configMapGenerator:
   - name: kkal-tracker-env
     envs:
-      - .env.prod
+      - .env
 
 patches:
   - path: ingress-patch.yaml

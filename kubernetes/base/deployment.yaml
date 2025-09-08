@@ -12,6 +12,10 @@ spec:
       labels:
         app: kkal-tracker
     spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kkal-tracker-pvc
       containers:
         - name: kkal-tracker
           image: ypeskov/kcal-tracker:latest
@@ -20,3 +24,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: kkal-tracker-env
+          volumeMounts:
+            - name: data
+              mountPath: /data
