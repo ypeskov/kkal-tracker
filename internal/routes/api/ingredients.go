@@ -25,7 +25,7 @@ func NewIngredientHandler(ingredientRepo *models.IngredientRepository, logger in
 	}
 }
 
-// Get all user ingredients for session storage caching
+// GetAllIngredients Get all user ingredients for session storage caching
 func (h *IngredientHandler) GetAllIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
@@ -38,7 +38,7 @@ func (h *IngredientHandler) GetAllIngredients(c echo.Context) error {
 	return c.JSON(http.StatusOK, ingredients)
 }
 
-// Search user ingredients for autocomplete (fallback if session storage fails)
+// SearchIngredients Search user ingredients for autocomplete (fallback if session storage fails)
 func (h *IngredientHandler) SearchIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	query := c.QueryParam("q")

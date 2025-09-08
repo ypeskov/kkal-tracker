@@ -218,6 +218,39 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     },
   })
 
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: (id: number) => calorieService.deleteEntry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calories'] })
+      setEditingEntry(null)
+      setEditFoodName('')
+      setEditWeight('')
+      setEditKcalPer100g('')
+      setEditFats('')
+      setEditCarbs('')
+      setEditProteins('')
+      setEditDate('')
+      setEditTime('')
+      setShowDeleteConfirmation(false)
+    },
+  })
+
+  const handleShowDeleteConfirmation = () => {
+    setShowDeleteConfirmation(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (editingEntry) {
+      deleteEntryMutation.mutate(editingEntry.id)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false)
+  }
+
   const isButtonDisabled = addEntryMutation.isPending || !foodName || !weight || !kcalPer100g
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -306,19 +339,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   return (
     <div className="dashboard-container">
-      <LanguageSwitcher />
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="dashboard-header">
         <div>
           <h1>{t('dashboard.title')}</h1>
           <p>{t('auth.welcome')}, {user?.email}!</p>
         </div>
-        <button 
-          onClick={handleLogout}
-          className="btn"
-          style={{ backgroundColor: '#dc3545' }}
-        >
-          {t('auth.logout')}
-        </button>
+        <div className="header-controls">
+          <LanguageSwitcher />
+          <button 
+            onClick={handleLogout}
+            className="btn"
+            style={{ backgroundColor: '#dc3545' }}
+          >
+            {t('auth.logout')}
+          </button>
+        </div>
       </header>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -736,26 +771,90 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
               </div>
 
-              <div className="form-row" style={{ marginTop: '2rem', justifyContent: 'flex-end', gap: '1rem' }}>
+              <div className="form-row" style={{ marginTop: '2rem', justifyContent: 'space-between', gap: '1rem' }}>
                 <button 
                   type="button" 
-                  onClick={handleCancelEdit}
+                  onClick={handleShowDeleteConfirmation}
                   className="btn"
-                  style={{ backgroundColor: '#6c757d' }}
-                  disabled={updateEntryMutation.isPending}
+                  style={{ backgroundColor: '#dc3545' }}
+                  disabled={updateEntryMutation.isPending || deleteEntryMutation.isPending}
                 >
-                  {t('dashboard.cancel')}
+                  {t('dashboard.delete')}
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn"
-                  disabled={updateEntryMutation.isPending || !editFoodName || !editWeight || !editKcalPer100g}
-                  style={{ backgroundColor: '#28a745' }}
-                >
-                  {updateEntryMutation.isPending ? t('common.loading') + '...' : t('dashboard.updateEntry')}
-                </button>
+                
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button 
+                    type="button" 
+                    onClick={handleCancelEdit}
+                    className="btn"
+                    style={{ backgroundColor: '#6c757d' }}
+                    disabled={updateEntryMutation.isPending || deleteEntryMutation.isPending}
+                  >
+                    {t('dashboard.cancel')}
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn"
+                    disabled={updateEntryMutation.isPending || deleteEntryMutation.isPending || !editFoodName || !editWeight || !editKcalPer100g}
+                    style={{ backgroundColor: '#28a745' }}
+                  >
+                    {updateEntryMutation.isPending ? t('common.loading') + '...' : t('dashboard.updateEntry')}
+                  </button>
+                </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirmation && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.5)', 
+          zIndex: 1001,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '8px', 
+            padding: '2rem', 
+            maxWidth: '400px', 
+            width: '100%',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#dc3545' }}>{t('dashboard.confirmDelete')}</h3>
+            <p style={{ marginBottom: '2rem' }}>
+              {t('dashboard.deleteWarning', { foodName: editingEntry?.food })}
+            </p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <button 
+                type="button" 
+                onClick={handleCancelDelete}
+                className="btn"
+                style={{ backgroundColor: '#6c757d' }}
+                disabled={deleteEntryMutation.isPending}
+              >
+                {t('dashboard.cancel')}
+              </button>
+              <button 
+                type="button" 
+                onClick={handleConfirmDelete}
+                className="btn"
+                style={{ backgroundColor: '#dc3545' }}
+                disabled={deleteEntryMutation.isPending}
+              >
+                {deleteEntryMutation.isPending ? t('common.loading') + '...' : t('dashboard.confirmDeleteButton')}
+              </button>
+            </div>
           </div>
         </div>
       )}

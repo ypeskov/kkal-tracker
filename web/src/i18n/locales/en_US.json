@@ -38,7 +38,11 @@
     "updateEntry": "Update",
     "cancel": "Cancel",
     "date": "Date",
-    "time": "Time"
+    "time": "Time",
+    "delete": "Delete",
+    "confirmDelete": "Confirm Deletion",
+    "deleteWarning": "Are you sure you want to delete the entry for \"{{foodName}}\"? This action cannot be undone.",
+    "confirmDeleteButton": "Delete"
   },
   "common": {
     "loading": "Loading..."
