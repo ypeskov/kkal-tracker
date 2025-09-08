@@ -33,7 +33,6 @@ docker build $PLATFORM_ARG -t "${IMAGE_NAME}:${TAG}" -t "${IMAGE_NAME}:latest" .
 if [ "$PUSH" == true ]; then
     echo "Pushing ${IMAGE_NAME}:${TAG} and ${IMAGE_NAME}:latest..."
     docker push "${IMAGE_NAME}:${TAG}"
-    docker push "${IMAGE_NAME}:latest"
     echo "Successfully pushed."
 fi
 

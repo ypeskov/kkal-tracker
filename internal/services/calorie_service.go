@@ -169,7 +169,7 @@ func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo stri
 	return entries, nil
 }
 
-func (s *CalorieService) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+func (s *CalorieService) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime string) (*models.CalorieEntry, error) {
 	// Validate calories
 	if calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")

@@ -126,14 +126,14 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error
 	return entries, nil
 }
 
-func (r *CalorieEntryRepository) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*CalorieEntry, error) {
+func (r *CalorieEntryRepository) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime string) (*CalorieEntry, error) {
 	query := `
 		UPDATE calorie_entries 
 		SET food = ?, calories = ?, weight = ?, kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, meal_datetime = ?, updated_at = ?
 		WHERE id = ? AND user_id = ?
 	`
 
-	now := time.Now().UTC()
+	now := time.Now().UTC().Format("2006-01-02 15:04:05")
 	_, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
 	if err != nil {
 		return nil, err
