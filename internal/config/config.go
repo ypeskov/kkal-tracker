@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
+	DatabaseType string
 	DatabasePath string
+	PostgresURL  string
 	Port         string
 	JWTSecret    string
 	LogLevel     string
@@ -26,7 +28,9 @@ func New() *Config {
 	}
 	
 	return &Config{
+		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"),
 		DatabasePath: databasePath,
+		PostgresURL:  getEnv("POSTGRES_URL", ""),
 		Port:         getEnv("PORT", "8080"),
 		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"),
 		LogLevel:     getEnv("LOG_LEVEL", "info"),

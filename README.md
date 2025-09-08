@@ -2,11 +2,13 @@
 
 A modern calorie tracking web application built with Go/Echo backend and React/TanStack frontend.
 
+**🚀 Zero-dependency deployment** - Compiles to a single binary with embedded frontend assets. Uses SQLite by default for maximum portability and minimal infrastructure requirements. Perfect for self-hosting, Docker containers, or any environment where you want a lightweight, production-ready application without external database dependencies.
+
 ## Features
 
 - **Backend**: Go with Echo framework
 - **Frontend**: React with TanStack Query for state management
-- **Database**: SQLite with migrations
+- **Database**: Multi-provider support (SQLite/PostgreSQL) with migrations ⚠️ *PostgreSQL not yet implemented*
 - **Authentication**: JWT-based auth with bcrypt password hashing
 - **Logging**: Structured logging with slog
 - **Build System**: Embedded file system for serving frontend assets
@@ -91,25 +93,47 @@ make dev
 
 ### Environment Configuration
 
-Copy `.env` and adjust values as needed:
+Copy `.env.sample` to `.env` and adjust values as needed:
 
 ```env
+# Database Configuration
+DATABASE_TYPE=sqlite
 DATABASE_PATH=./data/kkal_tracker.db
+# POSTGRES_URL=postgres://user:password@localhost/kkal_tracker?sslmode=disable
+
+# Server Configuration
 PORT=8080
 JWT_SECRET=your-jwt-secret-key-change-this-in-production
 LOG_LEVEL=debug
 ```
 
-## API Endpoints
+#### Environment Variables
 
-### Authentication
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (requires auth)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_TYPE` | `sqlite` | Database provider to use (`sqlite` or `postgres`) |
+| `DATABASE_PATH` | `./data/kkal_tracker.db` | Path to SQLite database file (used when `DATABASE_TYPE=sqlite`) |
+| `POSTGRES_URL` | _empty_ | PostgreSQL connection string (used when `DATABASE_TYPE=postgres`) ⚠️ *Not yet implemented* |
+| `PORT` | `8080` | HTTP server port |
+| `JWT_SECRET` | `default-secret-key` | Secret key for JWT token signing (change in production!) |
+| `LOG_LEVEL` | `info` | Logging level (`debug`, `info`, `warn`, `error`) |
+| `ENVIRONMENT` | `development` | Application environment (`development`, `production`) |
 
-### Calorie Entries
-- `GET /api/calories` - Get calorie entries (requires auth)
-- `POST /api/calories` - Create calorie entry (requires auth)
-- `DELETE /api/calories/:id` - Delete calorie entry (requires auth)
+#### Database Provider Selection
+
+The application supports multiple database providers through the repository pattern:
+
+**SQLite (default)**:
+```env
+DATABASE_TYPE=sqlite
+DATABASE_PATH=./data/kkal_tracker.db
+```
+
+**PostgreSQL** ⚠️ *Not yet implemented*:
+```env
+DATABASE_TYPE=postgres
+POSTGRES_URL=postgres://username:password@localhost/kkal_tracker?sslmode=disable
+```
 
 ## Frontend Features
 
@@ -160,7 +184,12 @@ Air will:
 
 ### Database
 
-The application uses SQLite with **Goose migrations**. The database file is created at the path specified in `DATABASE_PATH` environment variable.
+The application supports multiple database providers through a repository pattern with **Goose migrations**:
+
+- **SQLite**: Default provider, database file created at `DATABASE_PATH`
+- **PostgreSQL**: Alternative provider using connection string from `POSTGRES_URL` ⚠️ *Not yet implemented*
+
+The active database provider is controlled by the `DATABASE_TYPE` environment variable.
 
 #### Migration Management
 
@@ -222,7 +251,7 @@ When creating users with `scripts/create_user.go`:
 
 ### Backend
 - **Echo**: HTTP web framework (v4.13.4)
-- **SQLite**: Database with mattn/go-sqlite3 driver (v1.14.32)
+- **Database**: Multi-provider architecture with SQLite driver (v1.14.32) and PostgreSQL support ⚠️ *PostgreSQL not yet implemented*
 - **Goose**: Database migrations with pressly/goose/v3 (v3.25.0)
 - **JWT**: golang-jwt/jwt/v5 for authentication (v5.3.0)
 - **Crypto**: golang.org/x/crypto for password hashing (v0.41.0)
@@ -239,6 +268,8 @@ When creating users with `scripts/create_user.go`:
 
 1. Set `ENVIRONMENT=production` in your environment
 2. Change `JWT_SECRET` to a secure random string
-3. Configure your database path appropriately
+3. Configure your database:
+   - For SQLite: Set `DATABASE_TYPE=sqlite` and `DATABASE_PATH`
+   - For PostgreSQL: Set `DATABASE_TYPE=postgres` and `POSTGRES_URL` ⚠️ *Not yet implemented*
 4. Build with `make build`
 5. Deploy the binary and serve on your preferred port

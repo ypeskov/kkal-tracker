@@ -33,7 +33,13 @@ func main() {
 	}
 	defer db.Close()
 
-	srv := server.New(cfg, log, db, web.StaticFiles)
+	s, err := server.New(cfg, log, db, web.StaticFiles)
+	if err != nil {
+		log.Error("Failed to create server", "error", err)
+		os.Exit(1)
+	}
+
+	srv := s.Start()
 
 	log.Info("Starting server", "port", cfg.Port)
 	if err := srv.ListenAndServe(); err != nil {
