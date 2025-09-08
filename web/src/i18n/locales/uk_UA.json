@@ -38,7 +38,11 @@
     "updateEntry": "Оновити",
     "cancel": "Скасувати",
     "date": "Дата",
-    "time": "Час"
+    "time": "Час",
+    "delete": "Видалити",
+    "confirmDelete": "Підтвердити видалення",
+    "deleteWarning": "Ви впевнені, що хочете видалити запис для \"{{foodName}}\"? Цю дію неможливо скасувати.",
+    "confirmDeleteButton": "Видалити"
   },
   "common": {
     "loading": "Завантаження..."

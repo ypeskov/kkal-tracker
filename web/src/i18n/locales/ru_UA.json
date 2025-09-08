@@ -38,7 +38,11 @@
     "updateEntry": "Обновить",
     "cancel": "Отмена",
     "date": "Дата",
-    "time": "Время"
+    "time": "Время",
+    "delete": "Удалить",
+    "confirmDelete": "Подтвердить удаление",
+    "deleteWarning": "Вы уверены, что хотите удалить запись для \"{{foodName}}\"? Это действие нельзя отменить.",
+    "confirmDeleteButton": "Удалить"
   },
   "common": {
     "loading": "Загрузка..."

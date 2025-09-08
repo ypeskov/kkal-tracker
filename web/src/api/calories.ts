@@ -1,3 +1,5 @@
+import { ingredientService } from './ingredients'
+
 interface CalorieEntry {
   id?: number
   food: string
@@ -64,7 +66,6 @@ class CalorieService {
     
     // If a new ingredient was created, invalidate the ingredients cache
     if (result.new_ingredient_created) {
-      const { ingredientService } = await import('./ingredients')
       ingredientService.clearCache()
       // Reload ingredients to refresh the cache
       await ingredientService.loadAndCacheIngredients()
