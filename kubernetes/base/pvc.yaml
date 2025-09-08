@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: kkal-tracker-pvc
 spec:
+  storageClassName: ""
   accessModes:
     - ReadWriteOnce
   resources:
