@@ -96,7 +96,7 @@
 /* Entry list styles */
 .entry-item {
   background: white;
-  padding: 1rem;
+  padding: 0.3rem;
   margin-bottom: 0.5rem;
   border-radius: 6px;
   border: 1px solid #e9ecef;
@@ -113,11 +113,8 @@
 
 .entry-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .entry-details {
@@ -138,11 +135,38 @@
   text-align: center;
 }
 
+/* Date section styling */
+.date-section {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.date-section:hover {
+  transform: translateX(2px);
+}
+
+.date-header {
+  position: sticky;
+  top: 60px;
+  z-index: 10;
+  backdrop-filter: blur(5px);
+}
+
 /* Mobile responsive breakpoints */
 @media (max-width: 640px) {
   .header-controls {
     flex-wrap: wrap;
     justify-content: center;
+  }
+  
+  .date-section {
+    padding: 0.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .date-header {
+    font-size: 0.95rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 }
 
@@ -171,15 +195,22 @@
     margin-top: 1rem;
   }
   
-  .entry-header {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-  }
   
   .entry-details {
-    flex-direction: column;
-    gap: 0.25rem;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    margin-left: 0 !important;
+  }
+  
+  .entry-details span {
+    flex: 0 0 calc(50% - 0.125rem);
+    text-align: center;
+    padding: 0.2rem;
+    background-color: rgba(0, 123, 255, 0.05);
+    border-radius: 4px;
+    font-size: 0.85em;
+    line-height: 1.2;
   }
 }
 
@@ -211,6 +242,7 @@
   .header-controls button {
     width: 100%;
   }
+  
 }
 
 /* Nutrition fields styling */
@@ -221,5 +253,41 @@
 @media (max-width: 768px) {
   .form-row:nth-child(3) .form-group {
     min-width: 100%;
+  }
+}
+
+/* Nutrition summary - 2 per line on mobile */
+@media (max-width: 768px) {
+  .nutrition-summary {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+  
+  .nutrition-summary span {
+    flex: 0 0 calc(50% - 0.125rem);
+    text-align: center;
+    padding: 0.2rem;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    font-size: 0.85em;
+    line-height: 1.2;
+  }
+  
+  /* Daily totals nutrients - 2 per line on mobile */
+  .daily-totals-nutrients {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+  
+  .daily-totals-nutrients span {
+    flex: 0 0 calc(50% - 0.125rem);
+    text-align: center;
+    padding: 0.2rem;
+    background-color: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    font-size: 0.85em;
+    line-height: 1.2;
   }
 }

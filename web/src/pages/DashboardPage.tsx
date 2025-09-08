@@ -164,7 +164,6 @@ export default function DashboardPage() {
         <CalorieEntriesList 
           entries={entries || []} 
           onEdit={handleEdit} 
-          filterType={filterType} 
         />
       )}
 

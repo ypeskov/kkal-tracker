@@ -5,10 +5,9 @@ import EntryListItem from './EntryListItem';
 interface CalorieEntriesListProps {
   entries: any[];
   onEdit: (entry: any) => void;
-  filterType: string;
 }
 
-export default function CalorieEntriesList({ entries, onEdit, filterType }: CalorieEntriesListProps) {
+export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesListProps) {
   const { t, i18n } = useTranslation();
 
   const entriesByDate = useMemo(() => {
@@ -19,7 +18,11 @@ export default function CalorieEntriesList({ entries, onEdit, filterType }: Calo
     const grouped: { [date: string]: any[] } = {};
 
     entries.forEach(entry => {
-      const date = new Date(entry.meal_datetime).toISOString().split('T')[0];
+      const entryDate = new Date(entry.meal_datetime);
+      const year = entryDate.getFullYear();
+      const month = String(entryDate.getMonth() + 1).padStart(2, '0');
+      const day = String(entryDate.getDate()).padStart(2, '0');
+      const date = `${year}-${month}-${day}`;
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -39,9 +42,17 @@ export default function CalorieEntriesList({ entries, onEdit, filterType }: Calo
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const dateOnly = date.toISOString().split('T')[0];
-    const todayOnly = today.toISOString().split('T')[0];
-    const yesterdayOnly = yesterday.toISOString().split('T')[0];
+    // Format dates using local date components
+    const formatLocalDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const dateOnly = formatLocalDate(date);
+    const todayOnly = formatLocalDate(today);
+    const yesterdayOnly = formatLocalDate(yesterday);
 
     const currentLang = i18n.language;
     const locale = currentLang === 'uk-UA' ? 'uk-UA' : currentLang === 'ru-UA' ? 'ru-RU' : 'en-US';
@@ -73,19 +84,28 @@ export default function CalorieEntriesList({ entries, onEdit, filterType }: Calo
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {Object.keys(entriesByDate)
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // Sort dates desc (newest first)
-            .map((dateKey) => (
-              <div key={dateKey}>
-                {(filterType !== 'today' || Object.keys(entriesByDate).length > 1) && (
-                  <h3 style={{ 
-                    margin: '0 0 1rem 0', 
-                    padding: '0.5rem 0', 
-                    fontSize: '1.1rem',
-                    color: '#495057',
-                    borderBottom: '2px solid #e9ecef'
-                  }}>
-                    {formatDateHeader(dateKey)}
-                  </h3>
-                )}
+            .map((dateKey, index) => (
+              <div key={dateKey} className="date-section" style={{
+                background: index % 2 === 0 ? '#f0f4f8' : '#e8f5e9',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                marginBottom: '1.5rem',
+                border: '1px solid ' + (index % 2 === 0 ? '#d1dae3' : '#c3e6c8'),
+                boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+              }}>
+                <h3 className="date-header" style={{ 
+                  margin: '0 0 1rem 0', 
+                  padding: '0.75rem 1rem', 
+                  fontSize: '1.1rem',
+                  color: index % 2 === 0 ? '#1a5490' : '#2d6a4f',
+                  fontWeight: '600',
+                  background: index % 2 === 0 ? 'linear-gradient(90deg, #ffffff, #f8fbff)' : 'linear-gradient(90deg, #ffffff, #f0fdf4)',
+                  borderRadius: '6px',
+                  borderLeft: '5px solid ' + (index % 2 === 0 ? '#4a90e2' : '#52c41a'),
+                  boxShadow: '0 2px 8px ' + (index % 2 === 0 ? 'rgba(74, 144, 226, 0.15)' : 'rgba(82, 196, 26, 0.15)')
+                }}>
+                  {formatDateHeader(dateKey)}
+                </h3>
                 
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                   {entriesByDate[dateKey].map((entry: any) => (
@@ -93,7 +113,7 @@ export default function CalorieEntriesList({ entries, onEdit, filterType }: Calo
                   ))}
                 </ul>
 
-                {Object.keys(entriesByDate).length > 1 && (() => {
+                {(() => {
                   const dailyTotals = calculateDailyTotals(entriesByDate[dateKey]);
                   return (
                     <div style={{ 
@@ -103,23 +123,35 @@ export default function CalorieEntriesList({ entries, onEdit, filterType }: Calo
                       borderRadius: '5px',
                       border: '1px solid #dee2e6'
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '1rem',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem'
-                      }}>
-                        <span style={{ color: '#495057' }}>{t('dashboard.total')}:</span>
-                        <span>{dailyTotals.calories} {t('dashboard.kcal')}</span>
-                        {dailyTotals.fats > 0 && (
-                          <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
-                        )}
-                        {dailyTotals.carbs > 0 && (
-                          <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
-                        )}
-                        {dailyTotals.proteins > 0 && (
-                          <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                      <div className="daily-totals">
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          <span style={{ color: '#495057' }}>{t('dashboard.total')}:</span>
+                          <span style={{ color: '#28a745' }}>{dailyTotals.calories} {t('dashboard.kcal')}</span>
+                        </div>
+                        {(dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
+                          <div className="daily-totals-nutrients" style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem',
+                            fontSize: '0.9rem'
+                          }}>
+                            {dailyTotals.fats > 0 && (
+                              <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                            )}
+                            {dailyTotals.carbs > 0 && (
+                              <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                            )}
+                            {dailyTotals.proteins > 0 && (
+                              <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

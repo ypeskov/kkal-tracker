@@ -17,26 +17,41 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
 
   return (
     <li className="entry-item" onClick={() => onEdit(entry)} style={{ cursor: 'pointer' }}>
-      <div className="entry-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ 
-            fontSize: '0.85rem', 
-            color: '#6c757d',
-            minWidth: '55px',
-            fontWeight: 'normal'
-          }}>
-            {formatTime(entry.meal_datetime)}
-          </span>
-          <strong>{entry.food}</strong>
-        </div>
-        <strong>{entry.calories} {t('dashboard.kcal')}</strong>
+      <div className="entry-header" style={{ 
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%'
+      }}>
+        <span style={{ 
+          fontSize: '0.85rem', 
+          color: '#6c757d',
+          width: '15%',
+          minWidth: '45px',
+          fontWeight: 'normal',
+          flexShrink: 0
+        }}>
+          {formatTime(entry.meal_datetime)}
+        </span>
+        <strong style={{ 
+          width: '60%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          paddingRight: '0.5rem'
+        }}>{entry.food}</strong>
+        <strong style={{
+          width: '25%',
+          textAlign: 'right',
+          flexShrink: 0,
+          whiteSpace: 'nowrap'
+        }}>{entry.calories} {t('dashboard.kcal')}</strong>
       </div>
-      <div className="entry-details" style={{ marginLeft: '60px' }}>
+      <div className="entry-details">
         <span>{t('dashboard.weight')}: {entry.weight}g</span>
         <span>{t('dashboard.kcalPer100g')}: {entry.kcalPer100g}</span>
-        {entry.fats && <span>{t('dashboard.fats')}: {entry.fats}g</span>}
-        {entry.carbs && <span>{t('dashboard.carbs')}: {entry.carbs}g</span>}
-        {entry.proteins && <span>{t('dashboard.proteins')}: {entry.proteins}g</span>}
+        {entry.fats && <span>{t('dashboard.fats')}: {entry.fats}g/100g</span>}
+        {entry.carbs && <span>{t('dashboard.carbs')}: {entry.carbs}g/100g</span>}
+        {entry.proteins && <span>{t('dashboard.proteins')}: {entry.proteins}g/100g</span>}
       </div>
     </li>
   );

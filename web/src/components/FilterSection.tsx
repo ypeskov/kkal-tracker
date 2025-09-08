@@ -82,7 +82,7 @@ export default function FilterSection({
           {t('dashboard.totalCaloriesFiltered')} {nutritionTotals.calories} {t('dashboard.kcal')}
         </div>
         {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0) && (
-          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9em', flexWrap: 'wrap' }}>
+          <div className="nutrition-summary" style={{ display: 'flex', gap: '1rem', fontSize: '0.9em', flexWrap: 'wrap' }}>
             {nutritionTotals.fats > 0 && (
               <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)}g</span>
             )}
