@@ -27,8 +27,6 @@ func main() {
 
 	// Initialize logger
 	appLogger := logger.New(cfg)
-	appLogger.Info("Loaded config", "config", cfg)
-	fmt.Println("--------------------")
 
 	// Initialize database
 	db, err := database.New(cfg.DatabasePath)

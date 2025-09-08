@@ -26,12 +26,11 @@ func main() {
 	cfg := config.New()
 
 	appLogger := logger.New(cfg)
-	appLogger.Info("Loaded config", "config", cfg)
-	fmt.Println("--------------------")
 
 	db, err := database.New(cfg.DatabasePath)
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		appLogger.Error("Failed to initialize database:", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
