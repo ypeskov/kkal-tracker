@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrInvalidDate = errors.New("invalid date format")
+	ErrInvalidDate   = errors.New("invalid date format")
 	ErrEntryNotFound = errors.New("calorie entry not found")
 )
 
@@ -48,11 +48,13 @@ func (s *CalorieService) GetEntriesByDate(userID int, date string) ([]*models.Ca
 }
 
 type CreateEntryResult struct {
-	Entry            *models.CalorieEntry `json:"entry"`
-	NewIngredientCreated bool             `json:"new_ingredient_created"`
+	Entry                *models.CalorieEntry `json:"entry"`
+	NewIngredientCreated bool                 `json:"new_ingredient_created"`
 }
 
-func (s *CalorieService) CreateEntry(userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*CreateEntryResult, error) {
+func (s *CalorieService) CreateEntry(userID int,
+	food string, calories int, weight float64, kcalPer100g float64,
+	fats, carbs, proteins *float64, mealDatetime string) (*CreateEntryResult, error) {
 
 	// Validate calories
 	if calories <= 0 {
@@ -97,7 +99,7 @@ func (s *CalorieService) CreateEntry(userID int, food string, calories int, weig
 	}
 
 	s.logger.Info("Calorie entry created", "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
-	
+
 	return &CreateEntryResult{
 		Entry:                entry,
 		NewIngredientCreated: newIngredientCreated,
@@ -136,16 +138,16 @@ func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[strin
 	}
 
 	stats := make(map[string]int)
-	
+
 	for i := 0; i < 7; i++ {
 		currentDate := start.AddDate(0, 0, i)
 		dateStr := currentDate.Format("2006-01-02")
-		
+
 		total, err := s.GetTotalCaloriesForDate(userID, dateStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		stats[dateStr] = total
 	}
 

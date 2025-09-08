@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"log/slog"
 	"time"
 )
 
@@ -21,20 +22,27 @@ type CalorieEntry struct {
 }
 
 type CalorieEntryRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *slog.Logger
 }
 
-func NewCalorieEntryRepository(db *sql.DB) *CalorieEntryRepository {
-	return &CalorieEntryRepository{db: db}
+func NewCalorieEntryRepository(db *sql.DB, log *slog.Logger) *CalorieEntryRepository {
+	return &CalorieEntryRepository{
+		db:     db,
+		logger: log,
+	}
 }
 
-func (r *CalorieEntryRepository) Create(userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*CalorieEntry, error) {
+func (r *CalorieEntryRepository) Create(userID int,
+	food string, calories int, weight float64, kcalPer100g float64, fats, carbs,
+	proteins *float64, mealDatetime string) (*CalorieEntry, error) {
+
 	query := `
 		INSERT INTO calorie_entries (user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	
-	now := time.Now().UTC()
+
+	now := time.Now().UTC().Format("2006-01-02 15:04:05")
 	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now)
 	if err != nil {
 		return nil, err
@@ -54,7 +62,7 @@ func (r *CalorieEntryRepository) GetByID(id int) (*CalorieEntry, error) {
 		FROM calorie_entries
 		WHERE id = ?
 	`
-	
+
 	entry := &CalorieEntry{}
 	err := r.db.QueryRow(query, id).Scan(
 		&entry.ID,
@@ -70,11 +78,11 @@ func (r *CalorieEntryRepository) GetByID(id int) (*CalorieEntry, error) {
 		&entry.UpdatedAt,
 		&entry.CreatedAt,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return entry, nil
 }
 
@@ -85,7 +93,7 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*CalorieEntry, error
 		WHERE user_id = ?
 		ORDER BY meal_datetime DESC, created_at DESC
 	`
-	
+
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return nil, err
@@ -124,7 +132,7 @@ func (r *CalorieEntryRepository) Update(id, userID int, food string, calories in
 		SET food = ?, calories = ?, weight = ?, kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, meal_datetime = ?, updated_at = ?
 		WHERE id = ? AND user_id = ?
 	`
-	
+
 	now := time.Now().UTC()
 	_, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
 	if err != nil {
@@ -138,10 +146,11 @@ func (r *CalorieEntryRepository) GetByUserIDAndDate(userID int, date string) ([]
 	query := `
 		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
 		FROM calorie_entries
-		WHERE user_id = ? AND date(meal_datetime) = ?
+		WHERE user_id = ? AND strftime('%Y-%m-%d', meal_datetime) = ?
 		ORDER BY meal_datetime DESC
 	`
-	
+	r.logger.Debug("GetByUserIDAndDate", slog.Int("userID", userID), slog.String("date", date))
+
 	rows, err := r.db.Query(query, userID, date)
 	if err != nil {
 		return nil, err
@@ -179,7 +188,7 @@ func (r *CalorieEntryRepository) Delete(id, userID int) error {
 		DELETE FROM calorie_entries
 		WHERE id = ? AND user_id = ?
 	`
-	
+
 	_, err := r.db.Exec(query, id, userID)
 	return err
 }
@@ -188,10 +197,10 @@ func (r *CalorieEntryRepository) GetByUserIDAndDateRange(userID int, dateFrom, d
 	query := `
 		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
 		FROM calorie_entries
-		WHERE user_id = ? AND date(meal_datetime) BETWEEN ? AND ?
+		WHERE user_id = ? AND strftime('%Y-%m-%d', meal_datetime) BETWEEN ? AND ?
 		ORDER BY meal_datetime DESC
 	`
-	
+
 	rows, err := r.db.Query(query, userID, dateFrom, dateTo)
 	if err != nil {
 		return nil, err
