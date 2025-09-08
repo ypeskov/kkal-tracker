@@ -8,7 +8,7 @@ interface User {
 
 interface DashboardHeaderProps {
   user?: User;
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {

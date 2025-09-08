@@ -2,27 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useEffect } from 'react';
 import { calorieService } from '../api/calories';
 import { ingredientService } from '../api/ingredients';
-import DashboardHeader from './DashboardHeader';
-import AddFoodEntryForm from './AddFoodEntryForm';
-import FilterSection from './FilterSection';
-import CalorieEntriesList from './CalorieEntriesList';
-import EditEntryModal from './EditEntryModal';
-import DeleteConfirmationDialog from './DeleteConfirmationDialog';
-import './Dashboard.css';
-
-interface User {
-  id: number;
-  email: string;
-}
-
-interface DashboardProps {
-  user?: User;
-  onLogout: () => void;
-}
+import DashboardHeader from '../components/DashboardHeader';
+import AddFoodEntryForm from '../components/AddFoodEntryForm';
+import FilterSection from '../components/FilterSection';
+import CalorieEntriesList from '../components/CalorieEntriesList';
+import EditEntryModal from '../components/EditEntryModal';
+import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
+import '../components/Dashboard.css';
+import { useRouteContext } from '@tanstack/react-router';
+import { RouterContext } from '../router';
 
 type FilterType = 'today' | 'yesterday' | 'lastWeek' | 'lastMonth' | 'customRange';
 
-export default function Dashboard({ user, onLogout }: DashboardProps) {
+export default function DashboardPage() {
+  const { user, onLogout } = useRouteContext({ from: '__root__' }) as RouterContext;
   const [filterType, setFilterType] = useState<FilterType>('today');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
@@ -119,7 +112,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const handleLogout = () => {
     ingredientService.clearCache();
-    onLogout();
+    if (onLogout) {
+      onLogout();
+    }
   };
 
   const handleEdit = (entry: any) => {

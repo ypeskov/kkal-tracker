@@ -44,6 +44,24 @@
     "deleteWarning": "Are you sure you want to delete the entry for \"{{foodName}}\"? This action cannot be undone.",
     "confirmDeleteButton": "Delete"
   },
+  "foodList": {
+    "title": "Food List",
+    "wip": "Work in progress"
+  },
+  "report": {
+    "title": "Reports",
+    "wip": "Work in progress"
+  },
+  "settings": {
+    "title": "Settings",
+    "wip": "Work in progress"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "foodList": "Food List",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
   "common": {
     "loading": "Loading..."
   },
