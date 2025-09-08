@@ -1,7 +1,7 @@
 -- Sample user with realistic meal data from August 1 to September 7, 2025
 
--- Create example user
-INSERT OR REPLACE INTO users (email, password_hash, created_at, updated_at) 
+-- Create example user (only if doesn't exist)
+INSERT OR IGNORE INTO users (email, password_hash, created_at, updated_at) 
 VALUES ('example@example.com', '$2a$10$Kv/R6gxw4q04AGuDLhTX1.Wg4/wB3.gM3JM.R5Lp77ItSevQQgD3a', '2025-07-01 10:00:00', '2025-07-01 10:00:00');
 
 -- Copy global ingredients to user_ingredients for the example user (assuming user_id = 1)
