@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"strconv"
 
-	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/repositories"
 
 	"github.com/labstack/echo/v4"
 )
 
 type IngredientHandler struct {
-	ingredientRepo *models.IngredientRepository
+	ingredientRepo repositories.IngredientRepository
 	logger         *slog.Logger
 }
 
-func NewIngredientHandler(ingredientRepo *models.IngredientRepository, logger *slog.Logger) *IngredientHandler {
+func NewIngredientHandler(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *IngredientHandler {
 	return &IngredientHandler{
 		ingredientRepo: ingredientRepo,
 		logger:         logger,

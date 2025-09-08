@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/repositories"
 )
 
 var (
@@ -14,12 +15,12 @@ var (
 )
 
 type CalorieService struct {
-	calorieRepo    *models.CalorieEntryRepository
-	ingredientRepo *models.IngredientRepository
+	calorieRepo    repositories.CalorieEntryRepository
+	ingredientRepo repositories.IngredientRepository
 	logger         *slog.Logger
 }
 
-func NewCalorieService(calorieRepo *models.CalorieEntryRepository, ingredientRepo *models.IngredientRepository, logger *slog.Logger) *CalorieService {
+func NewCalorieService(calorieRepo repositories.CalorieEntryRepository, ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *CalorieService {
 	return &CalorieService{
 		calorieRepo:    calorieRepo,
 		ingredientRepo: ingredientRepo,

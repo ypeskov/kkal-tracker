@@ -5,9 +5,11 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/database"
-	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/logger"
+	"ypeskov/kkal-tracker/internal/repositories/sqlite"
 
 	"github.com/joho/godotenv"
 )
@@ -32,6 +34,7 @@ func main() {
 	}
 
 	cfg := config.New()
+	appLogger := logger.New(cfg)
 
 	db, err := database.New(cfg.DatabasePath)
 	if err != nil {
@@ -44,9 +47,15 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	userRepo := models.NewUserRepository(db)
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal("Failed to hash password:", err)
+	}
 
-	user, err := userRepo.CreateWithLanguage(email, password, languageCode)
+	userRepo := sqlite.NewUserRepository(db, appLogger)
+
+	user, err := userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode)
 	if err != nil {
 		log.Fatal("Failed to create user:", err)
 	}

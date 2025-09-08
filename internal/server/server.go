@@ -10,7 +10,7 @@ import (
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/middleware"
-	"ypeskov/kkal-tracker/internal/models"
+	"ypeskov/kkal-tracker/internal/repositories/sqlite"
 	"ypeskov/kkal-tracker/internal/routes/api"
 	"ypeskov/kkal-tracker/internal/routes/web"
 	"ypeskov/kkal-tracker/internal/services"
@@ -30,9 +30,9 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, logger)
 
-	userRepo := models.NewUserRepository(db)
-	calorieRepo := models.NewCalorieEntryRepository(db, logger)
-	ingredientRepo := models.NewIngredientRepository(db)
+	userRepo := sqlite.NewUserRepository(db, logger)
+	calorieRepo := sqlite.NewCalorieEntryRepository(db, logger)
+	ingredientRepo := sqlite.NewIngredientRepository(db, logger)
 
 	authService := services.NewAuthService(userRepo, ingredientRepo, jwtService, logger)
 	calorieService := services.NewCalorieService(calorieRepo, ingredientRepo, logger)
