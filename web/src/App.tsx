@@ -44,7 +44,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${!isAuthenticated ? 'login-mode' : ''}`}>
       {!isAuthenticated ? (
         <Login onLogin={() => setIsAuthenticated(true)} />
       ) : (

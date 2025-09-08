@@ -3,6 +3,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 /* App Header */
@@ -56,6 +57,10 @@
   .app-header-content {
     padding: 14px 24px;
   }
+  
+  .app-main {
+    padding: 0 24px;
+  }
 }
 
 /* Desktop */
@@ -66,5 +71,9 @@
   
   .app-title {
     font-size: 22px;
+  }
+  
+  .app-main {
+    padding: 0 32px;
   }
 }

@@ -204,7 +204,35 @@
 /* Tablet */
 @media (max-width: 1024px) and (min-width: 769px) {
   .hamburger-nav {
-    width: 320px;
+    width: 350px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .hamburger-nav {
+    width: 400px;
+  }
+  
+  .hamburger-nav-header {
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+  
+  .hamburger-nav-link {
+    font-size: 16px;
+    padding: 18px 28px;
+  }
+  
+  .hamburger-logout-btn {
+    font-size: 16px;
+    padding: 18px 28px;
+  }
+  
+  .hamburger-close-btn {
+    font-size: 26px;
+    width: 42px;
+    height: 42px;
   }
 }
 
