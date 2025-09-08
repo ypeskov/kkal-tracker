@@ -21,7 +21,6 @@ func main() {
 
 	cfg := config.New()
 	log := logger.New(cfg)
-	log.Info("Loading config...", "config", cfg)
 
 	if err != nil {
 		log.Warn("Error loading .env file", "error", err)
