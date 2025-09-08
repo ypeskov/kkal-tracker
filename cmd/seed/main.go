@@ -13,9 +13,15 @@ import (
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/database"
 	"ypeskov/kkal-tracker/internal/logger"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Warning: Error loading .env file: %v", err)
+	}
 	// Load configuration
 	cfg := config.New()
 
