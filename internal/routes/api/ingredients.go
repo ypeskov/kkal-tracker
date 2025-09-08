@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -11,14 +12,10 @@ import (
 
 type IngredientHandler struct {
 	ingredientRepo *models.IngredientRepository
-	logger         interface {
-		Error(msg string, args ...interface{})
-	}
+	logger         *slog.Logger
 }
 
-func NewIngredientHandler(ingredientRepo *models.IngredientRepository, logger interface {
-	Error(msg string, args ...interface{})
-}) *IngredientHandler {
+func NewIngredientHandler(ingredientRepo *models.IngredientRepository, logger *slog.Logger) *IngredientHandler {
 	return &IngredientHandler{
 		ingredientRepo: ingredientRepo,
 		logger:         logger,

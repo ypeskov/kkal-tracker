@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/models"
@@ -17,14 +18,10 @@ type AuthService struct {
 	userRepo       *models.UserRepository
 	ingredientRepo *models.IngredientRepository
 	jwtService     *auth.JWTService
-	logger         interface {
-		Error(msg string, args ...interface{})
-	}
+	logger         *slog.Logger
 }
 
-func NewAuthService(userRepo *models.UserRepository, ingredientRepo *models.IngredientRepository, jwtService *auth.JWTService, logger interface {
-	Error(msg string, args ...interface{})
-}) *AuthService {
+func NewAuthService(userRepo *models.UserRepository, ingredientRepo *models.IngredientRepository, jwtService *auth.JWTService, logger *slog.Logger) *AuthService {
 	return &AuthService{
 		userRepo:       userRepo,
 		ingredientRepo: ingredientRepo,
