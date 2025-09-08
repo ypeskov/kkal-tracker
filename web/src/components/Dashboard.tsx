@@ -142,9 +142,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     
     return entries.reduce((totals, entry) => ({
       calories: totals.calories + entry.calories,
-      fats: totals.fats + (entry.fats || 0),
-      carbs: totals.carbs + (entry.carbs || 0),
-      proteins: totals.proteins + (entry.proteins || 0)
+      fats: totals.fats + ((entry.fats || 0) * entry.weight / 100),
+      carbs: totals.carbs + ((entry.carbs || 0) * entry.weight / 100),
+      proteins: totals.proteins + ((entry.proteins || 0) * entry.weight / 100)
     }), { calories: 0, fats: 0, carbs: 0, proteins: 0 })
   }, [entries])
 
@@ -187,9 +187,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const calculateDailyTotals = (dateEntries: any[]) => {
     return dateEntries.reduce((totals, entry) => ({
       calories: totals.calories + (entry.calories || 0),
-      fats: totals.fats + (entry.fats || 0),
-      carbs: totals.carbs + (entry.carbs || 0),
-      proteins: totals.proteins + (entry.proteins || 0)
+      fats: totals.fats + ((entry.fats || 0) * entry.weight / 100),
+      carbs: totals.carbs + ((entry.carbs || 0) * entry.weight / 100),
+      proteins: totals.proteins + ((entry.proteins || 0) * entry.weight / 100)
     }), { calories: 0, fats: 0, carbs: 0, proteins: 0 })
   }
 
