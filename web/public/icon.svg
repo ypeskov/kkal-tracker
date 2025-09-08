@@ -1,0 +1,32 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="plateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80"/>
+      <stop offset="100%" style="stop-color:#22c55e"/>
+    </linearGradient>
+    <linearGradient id="foodGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fb7185"/>
+      <stop offset="100%" style="stop-color:#f43f5e"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#plateGradient)" stroke="#16a34a" stroke-width="2"/>
+  
+  <!-- Plate -->
+  <ellipse cx="32" cy="36" rx="22" ry="18" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <ellipse cx="32" cy="36" rx="18" ry="14" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Food items -->
+  <circle cx="26" cy="32" r="4" fill="url(#foodGradient)"/>
+  <circle cx="38" cy="34" r="3" fill="#fbbf24"/>
+  <circle cx="32" cy="40" r="3" fill="#34d399"/>
+  
+  <!-- Fork -->
+  <g transform="translate(12, 16)">
+    <rect x="8" y="2" width="2" height="20" rx="1" fill="#6b7280"/>
+    <rect x="6" y="2" width="1" height="8" rx="0.5" fill="#6b7280"/>
+    <rect x="10" y="2" width="1" height="8" rx="0.5" fill="#6b7280"/>
+    <rect x="12" y="2" width="1" height="6" rx="0.5" fill="#6b7280"/>
+  </g>
+</svg>
