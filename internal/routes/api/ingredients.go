@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -20,6 +21,22 @@ func NewIngredientHandler(ingredientRepo repositories.IngredientRepository, logg
 		ingredientRepo: ingredientRepo,
 		logger:         logger,
 	}
+}
+
+type CreateIngredientRequest struct {
+	Name        string   `json:"name" validate:"required"`
+	KcalPer100g float64  `json:"kcalPer100g" validate:"required,min=0"`
+	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
+	Carbs       *float64 `json:"carbs,omitempty" validate:"omitempty,min=0"`
+	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
+}
+
+type UpdateIngredientRequest struct {
+	Name        string   `json:"name" validate:"required"`
+	KcalPer100g float64  `json:"kcalPer100g" validate:"required,min=0"`
+	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
+	Carbs       *float64 `json:"carbs,omitempty" validate:"omitempty,min=0"`
+	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
 }
 
 // GetAllIngredients Get all user ingredients for session storage caching
@@ -62,7 +79,106 @@ func (h *IngredientHandler) SearchIngredients(c echo.Context) error {
 	return c.JSON(http.StatusOK, ingredients)
 }
 
+// GetIngredientByID Get a single user ingredient by ID
+func (h *IngredientHandler) GetIngredientByID(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	ingredientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
+	}
+
+	ingredient, err := h.ingredientRepo.GetUserIngredientByID(userID, ingredientID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		}
+		h.logger.Error("Failed to get user ingredient", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusOK, ingredient)
+}
+
+// CreateIngredient Create a new user ingredient
+func (h *IngredientHandler) CreateIngredient(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	
+	var req CreateIngredientRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	ingredient, err := h.ingredientRepo.CreateUserIngredient(
+		userID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
+	)
+	if err != nil {
+		h.logger.Error("Failed to create user ingredient", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusCreated, ingredient)
+}
+
+// UpdateIngredient Update an existing user ingredient
+func (h *IngredientHandler) UpdateIngredient(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	ingredientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
+	}
+
+	var req UpdateIngredientRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	ingredient, err := h.ingredientRepo.UpdateUserIngredient(
+		userID, ingredientID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		}
+		h.logger.Error("Failed to update user ingredient", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusOK, ingredient)
+}
+
+// DeleteIngredient Delete a user ingredient
+func (h *IngredientHandler) DeleteIngredient(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	ingredientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
+	}
+
+	err = h.ingredientRepo.DeleteUserIngredient(userID, ingredientID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		}
+		h.logger.Error("Failed to delete user ingredient", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *IngredientHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.GetAllIngredients)
 	g.GET("/search", h.SearchIngredients)
+	g.GET("/:id", h.GetIngredientByID)
+	g.POST("", h.CreateIngredient)
+	g.PUT("/:id", h.UpdateIngredient)
+	g.DELETE("/:id", h.DeleteIngredient)
 }

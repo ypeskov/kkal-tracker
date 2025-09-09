@@ -184,15 +184,34 @@ func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageC
 	}
 	defer tx.Rollback()
 
+	// First check if user already has ingredients
+	var count int
+	err = tx.QueryRow("SELECT COUNT(*) FROM user_ingredients WHERE user_id = ?", userID).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		r.logger.Debug("User already has ingredients, skipping copy",
+			slog.Int("user_id", userID),
+			slog.Int("existing_count", count))
+		return tx.Commit()
+	}
+
+	// Insert only if user has no ingredients yet (prevents duplicates)
 	query := `
 		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id)
 		SELECT ?, gin.name, gi.kcal_per_100g, gi.fats, gi.carbs, gi.proteins, gi.id
 		FROM global_ingredients gi
 		INNER JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
 		WHERE gin.language_code = ?
+		AND NOT EXISTS (
+			SELECT 1 FROM user_ingredients ui 
+			WHERE ui.user_id = ? AND ui.name = gin.name
+		)
 	`
 
-	_, err = tx.Exec(query, userID, languageCode)
+	_, err = tx.Exec(query, userID, languageCode, userID)
 	if err != nil {
 		return err
 	}
@@ -297,4 +316,106 @@ func (r *IngredientRepository) getGlobalIngredientNames(ingredientID int) (map[s
 	}
 
 	return names, nil
+}
+
+// GetUserIngredientByID Get user ingredient by ID
+func (r *IngredientRepository) GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error) {
+	query := `
+		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
+		FROM user_ingredients
+		WHERE user_id = ? AND id = ?
+	`
+
+	ingredient := &models.UserIngredient{}
+	err := r.db.QueryRow(query, userID, ingredientID).Scan(
+		&ingredient.ID,
+		&ingredient.UserID,
+		&ingredient.Name,
+		&ingredient.KcalPer100g,
+		&ingredient.Fats,
+		&ingredient.Carbs,
+		&ingredient.Proteins,
+		&ingredient.GlobalIngredientID,
+		&ingredient.CreatedAt,
+		&ingredient.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ingredient, nil
+}
+
+// CreateUserIngredient Create a new user ingredient
+func (r *IngredientRepository) CreateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	r.logger.Debug("Creating user ingredient",
+		slog.Int("user_id", userID),
+		slog.String("name", name),
+		slog.Float64("kcal_per_100g", kcalPer100g))
+
+	insertQuery := `
+		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	result, err := r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the newly created ingredient
+	return r.GetUserIngredientByID(userID, int(id))
+}
+
+// UpdateUserIngredient Update an existing user ingredient
+func (r *IngredientRepository) UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	r.logger.Debug("Updating user ingredient",
+		slog.Int("user_id", userID),
+		slog.Int("ingredient_id", ingredientID),
+		slog.String("name", name),
+		slog.Float64("kcal_per_100g", kcalPer100g))
+
+	updateQuery := `
+		UPDATE user_ingredients 
+		SET name = ?, kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = ? AND id = ?
+	`
+	_, err := r.db.Exec(updateQuery, name, kcalPer100g, fats, carbs, proteins, userID, ingredientID)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetUserIngredientByID(userID, ingredientID)
+}
+
+// DeleteUserIngredient Delete a user ingredient
+func (r *IngredientRepository) DeleteUserIngredient(userID int, ingredientID int) error {
+	r.logger.Debug("Deleting user ingredient",
+		slog.Int("user_id", userID),
+		slog.Int("ingredient_id", ingredientID))
+
+	deleteQuery := `
+		DELETE FROM user_ingredients
+		WHERE user_id = ? AND id = ?
+	`
+	result, err := r.db.Exec(deleteQuery, userID, ingredientID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

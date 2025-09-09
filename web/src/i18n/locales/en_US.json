@@ -46,7 +46,20 @@
   },
   "foodList": {
     "title": "Food List",
-    "wip": "Work in progress"
+    "wip": "Work in progress",
+    "addNew": "Add New",
+    "filterPlaceholder": "Filter by name...",
+    "name": "Name",
+    "calories": "Calories",
+    "caloriesPer100g": "Calories per 100g",
+    "proteins": "Proteins",
+    "carbs": "Carbs",
+    "fats": "Fats",
+    "noIngredients": "No ingredients found",
+    "editIngredient": "Edit Ingredient",
+    "addNewIngredient": "Add New Ingredient",
+    "confirmDelete": "Are you sure you want to delete \"{{foodName}}\"? This action cannot be undone.",
+    "optional": "Optional"
   },
   "report": {
     "title": "Reports",
@@ -63,7 +76,15 @@
     "settings": "Settings"
   },
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "create": "Create",
+    "creating": "Creating...",
+    "update": "Update",
+    "updating": "Updating...",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "cancel": "Cancel"
   },
   "language": {
     "select": "Language",
