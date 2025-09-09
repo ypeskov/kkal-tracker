@@ -55,10 +55,12 @@ export default function FoodList() {
     },
   });
 
-  // Filter ingredients based on search text
-  const filteredIngredients = ingredients.filter(ingredient =>
-    ingredient.name.toLowerCase().includes(filterText.toLowerCase())
-  );
+  // Filter ingredients based on search text and sort by name
+  const filteredIngredients = ingredients
+    .filter(ingredient =>
+      ingredient.name.toLowerCase().includes(filterText.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleRowClick = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
