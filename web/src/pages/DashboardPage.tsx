@@ -178,9 +178,10 @@ export default function DashboardPage() {
         />
       )}
 
-      {showDeleteConfirmation && (
+      {showDeleteConfirmation && editingEntry && (
         <DeleteConfirmationDialog
-          entry={editingEntry}
+          message="dashboard.deleteWarning"
+          itemName={editingEntry.food}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           isDeleting={deleteEntryMutation.isPending}

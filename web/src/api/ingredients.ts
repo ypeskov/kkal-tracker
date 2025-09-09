@@ -5,6 +5,25 @@ export interface Ingredient {
   fats?: number
   carbs?: number
   proteins?: number
+  user_id?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateIngredientData {
+  name: string
+  kcalPer100g: number
+  fats?: number
+  carbs?: number
+  proteins?: number
+}
+
+export interface UpdateIngredientData {
+  name: string
+  kcalPer100g: number
+  fats?: number
+  carbs?: number
+  proteins?: number
 }
 
 class IngredientService {
@@ -133,6 +152,102 @@ class IngredientService {
       return Array.isArray(parsed) && parsed.length > 0
     } catch (error) {
       return false
+    }
+  }
+
+  // Get ingredient by ID
+  getIngredientById = async (id: number): Promise<Ingredient | null> => {
+    try {
+      const response = await fetch(`/api/ingredients/${id}`, {
+        headers: this.getAuthHeaders(),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null
+        }
+        throw new Error('Failed to fetch ingredient')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to get ingredient:', error)
+      throw error
+    }
+  }
+
+  // Create a new ingredient
+  createIngredient = async (data: CreateIngredientData): Promise<Ingredient> => {
+    try {
+      const response = await fetch('/api/ingredients', {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(error || 'Failed to create ingredient')
+      }
+
+      const newIngredient = await response.json()
+      
+      // Update cache
+      await this.loadAndCacheIngredients()
+      
+      return newIngredient
+    } catch (error) {
+      console.error('Failed to create ingredient:', error)
+      throw error
+    }
+  }
+
+  // Update an existing ingredient
+  updateIngredient = async (id: number, data: UpdateIngredientData): Promise<Ingredient> => {
+    try {
+      const response = await fetch(`/api/ingredients/${id}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(error || 'Failed to update ingredient')
+      }
+
+      const updatedIngredient = await response.json()
+      
+      // Update cache
+      await this.loadAndCacheIngredients()
+      
+      return updatedIngredient
+    } catch (error) {
+      console.error('Failed to update ingredient:', error)
+      throw error
+    }
+  }
+
+  // Delete an ingredient
+  deleteIngredient = async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`/api/ingredients/${id}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Ingredient not found')
+        }
+        throw new Error('Failed to delete ingredient')
+      }
+
+      // Update cache
+      await this.loadAndCacheIngredients()
+    } catch (error) {
+      console.error('Failed to delete ingredient:', error)
+      throw error
     }
   }
 }

@@ -1,16 +1,23 @@
 import { useTranslation } from 'react-i18next';
 
 interface DeleteConfirmationDialogProps {
-  entry: any;
+  title?: string;
+  message: string;
+  itemName?: string;
   onConfirm: () => void;
   onCancel: () => void;
   isDeleting: boolean;
 }
 
-export default function DeleteConfirmationDialog({ entry, onConfirm, onCancel, isDeleting }: DeleteConfirmationDialogProps) {
+export default function DeleteConfirmationDialog({ 
+  title,
+  message,
+  itemName,
+  onConfirm, 
+  onCancel, 
+  isDeleting 
+}: DeleteConfirmationDialogProps) {
   const { t } = useTranslation();
-
-  if (!entry) return null;
 
   return (
     <div style={{ 
@@ -34,9 +41,11 @@ export default function DeleteConfirmationDialog({ entry, onConfirm, onCancel, i
         width: '100%',
         textAlign: 'center'
       }}>
-        <h3 style={{ marginTop: 0, color: '#dc3545' }}>{t('dashboard.confirmDelete')}</h3>
+        <h3 style={{ marginTop: 0, color: '#dc3545' }}>
+          {title || t('dashboard.confirmDelete')}
+        </h3>
         <p style={{ marginBottom: '2rem' }}>
-          {t('dashboard.deleteWarning', { foodName: entry?.food })}
+          {itemName ? t(message, { foodName: itemName }) : message}
         </p>
         
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
@@ -47,7 +56,7 @@ export default function DeleteConfirmationDialog({ entry, onConfirm, onCancel, i
             style={{ backgroundColor: '#6c757d' }}
             disabled={isDeleting}
           >
-            {t('dashboard.cancel')}
+            {t('common.cancel')}
           </button>
           <button 
             type="button" 
@@ -56,7 +65,7 @@ export default function DeleteConfirmationDialog({ entry, onConfirm, onCancel, i
             style={{ backgroundColor: '#dc3545' }}
             disabled={isDeleting}
           >
-            {isDeleting ? t('common.loading') + '...' : t('dashboard.confirmDeleteButton')}
+            {isDeleting ? t('common.deleting') : t('common.delete')}
           </button>
         </div>
       </div>

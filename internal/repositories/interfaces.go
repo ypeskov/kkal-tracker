@@ -33,8 +33,14 @@ type IngredientRepository interface {
 	SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error)
 	GetAllUserIngredients(userID int) ([]*models.UserIngredient, error)
 	GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error)
+	GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error)
 	CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64,
 		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+	CreateUserIngredient(userID int, name string, kcalPer100g float64,
+		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+	UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64,
+		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+	DeleteUserIngredient(userID int, ingredientID int) error
 	CopyGlobalIngredientsToUser(userID int, languageCode string) error
 
 	// CreateGlobalIngredient Global ingredients (admin)
