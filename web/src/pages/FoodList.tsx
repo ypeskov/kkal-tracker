@@ -127,6 +127,16 @@ export default function FoodList() {
               onChange={(e) => setFilterText(e.target.value)}
               className="form-input"
             />
+            {filterText && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setFilterText('')}
+                aria-label={t('common.clear')}
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
       </div>

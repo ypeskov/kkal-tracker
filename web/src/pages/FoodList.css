@@ -24,11 +24,12 @@
 .filter-input {
   flex: 1;
   max-width: 400px;
+  position: relative;
 }
 
 .filter-input input {
   width: 100%;
-  padding: 10px 15px;
+  padding: 10px 40px 10px 15px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
@@ -42,6 +43,32 @@
 
 .filter-input input::placeholder {
   color: #999;
+}
+
+.filter-clear-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px 10px;
+  line-height: 1;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-clear-btn:hover {
+  color: #666;
+}
+
+.filter-clear-btn:active {
+  color: #333;
 }
 
 .food-list-table-container {

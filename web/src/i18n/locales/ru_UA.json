@@ -84,7 +84,8 @@
     "updating": "Обновление...",
     "delete": "Удалить",
     "deleting": "Удаление...",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "clear": "Очистить"
   },
   "language": {
     "select": "Язык",

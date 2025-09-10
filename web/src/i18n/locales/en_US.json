@@ -84,7 +84,8 @@
     "updating": "Updating...",
     "delete": "Delete",
     "deleting": "Deleting...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "clear": "Clear"
   },
   "language": {
     "select": "Language",
