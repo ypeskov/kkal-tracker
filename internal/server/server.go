@@ -74,6 +74,9 @@ func (s *Server) Start() *http.Server {
 	e := echo.New()
 	//e.HideBanner = true
 
+	// Register custom validator
+	e.Validator = middleware.NewValidator()
+
 	//e.Use(middleware.Logger(s.logger))
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.CORS())

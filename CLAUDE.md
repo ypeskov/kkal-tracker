@@ -80,7 +80,11 @@ JWT_SECRET=your-secret-key
 - **Development**: Uses Air for live reload, excludes `web/dist` from watching
 - **Production**: JSON logging format, structured error handling
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
-- **Server Management**: DO NOT start the development server (`make dev`) unless explicitly requested. The user manages Air in a separate terminal session
+- **Server Management**: 
+  # ⚠️  CRITICAL WARNING - DO NOT START DEVELOPMENT SERVER ⚠️
+  # NEVER RUN `make dev` OR ANY SERVER COMMANDS WITHOUT EXPLICIT USER APPROVAL
+  # THE USER MANAGES THE DEVELOPMENT SERVER (Air) IN A SEPARATE TERMINAL SESSION
+  # ONLY BUILD COMMANDS (`make build`, `make build-frontend`) ARE ALLOWED
 
 ## Dependencies
 - Echo v4.13.4 (web framework)
