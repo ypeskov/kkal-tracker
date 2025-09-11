@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EntryListItem from './EntryListItem';
 
@@ -9,6 +9,7 @@ interface CalorieEntriesListProps {
 
 export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesListProps) {
   const { t, i18n } = useTranslation();
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   const entriesByDate = useMemo(() => {
     if (!entries || entries.length === 0) {
@@ -75,6 +76,21 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
     }), { calories: 0, fats: 0, carbs: 0, proteins: 0 });
   };
 
+  // Check if we have multiple dates (for collapsible behavior)
+  const hasMultipleDates = Object.keys(entriesByDate).length > 1;
+
+  const toggleDateExpansion = (dateKey: string) => {
+    setExpandedDates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateKey)) {
+        newSet.delete(dateKey);
+      } else {
+        newSet.add(dateKey);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <section>
       <h2>{t('dashboard.todayEntries')}</h2>
@@ -84,81 +100,151 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {Object.keys(entriesByDate)
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // Sort dates desc (newest first)
-            .map((dateKey, index) => (
-              <div key={dateKey} className="date-section" style={{
-                background: index % 2 === 0 ? '#f0f4f8' : '#e8f5e9',
-                borderRadius: '8px',
-                padding: '0.75rem',
-                marginBottom: '1.5rem',
-                border: '1px solid ' + (index % 2 === 0 ? '#d1dae3' : '#c3e6c8'),
-                boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
-              }}>
-                <h3 className="date-header" style={{ 
-                  margin: '0 0 1rem 0', 
-                  padding: '0.75rem 1rem', 
-                  fontSize: '1.1rem',
-                  color: index % 2 === 0 ? '#1a5490' : '#2d6a4f',
-                  fontWeight: '600',
-                  background: index % 2 === 0 ? 'linear-gradient(90deg, #ffffff, #f8fbff)' : 'linear-gradient(90deg, #ffffff, #f0fdf4)',
-                  borderRadius: '6px',
-                  borderLeft: '5px solid ' + (index % 2 === 0 ? '#4a90e2' : '#52c41a'),
-                  boxShadow: '0 2px 8px ' + (index % 2 === 0 ? 'rgba(74, 144, 226, 0.15)' : 'rgba(82, 196, 26, 0.15)')
+            .map((dateKey, index) => {
+              const isExpanded = !hasMultipleDates || expandedDates.has(dateKey);
+              const dailyTotals = calculateDailyTotals(entriesByDate[dateKey]);
+              
+              return (
+                <div key={dateKey} className="date-section" style={{
+                  background: index % 2 === 0 ? '#f0f4f8' : '#e8f5e9',
+                  borderRadius: '8px',
+                  padding: '0.75rem',
+                  marginBottom: '1.5rem',
+                  border: '1px solid ' + (index % 2 === 0 ? '#d1dae3' : '#c3e6c8'),
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
                 }}>
-                  {formatDateHeader(dateKey)}
-                </h3>
-                
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {entriesByDate[dateKey].map((entry: any) => (
-                    <EntryListItem key={entry.id} entry={entry} onEdit={onEdit} />
-                  ))}
-                </ul>
-
-                {(() => {
-                  const dailyTotals = calculateDailyTotals(entriesByDate[dateKey]);
-                  return (
+                  {/* Clickable date header with total */}
+                  <div 
+                    onClick={() => hasMultipleDates && toggleDateExpansion(dateKey)}
+                    style={{ 
+                      cursor: hasMultipleDates ? 'pointer' : 'default',
+                      margin: isExpanded ? '0 0 1rem 0' : '0', 
+                      padding: '0.75rem 1rem', 
+                      fontSize: '1.1rem',
+                      color: index % 2 === 0 ? '#1a5490' : '#2d6a4f',
+                      fontWeight: '600',
+                      background: index % 2 === 0 ? 'linear-gradient(90deg, #ffffff, #f8fbff)' : 'linear-gradient(90deg, #ffffff, #f0fdf4)',
+                      borderRadius: '6px',
+                      borderLeft: '5px solid ' + (index % 2 === 0 ? '#4a90e2' : '#52c41a'),
+                      boxShadow: '0 2px 8px ' + (index % 2 === 0 ? 'rgba(74, 144, 226, 0.15)' : 'rgba(82, 196, 26, 0.15)'),
+                      transition: 'transform 0.2s ease',
+                      ...(hasMultipleDates && {
+                        ':hover': {
+                          transform: 'translateX(2px)'
+                        }
+                      })
+                    }}
+                    className="date-header-clickable"
+                  >
                     <div style={{ 
-                      marginTop: '1rem', 
-                      padding: '0.75rem', 
-                      backgroundColor: '#f8f9fa', 
-                      borderRadius: '5px',
-                      border: '1px solid #dee2e6'
+                      display: 'flex', 
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
                     }}>
-                      <div className="daily-totals">
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          fontWeight: 'bold',
-                          fontSize: '0.95rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          <span style={{ color: '#495057' }}>{t('dashboard.total')}:</span>
-                          <span style={{ color: '#28a745' }}>{dailyTotals.calories} {t('dashboard.kcal')}</span>
-                        </div>
-                        {(dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
-                          <div className="daily-totals-nutrients" style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem',
-                            fontSize: '0.9rem'
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {hasMultipleDates && (
+                          <span style={{
+                            display: 'inline-block',
+                            width: '20px',
+                            height: '20px',
+                            lineHeight: '20px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            transition: 'transform 0.2s ease',
+                            transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
                           }}>
-                            {dailyTotals.fats > 0 && (
-                              <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
-                            )}
-                            {dailyTotals.carbs > 0 && (
-                              <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
-                            )}
-                            {dailyTotals.proteins > 0 && (
-                              <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
-                            )}
-                          </div>
+                            ▼
+                          </span>
+                        )}
+                        <span>{formatDateHeader(dateKey)}</span>
+                      </div>
+                      <span style={{ 
+                        color: '#28a745',
+                        fontWeight: 'bold',
+                        fontSize: '1rem'
+                      }}>
+                        {dailyTotals.calories} {t('dashboard.kcal')}
+                      </span>
+                    </div>
+                    
+                    {/* Show nutrient summary in header when collapsed */}
+                    {!isExpanded && (dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem',
+                        fontSize: '0.85rem',
+                        marginTop: '0.5rem',
+                        opacity: 0.8
+                      }}>
+                        {dailyTotals.fats > 0 && (
+                          <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                        )}
+                        {dailyTotals.carbs > 0 && (
+                          <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                        )}
+                        {dailyTotals.proteins > 0 && (
+                          <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
                         )}
                       </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            ))}
+                    )}
+                  </div>
+                  
+                  {/* Entries list - only visible when expanded */}
+                  {isExpanded && (
+                    <>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {entriesByDate[dateKey].map((entry: any) => (
+                          <EntryListItem key={entry.id} entry={entry} onEdit={onEdit} />
+                        ))}
+                      </ul>
+
+                      {/* Daily totals footer - only when expanded */}
+                      <div style={{ 
+                        marginTop: '1rem', 
+                        padding: '0.75rem', 
+                        backgroundColor: '#f8f9fa', 
+                        borderRadius: '5px',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        <div className="daily-totals">
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontWeight: 'bold',
+                            fontSize: '0.95rem',
+                            marginBottom: '0.5rem'
+                          }}>
+                            <span style={{ color: '#495057' }}>{t('dashboard.total')}:</span>
+                            <span style={{ color: '#28a745' }}>{dailyTotals.calories} {t('dashboard.kcal')}</span>
+                          </div>
+                          {(dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
+                            <div className="daily-totals-nutrients" style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: '0.5rem',
+                              fontSize: '0.9rem'
+                            }}>
+                              {dailyTotals.fats > 0 && (
+                                <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                              )}
+                              {dailyTotals.carbs > 0 && (
+                                <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                              )}
+                              {dailyTotals.proteins > 0 && (
+                                <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
         </div>
       )}
     </section>

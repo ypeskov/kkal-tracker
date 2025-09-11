@@ -152,6 +152,21 @@
   backdrop-filter: blur(5px);
 }
 
+/* Collapsible date header styles */
+.date-header-clickable {
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.date-header-clickable:hover {
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+.date-header-clickable:active {
+  transform: translateX(1px);
+}
+
 /* Mobile responsive breakpoints */
 @media (max-width: 640px) {
   .header-controls {
