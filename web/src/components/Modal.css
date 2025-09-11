@@ -167,3 +167,35 @@
     width: 100%;
   }
 }
+
+/* Dedicated modal button class */
+.modal-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 0.75rem 1.5rem;
+}
+
+/* Mobile styling for modal buttons */
+@media (max-width: 600px) {
+  .modal-btn {
+    padding: 0.75rem 1rem;
+    font-size: 12px;
+    min-width: auto;
+  }
+  
+  /* Reduce spacing for modal button container on mobile */
+  .modal-button-container {
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .modal-button-container > div {
+    gap: 0.5rem;
+  }
+}

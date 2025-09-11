@@ -214,12 +214,12 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             justifyContent: 'space-between', 
             alignItems: 'center',
             width: '100%',
-            gap: '1rem' 
-          }}>
+            gap: '1rem'
+          }} className="modal-button-container">
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button 
                 type="submit" 
-                className="btn"
+                className="modal-btn"
                 disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
                 style={{ backgroundColor: '#28a745' }}
               >
@@ -228,7 +228,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               <button 
                 type="button" 
                 onClick={onCancel}
-                className="btn"
+                className="modal-btn"
                 style={{ backgroundColor: '#6c757d' }}
                 disabled={isUpdating || isDeleting}
               >
@@ -239,7 +239,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             <button 
               type="button" 
               onClick={onDelete}
-              className="btn"
+              className="modal-btn"
               style={{ backgroundColor: '#dc3545' }}
               disabled={isUpdating || isDeleting}
             >
