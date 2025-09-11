@@ -208,18 +208,23 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="form-row" style={{ marginTop: '2rem', justifyContent: 'space-between', gap: '1rem' }}>
-            <button 
-              type="button" 
-              onClick={onDelete}
-              className="btn"
-              style={{ backgroundColor: '#dc3545' }}
-              disabled={isUpdating || isDeleting}
-            >
-              {t('dashboard.delete')}
-            </button>
-            
+          <div style={{ 
+            marginTop: '2rem', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            width: '100%',
+            gap: '1rem' 
+          }}>
             <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                type="submit" 
+                className="btn"
+                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
+                style={{ backgroundColor: '#28a745' }}
+              >
+                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
+              </button>
               <button 
                 type="button" 
                 onClick={onCancel}
@@ -229,15 +234,17 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               >
                 {t('dashboard.cancel')}
               </button>
-              <button 
-                type="submit" 
-                className="btn"
-                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
-                style={{ backgroundColor: '#28a745' }}
-              >
-                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
-              </button>
             </div>
+            
+            <button 
+              type="button" 
+              onClick={onDelete}
+              className="btn"
+              style={{ backgroundColor: '#dc3545' }}
+              disabled={isUpdating || isDeleting}
+            >
+              {t('dashboard.delete')}
+            </button>
           </div>
         </form>
       </div>
