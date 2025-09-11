@@ -1,4 +1,4 @@
-package api
+package auth
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type AuthHandler struct {
+type Handler struct {
 	authService *services.AuthService
 	logger      *slog.Logger
 }
@@ -36,14 +36,14 @@ type LoginResponse struct {
 	User  ResponseUser `json:"user"`
 }
 
-func NewAuthHandler(authService *services.AuthService, logger *slog.Logger) *AuthHandler {
-	return &AuthHandler{
+func NewHandler(authService *services.AuthService, logger *slog.Logger) *Handler {
+	return &Handler{
 		authService: authService,
 		logger:      logger,
 	}
 }
 
-func (h *AuthHandler) Login(c echo.Context) error {
+func (h *Handler) Login(c echo.Context) error {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
@@ -69,7 +69,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	})
 }
 
-func (h *AuthHandler) Register(c echo.Context) error {
+func (h *Handler) Register(c echo.Context) error {
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
@@ -94,7 +94,7 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	})
 }
 
-func (h *AuthHandler) GetCurrentUser(c echo.Context) error {
+func (h *Handler) GetCurrentUser(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	user, err := h.authService.GetCurrentUser(userID)
@@ -109,7 +109,7 @@ func (h *AuthHandler) GetCurrentUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-func (h *AuthHandler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware) {
+func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware) {
 	g.POST("/login", h.Login)
 	g.POST("/register", h.Register)
 	g.GET("/me", h.GetCurrentUser, authMiddleware.RequireAuth)

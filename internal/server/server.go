@@ -12,7 +12,9 @@ import (
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	"ypeskov/kkal-tracker/internal/repositories/sqlite"
-	"ypeskov/kkal-tracker/internal/routes/api"
+	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
+	"ypeskov/kkal-tracker/internal/handlers/calories"
+	"ypeskov/kkal-tracker/internal/handlers/ingredients"
 	"ypeskov/kkal-tracker/internal/routes/web"
 	"ypeskov/kkal-tracker/internal/services"
 
@@ -87,9 +89,9 @@ func (s *Server) Start() *http.Server {
 	authService := services.NewAuthService(s.userRepo, s.ingredientRepo, jwtService, s.logger)
 	calorieService := services.NewCalorieService(s.calorieRepo, s.ingredientRepo, s.logger)
 
-	authHandler := api.NewAuthHandler(authService, s.logger)
-	calorieHandler := api.NewCalorieHandler(calorieService, s.logger)
-	ingredientHandler := api.NewIngredientHandler(s.ingredientRepo, s.logger)
+	authHandler := authhandler.NewHandler(authService, s.logger)
+	calorieHandler := calories.NewHandler(calorieService, s.logger)
+	ingredientHandler := ingredients.NewHandler(s.ingredientRepo, s.logger)
 
 	apiGroup := e.Group("/api")
 

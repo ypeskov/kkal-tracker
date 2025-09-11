@@ -1,4 +1,4 @@
-package api
+package ingredients
 
 import (
 	"database/sql"
@@ -11,19 +11,19 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type IngredientHandler struct {
+type Handler struct {
 	ingredientRepo repositories.IngredientRepository
 	logger         *slog.Logger
 }
 
-func NewIngredientHandler(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *IngredientHandler {
-	return &IngredientHandler{
+func NewHandler(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Handler {
+	return &Handler{
 		ingredientRepo: ingredientRepo,
 		logger:         logger,
 	}
 }
 
-type CreateIngredientRequest struct {
+type CreateRequest struct {
 	Name        string   `json:"name" validate:"required"`
 	KcalPer100g float64  `json:"kcalPer100g" validate:"required,min=0"`
 	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
@@ -31,7 +31,7 @@ type CreateIngredientRequest struct {
 	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
 }
 
-type UpdateIngredientRequest struct {
+type UpdateRequest struct {
 	Name        string   `json:"name" validate:"required"`
 	KcalPer100g float64  `json:"kcalPer100g" validate:"required,min=0"`
 	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
@@ -40,7 +40,7 @@ type UpdateIngredientRequest struct {
 }
 
 // GetAllIngredients Get all user ingredients for session storage caching
-func (h *IngredientHandler) GetAllIngredients(c echo.Context) error {
+func (h *Handler) GetAllIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	ingredients, err := h.ingredientRepo.GetAllUserIngredients(userID)
@@ -53,7 +53,7 @@ func (h *IngredientHandler) GetAllIngredients(c echo.Context) error {
 }
 
 // SearchIngredients Search user ingredients for autocomplete (fallback if session storage fails)
-func (h *IngredientHandler) SearchIngredients(c echo.Context) error {
+func (h *Handler) SearchIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	query := c.QueryParam("q")
 	limitParam := c.QueryParam("limit")
@@ -80,7 +80,7 @@ func (h *IngredientHandler) SearchIngredients(c echo.Context) error {
 }
 
 // GetIngredientByID Get a single user ingredient by ID
-func (h *IngredientHandler) GetIngredientByID(c echo.Context) error {
+func (h *Handler) GetIngredientByID(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -100,10 +100,10 @@ func (h *IngredientHandler) GetIngredientByID(c echo.Context) error {
 }
 
 // CreateIngredient Create a new user ingredient
-func (h *IngredientHandler) CreateIngredient(c echo.Context) error {
+func (h *Handler) CreateIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	
-	var req CreateIngredientRequest
+	var req CreateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -124,14 +124,14 @@ func (h *IngredientHandler) CreateIngredient(c echo.Context) error {
 }
 
 // UpdateIngredient Update an existing user ingredient
-func (h *IngredientHandler) UpdateIngredient(c echo.Context) error {
+func (h *Handler) UpdateIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
 
-	var req UpdateIngredientRequest
+	var req UpdateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -155,7 +155,7 @@ func (h *IngredientHandler) UpdateIngredient(c echo.Context) error {
 }
 
 // DeleteIngredient Delete a user ingredient
-func (h *IngredientHandler) DeleteIngredient(c echo.Context) error {
+func (h *Handler) DeleteIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -174,7 +174,7 @@ func (h *IngredientHandler) DeleteIngredient(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *IngredientHandler) RegisterRoutes(g *echo.Group) {
+func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.GetAllIngredients)
 	g.GET("/search", h.SearchIngredients)
 	g.GET("/:id", h.GetIngredientByID)
