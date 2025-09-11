@@ -1,11 +1,11 @@
 package api
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/middleware"
-	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/services"
 
 	"github.com/labstack/echo/v4"
@@ -27,9 +27,13 @@ type RegisterRequest struct {
 	LanguageCode string `json:"language_code" validate:"required"`
 }
 
+type ResponseUser struct {
+	Email string `json:"email"`
+}
+
 type LoginResponse struct {
-	Token string      `json:"token"`
-	User  models.User `json:"user"`
+	Token string       `json:"token"`
+	User  ResponseUser `json:"user"`
 }
 
 func NewAuthHandler(authService *services.AuthService, logger *slog.Logger) *AuthHandler {
@@ -47,16 +51,21 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	user, token, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
-		if err == services.ErrInvalidCredentials {
+		if errors.Is(err, services.ErrInvalidCredentials) {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 		}
 		h.logger.Error("Login failed", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	responseUser := ResponseUser{
+		Email: user.Email,
+	}
+	h.logger.Debug("%+v", "responseUser", responseUser)
+
 	return c.JSON(http.StatusOK, LoginResponse{
 		Token: token,
-		User:  *user,
+		User:  responseUser,
 	})
 }
 
@@ -75,9 +84,13 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
-	return c.JSON(http.StatusCreated, LoginResponse{
+	responseUser := ResponseUser{
+		Email: user.Email,
+	}
+
+	return c.JSON(http.StatusCreated, &LoginResponse{
 		Token: token,
-		User:  *user,
+		User:  responseUser,
 	})
 }
 
