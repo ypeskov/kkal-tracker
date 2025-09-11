@@ -1,4 +1,4 @@
-package api
+package calories
 
 import (
 	"log/slog"
@@ -12,12 +12,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type CalorieHandler struct {
+type Handler struct {
 	calorieService *services.CalorieService
 	logger         *slog.Logger
 }
 
-type CreateCalorieEntryRequest struct {
+type CreateEntryRequest struct {
 	Food         string   `json:"food" validate:"required"`
 	Calories     int      `json:"calories" validate:"required,min=1"`
 	Weight       float64  `json:"weight" validate:"required,min=0.1"`
@@ -28,14 +28,14 @@ type CreateCalorieEntryRequest struct {
 	MealDatetime string   `json:"meal_datetime" validate:"required"`
 }
 
-func NewCalorieHandler(calorieService *services.CalorieService, logger *slog.Logger) *CalorieHandler {
-	return &CalorieHandler{
+func NewHandler(calorieService *services.CalorieService, logger *slog.Logger) *Handler {
+	return &Handler{
 		calorieService: calorieService,
 		logger:         logger,
 	}
 }
 
-func (h *CalorieHandler) GetEntries(c echo.Context) error {
+func (h *Handler) GetEntries(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	date := c.QueryParam("date")
 	dateFrom := c.QueryParam("dateFrom")
@@ -58,10 +58,10 @@ func (h *CalorieHandler) GetEntries(c echo.Context) error {
 	return c.JSON(http.StatusOK, entries)
 }
 
-func (h *CalorieHandler) CreateEntry(c echo.Context) error {
+func (h *Handler) CreateEntry(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
-	var req CreateCalorieEntryRequest
+	var req CreateEntryRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -83,7 +83,7 @@ func (h *CalorieHandler) CreateEntry(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
+func (h *Handler) DeleteEntry(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	idParam := c.Param("id")
@@ -101,7 +101,7 @@ func (h *CalorieHandler) DeleteEntry(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
+func (h *Handler) UpdateEntry(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	idParam := c.Param("id")
@@ -110,7 +110,7 @@ func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid entry ID")
 	}
 
-	var req CreateCalorieEntryRequest
+	var req CreateEntryRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -130,7 +130,7 @@ func (h *CalorieHandler) UpdateEntry(c echo.Context) error {
 	return c.JSON(http.StatusOK, entry)
 }
 
-func (h *CalorieHandler) RegisterRoutes(g *echo.Group) {
+func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.GetEntries)
 	g.POST("", h.CreateEntry)
 	g.PUT("/:id", h.UpdateEntry)
