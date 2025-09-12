@@ -25,10 +25,10 @@ func (r *UserRepository) Create(email, passwordHash string) (*models.User, error
 }
 
 func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error) {
-	r.logger.Debug("Creating user with language", 
+	r.logger.Debug("Creating user with language",
 		slog.String("email", email),
 		slog.String("language", languageCode))
-	
+
 	// Start transaction to ensure user creation and ingredient copying are atomic
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -51,7 +51,7 @@ func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode st
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.logger.Debug("User created in database", slog.Int64("id", id))
 
 	// Copy global ingredients to user_ingredients
@@ -72,15 +72,15 @@ func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode st
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	
-	r.logger.Debug("Transaction committed successfully", slog.Int64("user_id", id))
+
+	r.logger.Debug("Transaction of creating user with language committed successfully", slog.Int64("user_id", id))
 
 	return r.GetByID(int(id))
 }
 
 func (r *UserRepository) GetByID(id int) (*models.User, error) {
 	r.logger.Debug("Getting user by ID", slog.Int("id", id))
-	
+
 	query := `
 		SELECT id, email, password_hash, created_at, updated_at
 		FROM users
@@ -105,7 +105,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	r.logger.Debug("Getting user by email", slog.String("email", email))
-	
+
 	query := `
 		SELECT id, email, password_hash, created_at, updated_at
 		FROM users

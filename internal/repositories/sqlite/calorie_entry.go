@@ -123,52 +123,6 @@ func (r *CalorieEntryRepository) GetByUserID(userID int) ([]*models.CalorieEntry
 	return entries, nil
 }
 
-func (r *CalorieEntryRepository) GetByUserIDAndDate(userID int, date string) ([]*models.CalorieEntry, error) {
-	// SQLite-specific date formatting using strftime
-	query := `
-		SELECT id, user_id, food, calories, weight, kcal_per_100g, fats, carbs, proteins, meal_datetime, updated_at, created_at
-		FROM calorie_entries
-		WHERE user_id = ? AND (
-			strftime('%Y-%m-%d', meal_datetime) = ?
-			OR strftime('%Y-%m-%d', substr(meal_datetime, 1, 19)) = ?
-		)
-		ORDER BY meal_datetime DESC
-	`
-
-	r.logger.Debug("GetByUserIDAndDate", slog.Int("userID", userID), slog.String("date", date))
-
-	rows, err := r.db.Query(query, userID, date, date)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var entries []*models.CalorieEntry
-	for rows.Next() {
-		entry := &models.CalorieEntry{}
-		err := rows.Scan(
-			&entry.ID,
-			&entry.UserID,
-			&entry.Food,
-			&entry.Calories,
-			&entry.Weight,
-			&entry.KcalPer100g,
-			&entry.Fats,
-			&entry.Carbs,
-			&entry.Proteins,
-			&entry.MealDatetime,
-			&entry.UpdatedAt,
-			&entry.CreatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, entry)
-	}
-
-	return entries, nil
-}
-
 func (r *CalorieEntryRepository) GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
 	// SQLite-specific date formatting using strftime
 	query := `

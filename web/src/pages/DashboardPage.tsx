@@ -40,11 +40,12 @@ export default function DashboardPage() {
     const today = new Date().toISOString().split('T')[0];
     switch (filterType) {
       case 'today':
-        return { date: today };
+        return { dateFrom: today, dateTo: today };
       case 'yesterday':
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        return { date: yesterday.toISOString().split('T')[0] };
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        return { dateFrom: yesterdayStr, dateTo: yesterdayStr };
       case 'lastWeek':
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -63,9 +64,9 @@ export default function DashboardPage() {
         if (customDateFrom && customDateTo) {
           return { dateFrom: customDateFrom, dateTo: customDateTo };
         }
-        return { date: today };
+        return { dateFrom: today, dateTo: today };
       default:
-        return { date: today };
+        return { dateFrom: today, dateTo: today };
     }
   }, [filterType, customDateFrom, customDateTo]);
 

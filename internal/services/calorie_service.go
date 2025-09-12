@@ -28,26 +28,6 @@ func NewCalorieService(calorieRepo repositories.CalorieEntryRepository, ingredie
 	}
 }
 
-func (s *CalorieService) GetEntriesByDate(userID int, date string) ([]*models.CalorieEntry, error) {
-	// If no date provided, use today
-	if date == "" {
-		date = time.Now().Format("2006-01-02")
-	}
-
-	entries, err := s.calorieRepo.GetByUserIDAndDate(userID, date)
-	if err != nil {
-		s.logger.Error("Failed to get calorie entries", "error", err, "user_id", userID, "date", date)
-		return nil, err
-	}
-
-	// Return empty slice instead of nil for better API responses
-	if entries == nil {
-		entries = []*models.CalorieEntry{}
-	}
-
-	return entries, nil
-}
-
 type CreateEntryResult struct {
 	Entry                *models.CalorieEntry `json:"entry"`
 	NewIngredientCreated bool                 `json:"new_ingredient_created"`
@@ -119,7 +99,8 @@ func (s *CalorieService) DeleteEntry(entryID, userID int) error {
 }
 
 func (s *CalorieService) GetTotalCaloriesForDate(userID int, date string) (int, error) {
-	entries, err := s.GetEntriesByDate(userID, date)
+	// Use date range with same date for both from and to
+	entries, err := s.GetEntriesByDateRange(userID, date, date)
 	if err != nil {
 		return 0, err
 	}
@@ -158,7 +139,7 @@ func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[strin
 func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
 	entries, err := s.calorieRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
 	if err != nil {
-		s.logger.Error("Failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
+		s.logger.Error("failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
 		return nil, err
 	}
 
