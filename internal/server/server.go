@@ -9,12 +9,12 @@ import (
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/config"
-	"ypeskov/kkal-tracker/internal/middleware"
-	"ypeskov/kkal-tracker/internal/repositories"
-	"ypeskov/kkal-tracker/internal/repositories/sqlite"
 	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
+	"ypeskov/kkal-tracker/internal/middleware"
+	"ypeskov/kkal-tracker/internal/repositories"
+	"ypeskov/kkal-tracker/internal/repositories/sqlite"
 	"ypeskov/kkal-tracker/internal/routes/web"
 	"ypeskov/kkal-tracker/internal/services"
 
@@ -86,7 +86,7 @@ func (s *Server) Start() *http.Server {
 	jwtService := auth.NewJWTService(s.config.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 
-	authService := services.NewAuthService(s.userRepo, s.ingredientRepo, jwtService, s.logger)
+	authService := services.NewAuthService(s.userRepo, jwtService, s.logger)
 	calorieService := services.NewCalorieService(s.calorieRepo, s.ingredientRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
@@ -113,4 +113,3 @@ func (s *Server) Start() *http.Server {
 		Handler: e,
 	}
 }
-

@@ -26,12 +26,8 @@ class CalorieService {
     }
   }
 
-  getEntries = async (params?: { date?: string; dateFrom?: string; dateTo?: string }): Promise<CalorieEntry[]> => {
+  getEntries = async (params?: { dateFrom?: string; dateTo?: string }): Promise<CalorieEntry[]> => {
     const searchParams = new URLSearchParams()
-    
-    if (params?.date) {
-      searchParams.append('date', params.date)
-    }
     
     if (params?.dateFrom && params?.dateTo) {
       searchParams.append('dateFrom', params.dateFrom)

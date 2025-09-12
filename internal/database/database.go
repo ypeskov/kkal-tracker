@@ -2,14 +2,15 @@ package database
 
 import (
 	"database/sql"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	_ "modernc.org/sqlite"
 	"github.com/pressly/goose/v3"
+	_ "modernc.org/sqlite"
 )
 
-func New(databasePath string) (*sql.DB, error) {
+func New(databasePath string, log *slog.Logger) (*sql.DB, error) {
 	dir := filepath.Dir(databasePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, err
@@ -17,6 +18,7 @@ func New(databasePath string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite", databasePath)
 	if err != nil {
+		log.Error("failed to open database", "error", err)
 		return nil, err
 	}
 

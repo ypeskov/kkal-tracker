@@ -99,7 +99,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 
 	user, err := h.authService.GetCurrentUser(userID)
 	if err != nil {
-		if err == services.ErrUserNotFound {
+		if errors.Is(err, services.ErrUserNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, "User not found")
 		}
 		h.logger.Error("Failed to get current user", "error", err)

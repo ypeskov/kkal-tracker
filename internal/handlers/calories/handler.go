@@ -37,7 +37,6 @@ func NewHandler(calorieService *services.CalorieService, logger *slog.Logger) *H
 
 func (h *Handler) GetEntries(c echo.Context) error {
 	userID := c.Get("user_id").(int)
-	date := c.QueryParam("date")
 	dateFrom := c.QueryParam("dateFrom")
 	dateTo := c.QueryParam("dateTo")
 
@@ -47,7 +46,8 @@ func (h *Handler) GetEntries(c echo.Context) error {
 	if dateFrom != "" && dateTo != "" {
 		entries, err = h.calorieService.GetEntriesByDateRange(userID, dateFrom, dateTo)
 	} else {
-		entries, err = h.calorieService.GetEntriesByDate(userID, date)
+		// If no date parameters provided, return empty array
+		entries = []*models.CalorieEntry{}
 	}
 
 	if err != nil {

@@ -20,7 +20,6 @@ type CalorieEntryRepository interface {
 		fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
 	GetByID(id int) (*models.CalorieEntry, error)
 	GetByUserID(userID int) ([]*models.CalorieEntry, error)
-	GetByUserIDAndDate(userID int, date string) ([]*models.CalorieEntry, error)
 	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error)
 	Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64,
 		fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
