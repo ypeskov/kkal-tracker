@@ -1,6 +1,6 @@
-/* App-специфичные стили - большинство перенесено в глобальную систему */
+/* App-specific styles - most moved to global system */
 
-/* Остались только специфичные для App.tsx стили */
+/* Only App.tsx-specific styles remain */
 .app {
   min-height: 100vh;
   background-color: var(--color-gray-100);
@@ -13,7 +13,7 @@
   justify-content: center;
 }
 
-/* Переопределения для обратной совместимости */
+/* Overrides for backward compatibility */
 .login-container {
   background: var(--color-bg-primary);
   padding: var(--spacing-2xl);
@@ -29,7 +29,7 @@
   padding: var(--spacing-2xl);
 }
 
-/* Старые классы для обратной совместимости - будут постепенно удалены */
+/* Legacy classes for backward compatibility - will be gradually removed */
 .error {
   color: var(--color-error);
   margin-top: var(--spacing-sm);

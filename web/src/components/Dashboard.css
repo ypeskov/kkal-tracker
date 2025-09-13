@@ -1,4 +1,4 @@
-/* Dashboard-специфичные стили с использованием глобальной системы */
+/* Dashboard-specific styles using global system */
 .dashboard-container {
   max-width: var(--container-xl);
   margin: 0 auto;
@@ -19,35 +19,35 @@
   align-items: end;
 }
 
-/* form-group теперь в глобальной системе - убираем дублирование */
+/* form-group now in global system - removing duplication */
 
-/* form-group label теперь в глобальной системе */
+/* form-group label now in global system */
 
-/* form-group input теперь в глобальной системе */
+/* form-group input now in global system */
 
-/* focus состояния теперь в глобальной системе */
+/* focus states now in global system */
 
-/* readonly поля теперь в глобальной системе как form-input--readonly */
+/* readonly fields now in global system as form-input--readonly */
 
-/* Кнопки теперь в глобальной системе как btn btn--primary */
+/* Buttons now in global system as btn btn--primary */
 
-/* hover состояния кнопок в глобальной системе */
+/* button hover states in global system */
 
-/* disabled состояния кнопок в глобальной системе */
+/* button disabled states in global system */
 
-/* Dashboard header стили */
+/* Dashboard header styles */
 .dashboard-header {
   margin-bottom: var(--spacing-2xl);
 }
 
-/* Entry list стили теперь в специализированных файлах */
-/* entry-item теперь в components/entry-item.css */
+/* Entry list styles now in specialized files */
+/* entry-item now in components/entry-item.css */
 
-/* hover состояния теперь в entry-item.css */
+/* hover states now in entry-item.css */
 
-/* entry-header теперь в entry-item.css */
+/* entry-header now in entry-item.css */
 
-/* entry-details теперь в entry-item.css */
+/* entry-details now in entry-item.css */
 
 .total-calories {
   margin-top: var(--spacing-lg);
@@ -59,21 +59,21 @@
   text-align: center;
 }
 
-/* Date section стили теперь в entries-list.css */
+/* Date section styles now in entries-list.css */
 
-/* hover эффекты теперь в entries-list.css */
+/* hover effects now in entries-list.css */
 
-/* date-header стили теперь в entries-list.css */
+/* date-header styles now in entries-list.css */
 
-/* Collapsible стили теперь в entries-list.css */
+/* Collapsible styles now in entries-list.css */
 
-/* hover эффекты теперь в entries-list.css */
+/* hover effects now in entries-list.css */
 
-/* active состояния теперь в entries-list.css */
+/* active states now in entries-list.css */
 
 /* Mobile responsive breakpoints */
 @media (max-width: 640px) {
-  /* Date section стили теперь в entries-list.css */
+  /* Date section styles now in entries-list.css */
 }
 
 @media (max-width: 768px) {
@@ -82,7 +82,7 @@
   }
 
   /* food-form стили теперь в food-form.css */
-  /* entry-details стили теперь в entry-item.css */
+  /* entry-details styles now in entry-item.css */
 }
 
 @media (max-width: 480px) {
@@ -97,4 +97,4 @@
   }
 }
 
-/* Nutrition стили теперь в food-form.css и entries-list.css */
+/* Nutrition styles now in food-form.css and entries-list.css */
