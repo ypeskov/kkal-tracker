@@ -62,8 +62,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
     <section className="mb-8">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('dashboard.addFoodEntry')}</h2>
       <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-        <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end">
-          <div className="flex flex-col flex-1">
+        {/* Desktop: all fields in grid layout, Mobile: standard responsive */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Food name - full width on desktop and mobile */}
+          <div className="flex flex-col md:col-span-2">
             <label htmlFor="foodName" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.foodName')}:</label>
             <FoodAutocomplete
               id="foodName"
@@ -74,10 +76,9 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               required
             />
           </div>
-        </div>
 
-        <div className="flex flex-col gap-4 mb-4 sm:flex-row">
-          <div className="flex flex-col flex-1">
+          {/* Weight and Kcal in one row on desktop and mobile */}
+          <div className="flex flex-col">
             <label htmlFor="weight" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
             <input
               type="number"
@@ -91,7 +92,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             />
           </div>
 
-          <div className="flex flex-col flex-1">
+          <div className="flex flex-col">
             <label htmlFor="kcalPer100g" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
             <input
               type="number"
@@ -106,9 +107,9 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        {/* Жиры и углеводы в одной строке */}
-        <div className="flex flex-col gap-4 mb-4 sm:flex-row">
-          <div className="flex flex-col flex-1">
+        {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+          <div className="flex flex-col">
             <label htmlFor="fats" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
             <input
               type="number"
@@ -121,7 +122,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             />
           </div>
 
-          <div className="flex flex-col flex-1">
+          <div className="flex flex-col">
             <label htmlFor="carbs" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.carbs')}:</label>
             <input
               type="number"
@@ -133,11 +134,9 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               step="0.1"
             />
           </div>
-        </div>
 
-        {/* Белки в отдельной строке, 50% ширины */}
-        <div className="mb-4">
-          <div className="flex flex-col w-full sm:w-1/2">
+          {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
+          <div className="flex flex-col col-span-1 md:col-span-1">
             <label htmlFor="proteins" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
             <input
               type="number"
@@ -151,6 +150,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
+        {/* Total calories and submit button */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex flex-col flex-1">
             <label htmlFor="totalCalories" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.totalCalories')}:</label>

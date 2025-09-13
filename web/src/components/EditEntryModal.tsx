@@ -144,7 +144,8 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
             <div className="flex flex-col">
               <label htmlFor="editFats" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fats')}:</label>
               <input
@@ -171,7 +172,8 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               />
             </div>
 
-            <div className="flex flex-col">
+            {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
+            <div className="flex flex-col col-span-1 md:col-span-1">
               <label htmlFor="editProteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.proteins')}:</label>
               <input
                 type="number"
@@ -198,17 +200,16 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-4 sm:flex-row flex-col">
-            <button
-              type="button"
-              onClick={onDelete}
-              className="btn-danger px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed sm:order-1 order-2"
-              disabled={isUpdating || isDeleting}
-            >
-              {t('dashboard.delete')}
-            </button>
-
-            <div className="flex gap-3 sm:order-2 order-1">
+          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-4">
+            {/* Update and Cancel buttons together on the left */}
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
+              >
+                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
+              </button>
               <button
                 type="button"
                 onClick={onCancel}
@@ -217,14 +218,17 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               >
                 {t('dashboard.cancel')}
               </button>
-              <button
-                type="submit"
-                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
-              >
-                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
-              </button>
             </div>
+
+            {/* Delete button on the right */}
+            <button
+              type="button"
+              onClick={onDelete}
+              className="btn-danger px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isUpdating || isDeleting}
+            >
+              {t('dashboard.delete')}
+            </button>
           </div>
         </form>
       </div>

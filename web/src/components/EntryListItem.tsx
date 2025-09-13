@@ -29,17 +29,17 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
         <strong className="font-semibold w-[60%] overflow-hidden text-ellipsis whitespace-nowrap pr-2 text-gray-800">{entry.food}</strong>
         <strong className="font-semibold w-[25%] text-right flex-shrink-0 whitespace-nowrap text-gray-800">{entry.calories} {t('dashboard.kcal')}</strong>
       </div>
-      <div className="flex gap-4 text-sm text-gray-600 flex-wrap md:gap-4 sm:gap-1">
-        <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-blue-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.weight')}: {entry.weight}g</span>
-        {actualFats !== null ? (
-          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-blue-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {actualFats.toFixed(1)}g</span>
-        ) : null}
-        {actualCarbs !== null ? (
-          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-blue-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {actualCarbs.toFixed(1)}g</span>
-        ) : null}
-        {actualProteins !== null ? (
-          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-blue-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {actualProteins.toFixed(1)}g</span>
-        ) : null}
+      <div className="flex flex-wrap gap-2 text-base text-gray-600 md:flex-nowrap md:gap-4 sm:gap-1">
+        <span className="flex-shrink-0">{t('dashboard.weight')}: {entry.weight}g</span>
+        {(entry.fats !== null && entry.fats !== undefined) && (
+          <span className="flex-shrink-0">{t('dashboard.fatsConsumed')}: {actualFats?.toFixed(1)}g</span>
+        )}
+        {(entry.carbs !== null && entry.carbs !== undefined) && (
+          <span className="flex-shrink-0">{t('dashboard.carbsConsumed')}: {actualCarbs?.toFixed(1)}g</span>
+        )}
+        {(entry.proteins !== null && entry.proteins !== undefined) && (
+          <span className="flex-shrink-0">{t('dashboard.proteinsConsumed')}: {actualProteins?.toFixed(1)}g</span>
+        )}
       </div>
     </li>
   );

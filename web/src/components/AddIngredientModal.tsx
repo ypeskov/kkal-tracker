@@ -76,7 +76,8 @@ export default function AddIngredientModal({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Mobile: Proteins+Carbs in 2 cols, Fats separate | Desktop: all 3 in one row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="mb-4">
               <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
               <input
@@ -105,7 +106,8 @@ export default function AddIngredientModal({
               />
             </div>
 
-            <div className="mb-4">
+            {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
+            <div className="mb-4 col-span-1 md:col-span-1">
               <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
               <input
                 id="fats"
@@ -120,8 +122,15 @@ export default function AddIngredientModal({
             </div>
           </div>
 
-          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-4 sm:flex-row flex-col">
-            <div className="flex gap-3 sm:order-2 order-1">
+          <div className="flex justify-center items-center mt-8 pt-5 border-t border-gray-200">
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isCreating}
+              >
+                {isCreating ? t('common.creating') : t('common.create')}
+              </button>
               <button
                 type="button"
                 className="btn-secondary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
@@ -129,13 +138,6 @@ export default function AddIngredientModal({
                 disabled={isCreating}
               >
                 {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled={isCreating}
-              >
-                {isCreating ? t('common.creating') : t('common.create')}
               </button>
             </div>
           </div>
