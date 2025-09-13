@@ -10,7 +10,7 @@
     "welcome": "Добре дошли"
   },
   "dashboard": {
-    "title": "Калориен трекер",
+    "title": "C-Tracker",
     "addFoodEntry": "Нова храна",
     "foodName": "Храна",
     "weight": "Тегло (г)",

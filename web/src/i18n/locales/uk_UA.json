@@ -10,7 +10,7 @@
     "welcome": "Вітаємо"
   },
   "dashboard": {
-    "title": "Підрахунок калорій",
+    "title": "C-Tracker",
     "addFoodEntry": "Нова їжа",
     "foodName": "Їжа",
     "weight": "Вага (г)",

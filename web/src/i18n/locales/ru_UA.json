@@ -10,7 +10,7 @@
     "welcome": "Добро пожаловать"
   },
   "dashboard": {
-    "title": "Учёт калорий",
+    "title": "C-Tracker",
     "addFoodEntry": "Новая пища",
     "foodName": "Еда",
     "weight": "Вес (г)",

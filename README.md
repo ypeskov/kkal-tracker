@@ -1,4 +1,4 @@
-# Calorie Tracker
+# C-Tracker
 
 A modern calorie tracking web application built with Go/Echo backend and React/TanStack frontend.
 

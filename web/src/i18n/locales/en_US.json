@@ -10,7 +10,7 @@
     "welcome": "Welcome"
   },
   "dashboard": {
-    "title": "Calorie Tracker",
+    "title": "C-Tracker",
     "addFoodEntry": "New Food",
     "foodName": "Food",
     "weight": "Weight (g)",
