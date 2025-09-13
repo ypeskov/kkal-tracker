@@ -81,7 +81,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
 
           {/* Weight - mobile: part of horizontal pair, desktop: normal column */}
           <div className="flex flex-col md:flex-col">
-            <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 sm:hidden">
+            <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 lg:hidden">
               <label htmlFor="weight" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.weight')}:</label>
               <input
                 type="number"
@@ -107,7 +107,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             </div>
 
             {/* Desktop weight field */}
-            <div className="hidden sm:flex sm:flex-col">
+            <div className="hidden lg:flex lg:flex-col">
               <label htmlFor="weight-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
               <input
                 type="number"
@@ -123,7 +123,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
 
           {/* Calories - desktop only */}
-          <div className="hidden sm:flex sm:flex-col">
+          <div className="hidden lg:flex lg:flex-col">
             <label htmlFor="kcalPer100g-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
             <input
               type="number"
@@ -139,7 +139,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         </div>
 
         {/* Mobile: Fats+Carbs horizontal layout */}
-        <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 mb-4 sm:hidden">
+        <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 mb-4 lg:hidden">
           <label htmlFor="fats" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.fats')}:</label>
           <input
             type="number"
@@ -163,7 +163,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         </div>
 
         {/* Mobile: Proteins at 50% width */}
-        <div className="grid grid-cols-[20%_30%] gap-1 mb-4 sm:hidden">
+        <div className="grid grid-cols-[20%_30%] gap-1 mb-4 lg:hidden">
           <label htmlFor="proteins" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.proteins')}:</label>
           <input
             type="number"
@@ -177,7 +177,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         </div>
 
         {/* Desktop: all 3 in one row */}
-        <div className="hidden sm:grid sm:grid-cols-3 gap-4 mb-4">
+        <div className="hidden lg:grid lg:grid-cols-3 gap-4 mb-4">
           <div className="flex flex-col">
             <label htmlFor="fats-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
             <input
@@ -220,7 +220,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         </div>
 
         {/* Mobile: Total calories and submit button */}
-        <div className="flex items-center gap-2 mb-4 sm:hidden">
+        <div className="flex items-center gap-2 mb-4 lg:hidden">
           <label className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.totalCalories')}:</label>
           <div className="font-bold text-lg text-green-600 flex-1">
             {totalCalories} {t('dashboard.kcal')}
@@ -235,7 +235,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         </div>
 
         {/* Desktop: Total calories and submit button */}
-        <div className="hidden sm:flex sm:items-center sm:gap-4">
+        <div className="hidden lg:flex lg:items-center lg:gap-4">
           <div className="flex items-center gap-2 flex-1">
             <label className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.totalCalories')}:</label>
             <div className="font-bold text-xl text-green-600">
