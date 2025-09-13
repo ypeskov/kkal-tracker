@@ -14,6 +14,11 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
     const locale = currentLang === 'uk-UA' ? 'uk-UA' : currentLang === 'ru-UA' ? 'ru-RU' : 'en-US';
     return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   };
+  
+  // Calculate actual nutrient amounts consumed
+  const actualFats = entry.fats ? (entry.fats * entry.weight / 100) : null;
+  const actualCarbs = entry.carbs ? (entry.carbs * entry.weight / 100) : null;
+  const actualProteins = entry.proteins ? (entry.proteins * entry.weight / 100) : null;
 
   return (
     <li className="entry-item" onClick={() => onEdit(entry)} style={{ cursor: 'pointer' }}>
@@ -48,10 +53,15 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
       </div>
       <div className="entry-details">
         <span>{t('dashboard.weight')}: {entry.weight}g</span>
-        <span>{t('dashboard.kcalPer100g')}: {entry.kcalPer100g}</span>
-        {entry.fats && <span>{t('dashboard.fats')}: {entry.fats}g/100g</span>}
-        {entry.carbs && <span>{t('dashboard.carbs')}: {entry.carbs}g/100g</span>}
-        {entry.proteins && <span>{t('dashboard.proteins')}: {entry.proteins}g/100g</span>}
+        {actualFats !== null ? (
+          <span>{t('dashboard.fatsConsumed')}: {actualFats.toFixed(1)}g</span>
+        ) : null}
+        {actualCarbs !== null ? (
+          <span>{t('dashboard.carbsConsumed')}: {actualCarbs.toFixed(1)}g</span>
+        ) : null}
+        {actualProteins !== null ? (
+          <span>{t('dashboard.proteinsConsumed')}: {actualProteins.toFixed(1)}g</span>
+        ) : null}
       </div>
     </li>
   );

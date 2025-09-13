@@ -179,13 +179,13 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                         opacity: 0.8
                       }}>
                         {dailyTotals.fats > 0 && (
-                          <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                          <span>{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
                         )}
                         {dailyTotals.carbs > 0 && (
-                          <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                          <span>{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
                         )}
                         {dailyTotals.proteins > 0 && (
-                          <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                          <span>{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
                         )}
                       </div>
                     )}
@@ -228,13 +228,13 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                               fontSize: '0.9rem'
                             }}>
                               {dailyTotals.fats > 0 && (
-                                <span>{t('dashboard.fats')}: {dailyTotals.fats.toFixed(1)}g</span>
+                                <span>{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
                               )}
                               {dailyTotals.carbs > 0 && (
-                                <span>{t('dashboard.carbs')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                                <span>{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
                               )}
                               {dailyTotals.proteins > 0 && (
-                                <span>{t('dashboard.proteins')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                                <span>{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
                               )}
                             </div>
                           )}
