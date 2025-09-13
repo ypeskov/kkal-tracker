@@ -13,9 +13,9 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const { t } = useTranslation();
 
   return (
-    <header className="dashboard-header">
+    <header className="flex justify-between items-center mb-6 p-6 bg-white rounded-lg shadow-sm">
       <div>
-        <p className="welcome-message">{t('auth.welcome')}, {user?.email}!</p>
+        <p className="text-gray-800 font-medium text-lg">{t('auth.welcome')}, {user?.email}!</p>
       </div>
     </header>
   );

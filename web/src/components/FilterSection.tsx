@@ -29,16 +29,16 @@ export default function FilterSection({
   const { t } = useTranslation();
 
   return (
-    <div className="card mb-lg p-lg">
-      <div className="mb-lg">
-        <label htmlFor="filterType" className="form-group label font-bold mb-sm">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-6">
+      <div className="mb-6">
+        <label htmlFor="filterType" className="block font-bold mb-2 text-gray-800 text-sm">
           {t('dashboard.filterBy')}:
         </label>
         <select
           id="filterType"
           value={filterType}
           onChange={(e) => onFilterChange(e.target.value as FilterType)}
-          className="form-input mr-lg"
+          className="w-full px-3 py-2 mr-6 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-10 text-sm transition-colors bg-white"
         >
           <option value="today">{t('dashboard.today')}</option>
           <option value="yesterday">{t('dashboard.yesterday')}</option>
@@ -49,9 +49,9 @@ export default function FilterSection({
       </div>
       
       {filterType === 'customRange' && (
-        <div className="flex gap-lg items-center flex-wrap">
+        <div className="flex gap-6 items-center flex-wrap">
           <div>
-            <label htmlFor="dateFrom" className="form-group label mb-xs">
+            <label htmlFor="dateFrom" className="block mb-1 text-gray-800 text-sm font-medium">
               {t('dashboard.dateFrom')}:
             </label>
             <input
@@ -59,11 +59,11 @@ export default function FilterSection({
               id="dateFrom"
               value={customDateFrom}
               onChange={(e) => onCustomDateFromChange(e.target.value)}
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-10 text-sm transition-colors bg-white"
             />
           </div>
           <div>
-            <label htmlFor="dateTo" className="form-group label mb-xs">
+            <label htmlFor="dateTo" className="block mb-1 text-gray-800 text-sm font-medium">
               {t('dashboard.dateTo')}:
             </label>
             <input
@@ -71,18 +71,18 @@ export default function FilterSection({
               id="dateTo"
               value={customDateTo}
               onChange={(e) => onCustomDateToChange(e.target.value)}
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-10 text-sm transition-colors bg-white"
             />
           </div>
         </div>
       )}
       
-      <div className="mt-lg p-md bg-success-light rounded-sm font-bold text-success-dark">
-        <div className="mb-sm">
+      <div className="mt-6 p-4 bg-green-50 rounded border border-green-200 font-bold text-green-800">
+        <div className="mb-2">
           {t('dashboard.totalCaloriesFiltered')} {nutritionTotals.calories} {t('dashboard.kcal')}
         </div>
         {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0) && (
-          <div className="flex gap-lg text-sm flex-wrap">
+          <div className="flex gap-6 text-sm flex-wrap">
             {nutritionTotals.fats > 0 && (
               <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)}g</span>
             )}

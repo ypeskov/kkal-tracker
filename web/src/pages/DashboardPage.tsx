@@ -8,7 +8,7 @@ import FilterSection from '../components/FilterSection';
 import CalorieEntriesList from '../components/CalorieEntriesList';
 import EditEntryModal from '../components/EditEntryModal';
 import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
-import '../components/Dashboard.css';
+// Dashboard.css imports removed - using Tailwind CSS
 import { useRouteContext } from '@tanstack/react-router';
 import { RouterContext } from '../router';
 
@@ -135,7 +135,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="max-w-screen-xl mx-auto px-4 py-8 md:px-6 lg:px-8">
       <DashboardHeader user={user} />
 
       <AddFoodEntryForm 
@@ -154,7 +154,9 @@ export default function DashboardPage() {
       />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <div className="flex items-center justify-center py-8">
+          <p className="text-gray-600">Loading...</p>
+        </div>
       ) : (
         <CalorieEntriesList 
           entries={entries || []} 

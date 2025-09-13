@@ -201,41 +201,4 @@ th {
 }
 */
 
-/* === TEMPORARY COMPATIBILITY STYLES === */
-
-/* Backward compatibility with old classes */
-.error {
-  color: var(--color-error);
-  margin-top: var(--spacing-sm);
-}
-
-/* Transitional styles to be removed after refactoring */
-.btn.submit-btn {
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-  min-width: var(--button-min-width);
-  height: var(--button-height);
-  align-self: flex-end;
-}
-
-.btn.submit-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-}
-
-.btn.submit-btn:disabled {
-  background-color: var(--color-gray-500);
-  cursor: not-allowed;
-}
-
-/* Old Dashboard.css classes for backward compatibility */
-.readonly-field {
-  background-color: var(--color-bg-disabled) !important;
-  cursor: not-allowed !important;
-  color: var(--color-gray-600);
-}
+/* Note: All component-specific styles have been migrated to Tailwind CSS */

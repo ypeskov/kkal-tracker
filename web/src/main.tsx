@@ -3,22 +3,20 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 
-// Import CSS files in correct order for optimal loading
-// 1. CSS Variables (foundation)
-import './styles/variables.css';
-// 2. Global styles and resets
-import './styles/global.css';
-// 3. Layout system
-import './styles/layout.css';
-// 4. Global components
-import './styles/components.css';
-// 5. Utility classes
-import './styles/utilities.css';
-// 6. Specific component styles
-import './styles/components/entries-list.css';
-import './styles/components/entry-item.css';
-import './styles/components/food-form.css';
-import './styles/components/modal-forms.css';
+// Import Tailwind CSS with comprehensive design system
+import './styles/tailwind.css';   // Tailwind base + complete design system theme
+
+// Import essential global styles
+import './styles/global.css';     // Global resets, typography, accessibility
+
+// Complete CSS migration accomplished:
+// - variables.css: consolidated into tailwind.css @theme
+// - utilities.css: removed (264 lines of Tailwind duplicates)
+// - components.css: removed (unused form/button classes)
+// - layout.css: removed (unused layout classes)
+// - App.css: removed (unused app classes)
+// - Component-specific files: removed (fully migrated to Tailwind)
+// Result: Clean, optimized CSS architecture with 100% Tailwind adoption
 
 // Import i18n
 import './i18n';

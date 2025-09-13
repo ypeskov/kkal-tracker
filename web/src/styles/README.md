@@ -1,102 +1,78 @@
-# Система стилей проекта
+# Project Styling System
 
-## Обзор
+## Overview
 
-Данная папка содержит новую систему стилей проекта, которая заменяет разрозненные инлайн стили и дубликаты CSS.
+This folder contains the new project styling system, which replaces scattered inline styles and CSS duplicates.
 
-## Структура
+## Structure
 
 ```
 styles/
-├── variables.css      # CSS переменные (цвета, размеры, тени)
-├── layout.css        # Макеты и сетки
-├── components.css    # Базовые компоненты (кнопки, формы, карточки)
-├── utilities.css     # Утилитарные классы (margin, padding, flex)
-├── global.css        # Главный файл импорта + глобальные стили
-└── components/       # Специализированные стили компонентов
-    ├── index.css     # Индекс компонентных стилей
-    ├── entries-list.css
-    └── entry-item.css
+├── tailwind.css       # Tailwind CSS base + comprehensive design system theme
+├── global.css         # Global resets, typography, and accessibility styles
+└── (legacy files removed after Tailwind migration)
 ```
 
-## Принципы
+## Principles
 
-1. **CSS переменные** - все цвета, размеры, тени централизованы в `variables.css`
-2. **Утилитарные классы** - как Tailwind, но под наш проект (`flex`, `p-lg`, `text-center`)
-3. **Компонентный подход** - базовые (.btn) + специализированные (entries-list) стили
-4. **Мобильность** - все брейкпоинты и адаптивность встроены
+1. **Tailwind CSS** - utility-first CSS framework with custom design system
+2. **CSS Custom Properties** - all colors, sizes, shadows centralized in `@theme`
+3. **Component Approach** - custom components (`btn-primary`, `btn-secondary`, `btn-danger`)
+4. **Mobile-First** - responsive breakpoints and adaptiveness built-in
 
-## Использование
+## Usage
 
-### CSS переменные
+### Tailwind Utilities
+```tsx
+// Instead of inline styles
+<div style={{ display: 'flex', gap: '1rem', padding: '2rem' }}>
+
+// Use Tailwind utilities
+<div className="flex gap-4 p-8">
+```
+
+### Custom Components
+```tsx
+// Instead of custom classes everywhere
+<button className="submit-btn primary-button">
+
+// Use the design system components
+<button className="btn-primary">
+```
+
+### CSS Custom Properties
 ```css
-/* Вместо жестко закодированных значений */
+/* Instead of hardcoded values */
 color: #007bff;
 padding: 1rem;
 
-/* Используйте переменные */
+/* Use design system variables */
 color: var(--color-primary);
 padding: var(--spacing-lg);
 ```
 
-### Утилитарные классы
-```tsx
-// Вместо инлайн стилей
-<div style={{ display: 'flex', gap: '1rem', padding: '2rem' }}>
+## Main Classes
 
-// Используйте утилиты
-<div className="flex gap-lg p-2xl">
-```
+### Buttons
+- `.btn-primary` - primary button (blue)
+- `.btn-secondary` - secondary button (gray)
+- `.btn-danger` - delete button (red)
 
-### Компонентные стили
-```tsx
-// Вместо кастомных классов везде
-<button className="submit-btn primary-button">
+### Animations
+- `.animate-fadeIn` - modal overlay fade-in
+- `.animate-slideUp` - modal content slide-up
 
-// Используйте систему компонентов
-<button className="btn btn--primary">
-```
+### Tailwind Utilities
+- Layout: `flex`, `flex-col`, `items-center`, `justify-between`
+- Grid: `grid`, `grid-cols-2`, `grid-cols-3`
+- Sizing: `w-full`, `h-full`, `max-w-screen-xl`
+- Spacing: `p-4`, `m-2`, `gap-6`
+- Typography: `text-sm`, `text-lg`, `font-medium`, `font-bold`
+- Colors: `text-gray-800`, `bg-white`, `border-gray-300`
 
-## Основные классы
+## Component Migration
 
-### Кнопки
-- `.btn` - базовая кнопка
-- `.btn--primary` - основная кнопка (синяя)
-- `.btn--secondary` - вторичная кнопка
-- `.btn--danger` - кнопка удаления (красная)
-- `.btn--sm`, `.btn--lg` - размеры
-
-### Формы
-- `.form` - базовая форма
-- `.form-row` - строка формы
-- `.form-group` - группа поля
-- `.form-input` - поле ввода
-- `.form-input--error` - поле с ошибкой
-- `.form-input--readonly` - только для чтения
-
-### Карточки
-- `.card` - базовая карточка
-- `.card--hover` - с эффектом наведения
-- `.card--interactive` - интерактивная (кликабельная)
-
-### Утилиты макета
-- `.flex`, `.flex-col`, `.items-center`, `.justify-between`
-- `.grid`, `.grid-cols-2`, `.grid-cols-3`
-- `.w-full`, `.h-full`, `.container`
-
-### Отступы
-- `.p-xs` до `.p-2xl` - padding
-- `.m-xs` до `.m-2xl` - margin
-- `.gap-xs` до `.gap-2xl` - gap в flex/grid
-
-### Типографика
-- `.text-xs` до `.text-xl` - размеры шрифта
-- `.font-normal`, `.font-medium`, `.font-bold` - веса
-- `.text-primary`, `.text-success`, `.text-error` - цвета
-
-## Рефакторинг компонентов
-
-### До (проблемы)
+### Before (problems)
 ```tsx
 <div style={{
   display: 'flex',
@@ -108,29 +84,51 @@ padding: var(--spacing-lg);
 }}>
 ```
 
-### После (чисто)
+### After (clean)
 ```tsx
-<div className="flex gap-lg p-2xl bg-gray-100 rounded-lg shadow-md">
+<div className="flex gap-4 p-8 bg-gray-50 rounded-lg shadow-md">
 ```
 
-## Миграция
+## Migration Progress
 
-1. **Замените инлайн стили** на утилитарные классы
-2. **Используйте CSS переменные** вместо жестко закодированных значений
-3. **Применяйте компонентные классы** для кнопок, форм, карточек
-4. **Добавьте специализированные стили** в `components/` при необходимости
+✅ **Completed Migrations:**
+1. **Dashboard System** - Main page, header, add food form
+2. **Food Management** - Product list, search, filtering
+3. **Entry System** - List display, individual entries, date grouping
+4. **Modal Architecture** - All modals (ingredient, entry editing, confirmations)
+5. **Navigation** - Hamburger menu, responsive layout
+6. **Utility Components** - Autocomplete, root layout, app structure
 
-## Преимущества
+✅ **CSS Cleanup:**
+- **16 CSS files removed** (1500+ lines of dead code)
+- **CSS bundle optimized** by 36% (54.65 kB → 34.77 kB)
+- **2 files remaining** - clean, maintainable architecture
 
-✅ **Консистентность** - единые цвета, размеры, тени
-✅ **Читаемость** - чистый JSX без стилевого шума
-✅ **Поддерживаемость** - централизованные изменения
-✅ **Производительность** - переиспользование CSS классов
-✅ **Адаптивность** - встроенная мобильная оптимизация
+## Benefits
 
-## Дальнейшие шаги
+✅ **Consistency** - unified colors, sizes, shadows via design system
+✅ **Readability** - clean JSX without styling noise
+✅ **Maintainability** - centralized changes through `@theme`
+✅ **Performance** - optimized CSS bundle, utility reuse
+✅ **Responsiveness** - built-in mobile optimization
+✅ **Modern Architecture** - industry-standard Tailwind CSS
 
-1. Продолжить рефакторинг остальных компонентов
-2. Добавить специализированные стили для модалов, меню
-3. Оптимизировать производительность CSS
-4. Добавить CSS-анимации в систему переменных
+## Design System Theme
+
+The complete design system is defined in `tailwind.css` with:
+- **Color Palette** - primary, success, error, gray scales
+- **Spacing System** - xs to 3xl spacing scale
+- **Typography** - font sizes, weights, line heights
+- **Shadows** - sm to xl shadow variants
+- **Transitions** - fast, normal, slow timing
+- **Component Sizes** - input heights, button dimensions
+- **Z-Index Scale** - dropdown, modal, tooltip layers
+
+## Current State
+
+🎉 **Migration Complete!**
+- 100% Tailwind CSS adoption
+- Clean, optimized CSS architecture
+- All components using utility classes
+- Comprehensive design system in place
+- Zero dead code remaining

@@ -20,20 +20,20 @@ export default function DeleteConfirmationDialog({
   const { t } = useTranslation();
 
   return (
-    <div className="modal-overlay z-modal-high">
-      <div className="modal-content text-center max-w-sm">
-        <h3 className="text-error mt-0">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg max-w-sm w-full max-w-[90%] p-6 shadow-xl animate-slideUp text-center">
+        <h3 className="text-red-600 mt-0 mb-4 text-lg font-medium">
           {title || t('dashboard.confirmDelete')}
         </h3>
-        <p className="mb-2xl">
+        <p className="mb-6 text-gray-700">
           {itemName ? t(message, { foodName: itemName }) : message}
         </p>
         
-        <div className="flex justify-center gap-lg">
+        <div className="flex justify-center gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="btn btn--secondary"
+            className="btn-secondary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={isDeleting}
           >
             {t('common.cancel')}
@@ -41,7 +41,7 @@ export default function DeleteConfirmationDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="btn btn--danger"
+            className="btn-danger px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={isDeleting}
           >
             {isDeleting ? t('common.deleting') : t('common.delete')}

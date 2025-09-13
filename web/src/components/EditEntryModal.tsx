@@ -67,76 +67,76 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   if (!entry) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>{t('dashboard.editEntry')}</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-w-[90%] max-h-[90vh] overflow-y-auto shadow-xl animate-slideUp">
+        <div className="flex justify-between items-center p-5 border-b border-gray-200">
+          <h2 className="text-xl font-medium text-gray-800 m-0">{t('dashboard.editEntry')}</h2>
         </div>
         
-        <form onSubmit={handleUpdateSubmit} className="modal-form">
-          <div className="form-row modal-food-name-row">
-            <div className="form-group">
-              <label htmlFor="editFoodName">{t('dashboard.foodName')}:</label>
+        <form onSubmit={handleUpdateSubmit} className="p-5">
+          <div className="flex flex-col md:flex-row gap-4 mb-4 items-stretch md:items-end">
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editFoodName" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.foodName')}:</label>
               <input
                 type="text"
                 id="editFoodName"
                 value={editFoodName}
                 onChange={(e) => setEditFoodName(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
               />
             </div>
           </div>
 
-          <div className="form-row modal-date-time-row">
-            <div className="form-group">
-              <label htmlFor="editDate">{t('dashboard.date')}:</label>
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editDate" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.date')}:</label>
               <input
                 type="date"
                 id="editDate"
                 value={editDate}
                 onChange={(e) => setEditDate(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="editTime">{t('dashboard.time')}:</label>
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editTime" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.time')}:</label>
               <input
                 type="time"
                 id="editTime"
                 value={editTime}
                 onChange={(e) => setEditTime(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
               />
             </div>
           </div>
           
-          <div className="form-row modal-weight-calories-row">
-            <div className="form-group">
-              <label htmlFor="editWeight">{t('dashboard.weight')}:</label>
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editWeight" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.weight')}:</label>
               <input
                 type="number"
                 id="editWeight"
                 value={editWeight}
                 onChange={(e) => setEditWeight(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
                 min="0"
                 step="0.1"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="editKcalPer100g">{t('dashboard.kcalPer100g')}:</label>
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editKcalPer100g" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.kcalPer100g')}:</label>
               <input
                 type="number"
                 id="editKcalPer100g"
                 value={editKcalPer100g}
                 onChange={(e) => setEditKcalPer100g(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
                 min="0"
                 step="0.1"
@@ -144,87 +144,87 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="form-row modal-fats-carbs-proteins-row">
-            <div className="form-group">
-              <label htmlFor="editFats">{t('dashboard.fats')}:</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="flex flex-col">
+              <label htmlFor="editFats" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fats')}:</label>
               <input
                 type="number"
                 id="editFats"
                 value={editFats}
                 onChange={(e) => setEditFats(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 min="0"
                 step="0.1"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="editCarbs">{t('dashboard.carbs')}:</label>
+            <div className="flex flex-col">
+              <label htmlFor="editCarbs" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.carbs')}:</label>
               <input
                 type="number"
                 id="editCarbs"
                 value={editCarbs}
                 onChange={(e) => setEditCarbs(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 min="0"
                 step="0.1"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="editProteins">{t('dashboard.proteins')}:</label>
+            <div className="flex flex-col">
+              <label htmlFor="editProteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.proteins')}:</label>
               <input
                 type="number"
                 id="editProteins"
                 value={editProteins}
                 onChange={(e) => setEditProteins(e.target.value)}
-                className="form-input"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 min="0"
                 step="0.1"
               />
             </div>
           </div>
 
-          <div className="form-row modal-total-calories-row">
-            <div className="form-group">
-              <label htmlFor="editTotalCalories">{t('dashboard.totalCalories')}:</label>
+          <div className="flex flex-col md:flex-row gap-4 mb-4 items-stretch md:items-end">
+            <div className="flex flex-col flex-1">
+              <label htmlFor="editTotalCalories" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.totalCalories')}:</label>
               <input
                 type="number"
                 id="editTotalCalories"
                 value={editTotalCalories}
                 readOnly
-                className="form-input form-input--readonly"
+                className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 cursor-not-allowed text-gray-600"
               />
             </div>
           </div>
 
-          <div className="modal-actions">
-            <div className="modal-actions-right">
-              <button
-                type="submit"
-                className="btn btn--success"
-                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
-              >
-                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
-              </button>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="btn btn--secondary"
-                disabled={isUpdating || isDeleting}
-              >
-                {t('dashboard.cancel')}
-              </button>
-            </div>
-            
+          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-4 sm:flex-row flex-col">
             <button
               type="button"
               onClick={onDelete}
-              className="btn btn--danger"
+              className="btn-danger px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed sm:order-1 order-2"
               disabled={isUpdating || isDeleting}
             >
               {t('dashboard.delete')}
             </button>
+
+            <div className="flex gap-3 sm:order-2 order-1">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="btn-secondary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isUpdating || isDeleting}
+              >
+                {t('dashboard.cancel')}
+              </button>
+              <button
+                type="submit"
+                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
+              >
+                {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
