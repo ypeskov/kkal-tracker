@@ -1,2 +1,1 @@
-/* Import global style system */
-@import './styles/global.css';
+/* Global styles are now imported directly in main.tsx for better performance */

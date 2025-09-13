@@ -1,11 +1,4 @@
-/* Main global styles file - imports all style systems */
-
-/* Import of main style files */
-@import './variables.css';
-@import './layout.css';
-@import './components.css';
-@import './utilities.css';
-@import './components/index.css';
+/* Main global styles file - all style imports now handled in main.tsx for better performance */
 
 /* === GLOBAL STYLE RESET === */
 

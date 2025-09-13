@@ -1,18 +1,16 @@
-/* Component styles index - imports all component styles */
-
-/* Specialized component styles */
-@import './entries-list.css';
-@import './entry-item.css';
-@import './food-form.css';
-@import './modal-forms.css';
+/* Component styles index - all component imports now handled in main.tsx for better performance */
 
 /*
-  Other component styles will be added here as refactoring continues:
+  Component styles are imported directly in main.tsx:
+  - entries-list.css
+  - entry-item.css
+  - food-form.css
+  - modal-forms.css
 
-  @import './filter-section.css';
-  @import './hamburger-menu.css';
-  @import './language-switcher.css';
-  @import './dashboard-header.css';
-
+  Future component styles will also be added to main.tsx:
+  - filter-section.css
+  - hamburger-menu.css
+  - language-switcher.css
+  - dashboard-header.css
   etc.
 */
