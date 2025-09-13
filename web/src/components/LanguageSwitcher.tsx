@@ -14,22 +14,17 @@ export default function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-sm my-lg">
-      <label htmlFor="language-select" className="text-sm font-medium">
-        {t('language.select')}:
-      </label>
-      <select
-        id="language-select"
-        value={i18n.language}
-        onChange={(e) => changeLanguage(e.target.value)}
-        className="form-input"
-      >
-        {languages.map((language) => (
-          <option key={language.code} value={language.code}>
-            {t(language.name)}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      id="language-select"
+      value={i18n.language}
+      onChange={(e) => changeLanguage(e.target.value)}
+      className="form-input"
+    >
+      {languages.map((language) => (
+        <option key={language.code} value={language.code}>
+          {t(language.name)}
+        </option>
+      ))}
+    </select>
   )
 }

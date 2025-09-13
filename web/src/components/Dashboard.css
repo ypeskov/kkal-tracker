@@ -37,16 +37,7 @@
 
 /* Dashboard header стили */
 .dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: var(--spacing-2xl);
-}
-
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
 }
 
 /* Entry list стили теперь в специализированных файлах */
@@ -82,11 +73,6 @@
 
 /* Mobile responsive breakpoints */
 @media (max-width: 640px) {
-  .header-controls {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
   /* Date section стили теперь в entries-list.css */
 }
 
@@ -107,23 +93,7 @@
   /* food-form стили теперь в food-form.css */
 
   .dashboard-header {
-    flex-direction: column !important;
-    gap: var(--spacing-lg);
     text-align: center;
-  }
-
-  .dashboard-header > div:first-child {
-    text-align: center;
-  }
-
-  .header-controls {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    width: 100%;
-  }
-
-  .header-controls button {
-    width: 100%;
   }
 }
 
