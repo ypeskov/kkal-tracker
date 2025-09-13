@@ -1,0 +1,240 @@
+/* Стили для списка записей калорий - CalorieEntriesList компонент */
+
+/* === ОСНОВНОЙ КОНТЕЙНЕР === */
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* === СЕКЦИЯ ДАТЫ === */
+
+.date-section {
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: all var(--transition-normal);
+}
+
+.date-section:hover {
+  transform: translateX(2px);
+}
+
+.date-section--primary {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-tertiary);
+}
+
+.date-section--secondary {
+  background: var(--color-bg-success);
+  border-color: var(--color-border-success);
+}
+
+/* === ЗАГОЛОВОК ДАТЫ === */
+
+.date-header {
+  margin: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.date-header--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.date-header--clickable:hover {
+  transform: translateX(3px);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.date-header--clickable:active {
+  transform: translateX(1px);
+}
+
+.date-header--primary {
+  color: #1a5490;
+  background: linear-gradient(90deg, #ffffff, #f8fbff);
+  border-left: 5px solid var(--color-border-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.date-header--secondary {
+  color: #2d6a4f;
+  background: linear-gradient(90deg, #ffffff, #f0fdf4);
+  border-left: 5px solid var(--color-success-alt);
+  box-shadow: var(--shadow-success);
+}
+
+.date-header--expanded {
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.date-header--collapsed {
+  margin: 0;
+}
+
+/* === СОДЕРЖИМОЕ ЗАГОЛОВКА === */
+
+.date-header__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.date-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.date-header__toggle {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: transform var(--transition-fast);
+}
+
+.date-header__toggle--expanded {
+  transform: rotate(0deg);
+}
+
+.date-header__toggle--collapsed {
+  transform: rotate(-90deg);
+}
+
+.date-header__calories {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+}
+
+/* === СВОДКА ПИТАТЕЛЬНЫХ ВЕЩЕСТВ === */
+
+.nutrients-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+  opacity: 0.8;
+}
+
+.nutrients-summary__item {
+  flex: 0 0 auto;
+}
+
+/* === СПИСОК ЗАПИСЕЙ === */
+
+.entries-list__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* === ИТОГИ ДНЯ === */
+
+.daily-totals {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-medium);
+}
+
+.daily-totals__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.daily-totals__label {
+  color: var(--color-gray-700);
+}
+
+.daily-totals__calories {
+  color: var(--color-success);
+}
+
+.daily-totals__nutrients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.daily-totals__nutrient {
+  flex: 0 0 auto;
+}
+
+/* === ПУСТОЕ СОСТОЯНИЕ === */
+
+.entries-list__empty {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-gray-600);
+}
+
+/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
+
+@media (max-width: 640px) {
+  .date-section {
+    padding: var(--spacing-sm) !important;
+    margin-bottom: var(--spacing-lg) !important;
+  }
+
+  .date-header {
+    font-size: var(--font-size-base) !important;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Сводка питательных веществ - 2 в ряд на мобильных */
+  .nutrients-summary {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: var(--spacing-xs) !important;
+  }
+
+  .nutrients-summary__item {
+    flex: 0 0 calc(50% - var(--spacing-xs) / 2);
+    text-align: center;
+    padding: var(--spacing-xs);
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-tight);
+  }
+
+  /* Итоги дня - питательные вещества 2 в ряд */
+  .daily-totals__nutrients {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: var(--spacing-xs) !important;
+  }
+
+  .daily-totals__nutrient {
+    flex: 0 0 calc(50% - var(--spacing-xs) / 2);
+    text-align: center;
+    padding: var(--spacing-xs);
+    background-color: var(--color-success-light);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-tight);
+  }
+}

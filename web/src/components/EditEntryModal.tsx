@@ -67,32 +67,14 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   if (!entry) return null;
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      zIndex: 1000,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '1rem'
-    }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
-        padding: '2rem', 
-        maxWidth: '500px', 
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
-        <h2 style={{ marginTop: 0 }}>{t('dashboard.editEntry')}</h2>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{t('dashboard.editEntry')}</h2>
+        </div>
         
-        <form onSubmit={handleUpdateSubmit}>
-          <div className="form-row">
+        <form onSubmit={handleUpdateSubmit} className="modal-form">
+          <div className="form-row modal-food-name-row">
             <div className="form-group">
               <label htmlFor="editFoodName">{t('dashboard.foodName')}:</label>
               <input
@@ -100,12 +82,13 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editFoodName"
                 value={editFoodName}
                 onChange={(e) => setEditFoodName(e.target.value)}
+                className="form-input"
                 required
               />
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="form-row modal-date-time-row">
             <div className="form-group">
               <label htmlFor="editDate">{t('dashboard.date')}:</label>
               <input
@@ -113,6 +96,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editDate"
                 value={editDate}
                 onChange={(e) => setEditDate(e.target.value)}
+                className="form-input"
                 required
               />
             </div>
@@ -124,12 +108,13 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editTime"
                 value={editTime}
                 onChange={(e) => setEditTime(e.target.value)}
+                className="form-input"
                 required
               />
             </div>
           </div>
           
-          <div className="form-row">
+          <div className="form-row modal-weight-calories-row">
             <div className="form-group">
               <label htmlFor="editWeight">{t('dashboard.weight')}:</label>
               <input
@@ -137,6 +122,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editWeight"
                 value={editWeight}
                 onChange={(e) => setEditWeight(e.target.value)}
+                className="form-input"
                 required
                 min="0"
                 step="0.1"
@@ -150,6 +136,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editKcalPer100g"
                 value={editKcalPer100g}
                 onChange={(e) => setEditKcalPer100g(e.target.value)}
+                className="form-input"
                 required
                 min="0"
                 step="0.1"
@@ -157,7 +144,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="form-row modal-fats-carbs-proteins-row">
             <div className="form-group">
               <label htmlFor="editFats">{t('dashboard.fats')}:</label>
               <input
@@ -165,6 +152,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editFats"
                 value={editFats}
                 onChange={(e) => setEditFats(e.target.value)}
+                className="form-input"
                 min="0"
                 step="0.1"
               />
@@ -177,6 +165,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editCarbs"
                 value={editCarbs}
                 onChange={(e) => setEditCarbs(e.target.value)}
+                className="form-input"
                 min="0"
                 step="0.1"
               />
@@ -189,13 +178,14 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editProteins"
                 value={editProteins}
                 onChange={(e) => setEditProteins(e.target.value)}
+                className="form-input"
                 min="0"
                 step="0.1"
               />
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="form-row modal-total-calories-row">
             <div className="form-group">
               <label htmlFor="editTotalCalories">{t('dashboard.totalCalories')}:</label>
               <input
@@ -203,44 +193,34 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 id="editTotalCalories"
                 value={editTotalCalories}
                 readOnly
-                className="readonly-field"
+                className="form-input form-input--readonly"
               />
             </div>
           </div>
 
-          <div style={{ 
-            marginTop: '2rem', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            width: '100%',
-            gap: '1rem'
-          }} className="modal-button-container">
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button 
-                type="submit" 
-                className="modal-btn"
+          <div className="modal-actions">
+            <div className="modal-actions-right">
+              <button
+                type="submit"
+                className="btn btn--success"
                 disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
-                style={{ backgroundColor: '#28a745' }}
               >
                 {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={onCancel}
-                className="modal-btn"
-                style={{ backgroundColor: '#6c757d' }}
+                className="btn btn--secondary"
                 disabled={isUpdating || isDeleting}
               >
                 {t('dashboard.cancel')}
               </button>
             </div>
             
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onDelete}
-              className="modal-btn"
-              style={{ backgroundColor: '#dc3545' }}
+              className="btn btn--danger"
               disabled={isUpdating || isDeleting}
             >
               {t('dashboard.delete')}

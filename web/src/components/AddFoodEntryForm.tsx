@@ -59,10 +59,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   const isButtonDisabled = isSubmitting || !foodName || !weight || !kcalPer100g;
 
   return (
-    <section style={{ marginBottom: '2rem' }}>
+    <section className="section">
       <h2>{t('dashboard.addFoodEntry')}</h2>
-      <form onSubmit={handleSubmit} className="food-form">
-        <div className="form-row">
+      <form onSubmit={handleSubmit} className="food-form form">
+        <div className="form-row food-name-row">
           <div className="form-group">
             <label htmlFor="foodName">{t('dashboard.foodName')}:</label>
             <FoodAutocomplete
@@ -76,7 +76,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        <div className="form-row">
+        <div className="form-row weight-calories-row">
           <div className="form-group">
             <label htmlFor="weight">{t('dashboard.weight')}:</label>
             <input
@@ -84,6 +84,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="weight"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
+              className="form-input"
               required
               min="0"
               step="0.1"
@@ -97,6 +98,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="kcalPer100g"
               value={kcalPer100g}
               onChange={(e) => setKcalPer100g(e.target.value)}
+              className="form-input"
               required
               min="0"
               step="0.1"
@@ -104,7 +106,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        <div className="form-row">
+        <div className="form-row fats-carbs-proteins-row">
           <div className="form-group">
             <label htmlFor="fats">{t('dashboard.fats')}:</label>
             <input
@@ -112,6 +114,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="fats"
               value={fats}
               onChange={(e) => setFats(e.target.value)}
+              className="form-input"
               min="0"
               step="0.1"
             />
@@ -124,6 +127,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="carbs"
               value={carbs}
               onChange={(e) => setCarbs(e.target.value)}
+              className="form-input"
               min="0"
               step="0.1"
             />
@@ -136,13 +140,14 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="proteins"
               value={proteins}
               onChange={(e) => setProteins(e.target.value)}
+              className="form-input"
               min="0"
               step="0.1"
             />
           </div>
         </div>
 
-        <div className="form-row">
+        <div className="form-row total-submit-row">
           <div className="form-group">
             <label htmlFor="totalCalories">{t('dashboard.totalCalories')}:</label>
             <input
@@ -150,13 +155,13 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               id="totalCalories"
               value={totalCalories}
               readOnly
-              className="readonly-field"
+              className="form-input form-input--readonly"
             />
           </div>
 
           <button
             type="submit"
-            className="btn submit-btn"
+            className="btn btn--primary"
             disabled={isButtonDisabled}
           >
             {isSubmitting ? t('common.loading') + '...' : t('dashboard.addEntry')}

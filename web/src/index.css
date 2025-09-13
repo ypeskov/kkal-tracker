@@ -1,8 +1,2 @@
-* {
-  box-sizing: border-box;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-}
+/* Импорт глобальной системы стилей */
+@import './styles/global.css';

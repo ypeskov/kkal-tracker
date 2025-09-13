@@ -118,6 +118,7 @@ export default function FoodAutocomplete({
         placeholder={placeholder}
         required={required}
         autoComplete="off"
+        className="form-input"
       />
       
       {showSuggestions && suggestions.length > 0 && (

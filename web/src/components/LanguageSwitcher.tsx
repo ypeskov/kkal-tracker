@@ -14,19 +14,15 @@ export default function LanguageSwitcher() {
   }
 
   return (
-    <div className="language-switcher" style={{ margin: '1rem 0' }}>
-      <label htmlFor="language-select" style={{ marginRight: '0.5rem' }}>
+    <div className="flex items-center gap-sm my-lg">
+      <label htmlFor="language-select" className="text-sm font-medium">
         {t('language.select')}:
       </label>
       <select
         id="language-select"
         value={i18n.language}
         onChange={(e) => changeLanguage(e.target.value)}
-        style={{
-          padding: '0.25rem',
-          borderRadius: '4px',
-          border: '1px solid #ccc'
-        }}
+        className="form-input"
       >
         {languages.map((language) => (
           <option key={language.code} value={language.code}>

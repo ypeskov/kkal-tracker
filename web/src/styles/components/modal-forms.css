@@ -1,0 +1,147 @@
+/* Специализированные стили для форм в модальных окнах */
+
+/* === ФОРМА РЕДАКТИРОВАНИЯ ЗАПИСИ === */
+
+.modal-form .form-row {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  align-items: end;
+}
+
+/* === КНОПКИ МОДАЛОВ === */
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border-light);
+  gap: var(--spacing-lg);
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+/* === МОБИЛЬНЫЕ СТИЛИ С КОНКРЕТНЫМИ КЛАССАМИ === */
+
+@media (max-width: 768px) {
+  /* Название еды - полная ширина */
+  .modal-food-name-row {
+    flex-direction: column !important;
+    gap: var(--spacing-md) !important;
+    align-items: stretch !important;
+  }
+
+  .modal-food-name-row .form-group {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Дата и время - 2 в ряд */
+  .modal-date-time-row {
+    flex-direction: row !important;
+    gap: var(--spacing-md) !important;
+  }
+
+  .modal-date-time-row .form-group {
+    flex: 1 !important;
+    min-width: calc(50% - var(--spacing-md) / 2) !important;
+    max-width: calc(50% - var(--spacing-md) / 2) !important;
+  }
+
+  /* Вес и калории - 2 в ряд */
+  .modal-weight-calories-row {
+    flex-direction: row !important;
+    gap: var(--spacing-md) !important;
+  }
+
+  .modal-weight-calories-row .form-group {
+    flex: 1 !important;
+    min-width: calc(50% - var(--spacing-md) / 2) !important;
+    max-width: calc(50% - var(--spacing-md) / 2) !important;
+  }
+
+  /* Разбиваем нутриенты на мобильных: жиры+углеводы в первой строке, белки во второй */
+  .modal-fats-carbs-proteins-row {
+    display: block !important;
+  }
+
+  .modal-fats-carbs-proteins-row .form-group:nth-child(1),
+  .modal-fats-carbs-proteins-row .form-group:nth-child(2) {
+    display: inline-block !important;
+    width: calc(50% - var(--spacing-md) / 2) !important;
+    margin-right: var(--spacing-md) !important;
+    vertical-align: top !important;
+  }
+
+  .modal-fats-carbs-proteins-row .form-group:nth-child(2) {
+    margin-right: 0 !important;
+  }
+
+  .modal-fats-carbs-proteins-row .form-group:nth-child(3) {
+    display: block !important;
+    width: calc(50% - var(--spacing-md) / 2) !important;
+    margin-top: var(--spacing-md) !important;
+  }
+
+  /* Общие калории */
+  .modal-total-calories-row {
+    flex-direction: column !important;
+    gap: var(--spacing-md) !important;
+    align-items: stretch !important;
+  }
+
+  .modal-total-calories-row .form-group {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Кнопки в модале - адаптивный лейаут */
+  .modal-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    align-items: center;
+  }
+
+  .modal-actions-right {
+    display: flex;
+    justify-content: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  /* Кнопки на мобильных - компактные */
+  .modal-actions .btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  /* На маленьких экранах кнопки в две строки */
+  .modal-actions {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+
+  .modal-actions-right {
+    order: 1;
+    justify-content: center;
+    gap: var(--spacing-sm);
+  }
+
+  .modal-actions .btn--danger {
+    order: 2;
+    align-self: center;
+  }
+
+  .modal-actions .btn {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+}

@@ -37,6 +37,7 @@ export default function Login({ onLogin }: LoginProps) {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="form-input"
             required
           />
         </div>
@@ -48,20 +49,21 @@ export default function Login({ onLogin }: LoginProps) {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="form-input"
             required
           />
         </div>
 
-        <button 
-          type="submit" 
-          className="btn"
+        <button
+          type="submit"
+          className="btn btn--primary btn--full"
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? t('auth.loggingIn') : t('auth.loginButton')}
         </button>
 
         {loginMutation.error && (
-          <div className="error">
+          <div className="alert alert--error mt-md">
             {t('auth.loginFailed')}
           </div>
         )}
