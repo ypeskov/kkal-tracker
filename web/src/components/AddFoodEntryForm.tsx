@@ -65,38 +65,69 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         {/* Desktop: all fields in grid layout, Mobile: standard responsive */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Food name - full width on desktop and mobile */}
-          <div className="flex flex-col md:col-span-2">
-            <label htmlFor="foodName" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.foodName')}:</label>
-            <FoodAutocomplete
-              id="foodName"
-              value={foodName}
-              onChange={setFoodName}
-              onSelect={handleIngredientSelect}
-              placeholder={t('dashboard.foodName')}
-              required
-            />
+          <div className="flex items-center gap-2 md:col-span-2">
+            <label htmlFor="foodName" className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.foodName')}:</label>
+            <div className="w-4/5">
+              <FoodAutocomplete
+                id="foodName"
+                value={foodName}
+                onChange={setFoodName}
+                onSelect={handleIngredientSelect}
+                placeholder={t('dashboard.foodName')}
+                required
+              />
+            </div>
           </div>
 
-          {/* Weight and Kcal in one row on desktop and mobile */}
-          <div className="flex flex-col">
-            <label htmlFor="weight" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
-            <input
-              type="number"
-              id="weight"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              min="0"
-              step="0.1"
-            />
+          {/* Weight - mobile: part of horizontal pair, desktop: normal column */}
+          <div className="flex flex-col md:flex-col">
+            <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 sm:hidden">
+              <label htmlFor="weight" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.weight')}:</label>
+              <input
+                type="number"
+                id="weight"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                required
+                min="0"
+                step="0.1"
+              />
+              <label htmlFor="kcalPer100g" className="font-medium text-gray-800 text-sm self-center text-right">{t('dashboard.kcalPer100g')}:</label>
+              <input
+                type="number"
+                id="kcalPer100g"
+                value={kcalPer100g}
+                onChange={(e) => setKcalPer100g(e.target.value)}
+                className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
+
+            {/* Desktop weight field */}
+            <div className="hidden sm:flex sm:flex-col">
+              <label htmlFor="weight-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
+              <input
+                type="number"
+                id="weight-desktop"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col">
-            <label htmlFor="kcalPer100g" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
+          {/* Calories - desktop only */}
+          <div className="hidden sm:flex sm:flex-col">
+            <label htmlFor="kcalPer100g-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
             <input
               type="number"
-              id="kcalPer100g"
+              id="kcalPer100g-desktop"
               value={kcalPer100g}
               onChange={(e) => setKcalPer100g(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -107,13 +138,51 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        {/* Mobile: Fats+Carbs horizontal layout */}
+        <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 mb-4 sm:hidden">
+          <label htmlFor="fats" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.fats')}:</label>
+          <input
+            type="number"
+            id="fats"
+            value={fats}
+            onChange={(e) => setFats(e.target.value)}
+            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            min="0"
+            step="0.1"
+          />
+          <label htmlFor="carbs" className="font-medium text-gray-800 text-sm self-center text-right">{t('dashboard.carbs')}:</label>
+          <input
+            type="number"
+            id="carbs"
+            value={carbs}
+            onChange={(e) => setCarbs(e.target.value)}
+            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            min="0"
+            step="0.1"
+          />
+        </div>
+
+        {/* Mobile: Proteins at 50% width */}
+        <div className="grid grid-cols-[20%_30%] gap-1 mb-4 sm:hidden">
+          <label htmlFor="proteins" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.proteins')}:</label>
+          <input
+            type="number"
+            id="proteins"
+            value={proteins}
+            onChange={(e) => setProteins(e.target.value)}
+            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            min="0"
+            step="0.1"
+          />
+        </div>
+
+        {/* Desktop: all 3 in one row */}
+        <div className="hidden sm:grid sm:grid-cols-3 gap-4 mb-4">
           <div className="flex flex-col">
-            <label htmlFor="fats" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
+            <label htmlFor="fats-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
             <input
               type="number"
-              id="fats"
+              id="fats-desktop"
               value={fats}
               onChange={(e) => setFats(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -123,10 +192,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
 
           <div className="flex flex-col">
-            <label htmlFor="carbs" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.carbs')}:</label>
+            <label htmlFor="carbs-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.carbs')}:</label>
             <input
               type="number"
-              id="carbs"
+              id="carbs-desktop"
               value={carbs}
               onChange={(e) => setCarbs(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -137,10 +206,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
 
           {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
           <div className="flex flex-col col-span-1 md:col-span-1">
-            <label htmlFor="proteins" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
+            <label htmlFor="proteins-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
             <input
               type="number"
-              id="proteins"
+              id="proteins-desktop"
               value={proteins}
               onChange={(e) => setProteins(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -150,17 +219,28 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        {/* Total calories and submit button */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="flex flex-col flex-1">
-            <label htmlFor="totalCalories" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.totalCalories')}:</label>
-            <input
-              type="number"
-              id="totalCalories"
-              value={totalCalories}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-600"
-            />
+        {/* Mobile: Total calories and submit button */}
+        <div className="flex items-center gap-2 mb-4 sm:hidden">
+          <label className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.totalCalories')}:</label>
+          <div className="font-bold text-lg text-green-600 flex-1">
+            {totalCalories} {t('dashboard.kcal')}
+          </div>
+          <button
+            type="submit"
+            className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed h-10 px-6"
+            disabled={isButtonDisabled}
+          >
+            {isSubmitting ? t('common.loading') + '...' : t('dashboard.addEntry')}
+          </button>
+        </div>
+
+        {/* Desktop: Total calories and submit button */}
+        <div className="hidden sm:flex sm:items-center sm:gap-4">
+          <div className="flex items-center gap-2 flex-1">
+            <label className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.totalCalories')}:</label>
+            <div className="font-bold text-xl text-green-600">
+              {totalCalories} {t('dashboard.kcal')}
+            </div>
           </div>
 
           <button
