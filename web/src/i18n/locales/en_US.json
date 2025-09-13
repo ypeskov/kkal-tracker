@@ -11,7 +11,7 @@
   },
   "dashboard": {
     "title": "Calorie Tracker",
-    "addFoodEntry": "Add Food Entry",
+    "addFoodEntry": "New Food",
     "foodName": "Food",
     "weight": "Weight (g)",
     "kcalPer100g": "kcal per 100g",
@@ -94,6 +94,7 @@
     "select": "Language",
     "en_US": "English (US)",
     "uk_UA": "Українська (UA)",
-    "ru_UA": "Русский (UA)"
+    "ru_UA": "Русский (UA)",
+    "bg_BG": "Български (BG)"
   }
 }

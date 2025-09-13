@@ -6,6 +6,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import enUS from './locales/en_US.json'
 import ukUA from './locales/uk_UA.json'
 import ruUA from './locales/ru_UA.json'
+import bgBG from './locales/bg_BG.json'
 
 const resources = {
   'en-US': {
@@ -16,6 +17,9 @@ const resources = {
   },
   'ru-UA': {
     translation: ruUA
+  },
+  'bg-BG': {
+    translation: bgBG
   }
 }
 

@@ -1,0 +1,100 @@
+{
+  "auth": {
+    "login": "Вход",
+    "email": "Електронна поща",
+    "password": "Парола",
+    "loginButton": "Вход",
+    "loggingIn": "Влизане...",
+    "loginFailed": "Неуспешен вход. Моля, проверете данните си.",
+    "logout": "Изход",
+    "welcome": "Добре дошли"
+  },
+  "dashboard": {
+    "title": "Калориен трекер",
+    "addFoodEntry": "Нова храна",
+    "foodName": "Храна",
+    "weight": "Тегло (г)",
+    "kcalPer100g": "ккал на 100г",
+    "fats": "Мазнини (г/100г)",
+    "carbs": "Въглехидрати (г/100г)",
+    "proteins": "Белтъци (г/100г)",
+    "fatsConsumed": "Мазнини",
+    "carbsConsumed": "Въглехидрати",
+    "proteinsConsumed": "Белтъци",
+    "totalCalories": "Общо ккал",
+    "addEntry": "Добави",
+    "todayEntries": "Записи",
+    "noEntries": "Не са намерени записи.",
+    "total": "Общо",
+    "kcal": "ккал",
+    "filterBy": "Филтриране по",
+    "today": "Днес",
+    "yesterday": "Вчера",
+    "lastWeek": "Последните 7 дни",
+    "lastMonth": "Последните 30 дни",
+    "customRange": "Персонализиран период",
+    "dateFrom": "От",
+    "dateTo": "До",
+    "applyFilter": "Приложи",
+    "totalCaloriesFiltered": "Общо ккал (филтрирано):",
+    "editEntry": "Редактиране на запис",
+    "updateEntry": "Актуализирай",
+    "cancel": "Отказ",
+    "date": "Дата",
+    "time": "Час",
+    "delete": "Изтрий",
+    "confirmDelete": "Потвърди изтриването",
+    "deleteWarning": "Сигурни ли сте, че искате да изтриете записа за \"{{foodName}}\"? Това действие не може да бъде отменено.",
+    "confirmDeleteButton": "Изтрий"
+  },
+  "foodList": {
+    "title": "Списък храни",
+    "wip": "В разработка",
+    "addNew": "Добави нов",
+    "filterPlaceholder": "Филтриране по име...",
+    "name": "Име",
+    "calories": "Калории",
+    "caloriesPer100g": "Калории на 100г",
+    "proteins": "Белтъци",
+    "carbs": "Въглехидрати",
+    "fats": "Мазнини",
+    "noIngredients": "Не са намерени съставки",
+    "editIngredient": "Редактиране на съставка",
+    "addNewIngredient": "Добави нова съставка",
+    "confirmDelete": "Сигурни ли сте, че искате да изтриете \"{{foodName}}\"? Това действие не може да бъде отменено.",
+    "optional": "По избор"
+  },
+  "report": {
+    "title": "Отчети",
+    "wip": "В разработка"
+  },
+  "settings": {
+    "title": "Настройки",
+    "wip": "В разработка"
+  },
+  "nav": {
+    "dashboard": "Табло",
+    "foodList": "Списък храни",
+    "reports": "Отчети",
+    "settings": "Настройки"
+  },
+  "common": {
+    "loading": "Зарежда се...",
+    "error": "Възникна грешка",
+    "create": "Създай",
+    "creating": "Създава се...",
+    "update": "Актуализирай",
+    "updating": "Актуализира се...",
+    "delete": "Изтрий",
+    "deleting": "Изтрива се...",
+    "cancel": "Отказ",
+    "clear": "Изчисти"
+  },
+  "language": {
+    "select": "Език",
+    "en_US": "English (US)",
+    "uk_UA": "Українська (UA)",
+    "ru_UA": "Русский (UA)",
+    "bg_BG": "Български (BG)"
+  }
+}

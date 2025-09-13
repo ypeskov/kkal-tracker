@@ -11,7 +11,7 @@
   },
   "dashboard": {
     "title": "Учёт калорий",
-    "addFoodEntry": "Добавить запись о еде",
+    "addFoodEntry": "Новая пища",
     "foodName": "Еда",
     "weight": "Вес (г)",
     "kcalPer100g": "ккал на 100г",
@@ -94,6 +94,7 @@
     "select": "Язык",
     "en_US": "English (US)",
     "uk_UA": "Українська (UA)",
-    "ru_UA": "Русский (UA)"
+    "ru_UA": "Русский (UA)",
+    "bg_BG": "Български (BG)"
   }
 }
