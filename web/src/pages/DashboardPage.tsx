@@ -135,7 +135,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto px-4 py-8 md:px-6 lg:px-8">
+    <div className="max-w-screen-xl mx-auto px-4 py-2 md:px-6 lg:px-8">
       <DashboardHeader user={user} />
 
       <AddFoodEntryForm 
