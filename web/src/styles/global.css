@@ -1,13 +1,13 @@
-/* Главный файл глобальных стилей - импортирует все системы стилей */
+/* Main global styles file - imports all style systems */
 
-/* Импорт основных файлов стилей */
+/* Import of main style files */
 @import './variables.css';
 @import './layout.css';
 @import './components.css';
 @import './utilities.css';
 @import './components/index.css';
 
-/* === ГЛОБАЛЬНЫЕ СБРОС СТИЛЕЙ === */
+/* === GLOBAL STYLE RESET === */
 
 *,
 *::before,
@@ -29,7 +29,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* === УЛУЧШЕННЫЕ СКРОЛЛБАРЫ === */
+/* === ENHANCED SCROLLBARS === */
 
 /* Webkit browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
@@ -58,7 +58,7 @@ body {
   scrollbar-color: var(--color-gray-400) var(--color-gray-100);
 }
 
-/* === УЛУЧШЕННЫЕ ФОКУС СТИЛИ === */
+/* === ENHANCED FOCUS STYLES === */
 
 :focus-visible {
   outline: 2px solid var(--color-primary);
@@ -73,7 +73,7 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* === ТИПОГРАФИКА === */
+/* === TYPOGRAPHY === */
 
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
@@ -122,7 +122,7 @@ a:hover {
   text-decoration: underline;
 }
 
-/* === СПИСКИ === */
+/* === LISTS === */
 
 ul, ol {
   margin: 0;
@@ -133,7 +133,7 @@ li {
   list-style: none;
 }
 
-/* === ИЗОБРАЖЕНИЯ === */
+/* === IMAGES === */
 
 img {
   max-width: 100%;
@@ -141,7 +141,7 @@ img {
   display: block;
 }
 
-/* === ТАБЛИЦЫ === */
+/* === TABLES === */
 
 table {
   border-collapse: collapse;
@@ -160,9 +160,9 @@ th {
   background-color: var(--color-gray-50);
 }
 
-/* === СПЕЦИАЛЬНЫЕ СОСТОЯНИЯ === */
+/* === SPECIAL STATES === */
 
-/* Отключение анимаций для пользователей с проблемами вестибулярного аппарата */
+/* Disable animations for users with vestibular disorders */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -174,7 +174,7 @@ th {
   }
 }
 
-/* Высокий контраст для пользователей с ограниченным зрением */
+/* High contrast for users with visual impairments */
 @media (prefers-contrast: high) {
   :root {
     --color-gray-400: #666;
@@ -185,7 +185,7 @@ th {
   }
 }
 
-/* === УТИЛИТЫ ДЛЯ ДОСТУПНОСТИ === */
+/* === ACCESSIBILITY UTILITIES === */
 
 .sr-only {
   position: absolute;
@@ -199,24 +199,24 @@ th {
   border: 0;
 }
 
-/* === ОТЛАДОЧНЫЕ СТИЛИ (убрать в продакшене) === */
+/* === DEBUG STYLES (remove in production) === */
 
-/* Подсветка всех элементов для отладки макета */
+/* Highlight all elements for layout debugging */
 /*
 .debug * {
   outline: 1px solid red;
 }
 */
 
-/* === ВРЕМЕННЫЕ СТИЛИ ДЛЯ СОВМЕСТИМОСТИ === */
+/* === TEMPORARY COMPATIBILITY STYLES === */
 
-/* Обратная совместимость со старыми классами */
+/* Backward compatibility with old classes */
 .error {
   color: var(--color-error);
   margin-top: var(--spacing-sm);
 }
 
-/* Переходные стили, которые будут удалены после рефакторинга */
+/* Transitional styles to be removed after refactoring */
 .btn.submit-btn {
   background-color: var(--color-primary);
   color: white;
@@ -240,7 +240,7 @@ th {
   cursor: not-allowed;
 }
 
-/* Старые классы Dashboard.css для обратной совместимости */
+/* Old Dashboard.css classes for backward compatibility */
 .readonly-field {
   background-color: var(--color-bg-disabled) !important;
   cursor: not-allowed !important;

@@ -1,6 +1,6 @@
-/* Специализированные стили для форм в модальных окнах */
+/* Specialized styles for forms in modal windows */
 
-/* === ФОРМА РЕДАКТИРОВАНИЯ ЗАПИСИ === */
+/* === ENTRY EDIT FORM === */
 
 .modal-form .form-row {
   display: flex;
@@ -9,7 +9,7 @@
   align-items: end;
 }
 
-/* === КНОПКИ МОДАЛОВ === */
+/* === MODAL BUTTONS === */
 
 .modal-actions {
   display: flex;
@@ -26,10 +26,10 @@
   gap: var(--spacing-lg);
 }
 
-/* === МОБИЛЬНЫЕ СТИЛИ С КОНКРЕТНЫМИ КЛАССАМИ === */
+/* === MOBILE STYLES WITH SPECIFIC CLASSES === */
 
 @media (max-width: 768px) {
-  /* Название еды - полная ширина */
+  /* Food name - full width */
   .modal-food-name-row {
     flex-direction: column !important;
     gap: var(--spacing-md) !important;
@@ -41,7 +41,7 @@
     max-width: 100% !important;
   }
 
-  /* Дата и время - 2 в ряд */
+  /* Date and time - 2 in a row */
   .modal-date-time-row {
     flex-direction: row !important;
     gap: var(--spacing-md) !important;
@@ -53,7 +53,7 @@
     max-width: calc(50% - var(--spacing-md) / 2) !important;
   }
 
-  /* Вес и калории - 2 в ряд */
+  /* Weight and calories - 2 in a row */
   .modal-weight-calories-row {
     flex-direction: row !important;
     gap: var(--spacing-md) !important;
@@ -65,7 +65,7 @@
     max-width: calc(50% - var(--spacing-md) / 2) !important;
   }
 
-  /* Разбиваем нутриенты на мобильных: жиры+углеводы в первой строке, белки во второй */
+  /* Split nutrients on mobile: fats+carbs in first row, proteins in second */
   .modal-fats-carbs-proteins-row {
     display: block !important;
   }
@@ -88,7 +88,7 @@
     margin-top: var(--spacing-md) !important;
   }
 
-  /* Общие калории */
+  /* Total calories */
   .modal-total-calories-row {
     flex-direction: column !important;
     gap: var(--spacing-md) !important;
@@ -100,7 +100,7 @@
     max-width: 100% !important;
   }
 
-  /* Кнопки в модале - адаптивный лейаут */
+  /* Modal buttons - adaptive layout */
   .modal-actions {
     flex-direction: row;
     justify-content: space-between;
@@ -114,7 +114,7 @@
     gap: var(--spacing-md);
   }
 
-  /* Кнопки на мобильных - компактные */
+  /* Buttons on mobile - compact */
   .modal-actions .btn {
     padding: var(--spacing-md) var(--spacing-lg);
     font-size: var(--font-size-sm);
@@ -122,7 +122,7 @@
 }
 
 @media (max-width: 480px) {
-  /* На маленьких экранах кнопки в две строки */
+  /* On small screens buttons in two rows */
   .modal-actions {
     flex-direction: column;
     gap: var(--spacing-md);

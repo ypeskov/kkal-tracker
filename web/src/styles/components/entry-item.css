@@ -1,6 +1,6 @@
-/* Стили для элемента записи калорий - EntryListItem компонент */
+/* Styles for calorie entry item - EntryListItem component */
 
-/* === ОСНОВНОЙ ЭЛЕМЕНТ === */
+/* === MAIN ELEMENT === */
 
 .entry-item {
   background: var(--color-bg-primary);
@@ -20,7 +20,7 @@
   transform: translateY(-1px);
 }
 
-/* === ЗАГОЛОВОК ЗАПИСИ === */
+/* === ENTRY HEADER === */
 
 .entry-item__header {
   display: flex;
@@ -57,7 +57,7 @@
   color: var(--color-gray-800);
 }
 
-/* === ДЕТАЛИ ЗАПИСИ === */
+/* === ENTRY DETAILS === */
 
 .entry-item__details {
   display: flex;
@@ -71,7 +71,7 @@
   flex: 0 0 auto;
 }
 
-/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
+/* === MOBILE ADAPTATION === */
 
 @media (max-width: 768px) {
   .entry-item__details {
@@ -92,7 +92,7 @@
   }
 }
 
-/* === СОСТОЯНИЕ ЗАГРУЗКИ === */
+/* === LOADING STATE === */
 
 .entry-item--loading {
   opacity: 0.6;
@@ -105,7 +105,7 @@
   border-color: var(--color-border-light);
 }
 
-/* === СОСТОЯНИЕ ОШИБКИ === */
+/* === ERROR STATE === */
 
 .entry-item--error {
   border-color: var(--color-error);

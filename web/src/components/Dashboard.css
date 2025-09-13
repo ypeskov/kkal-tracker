@@ -81,7 +81,7 @@
     padding: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
   }
 
-  /* food-form стили теперь в food-form.css */
+  /* food-form styles now in food-form.css */
   /* entry-details styles now in entry-item.css */
 }
 
@@ -90,7 +90,7 @@
     padding: 0 var(--spacing-xs) var(--spacing-xs) var(--spacing-xs);
   }
 
-  /* food-form стили теперь в food-form.css */
+  /* food-form styles now in food-form.css */
 
   .dashboard-header {
     text-align: center;

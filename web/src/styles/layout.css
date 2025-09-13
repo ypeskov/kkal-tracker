@@ -1,6 +1,6 @@
-/* Стили макета и лейаута приложения */
+/* Application layout and structure styles */
 
-/* === БАЗОВЫЕ СТИЛИ === */
+/* === BASE STYLES === */
 
 * {
   box-sizing: border-box;
@@ -24,7 +24,7 @@ body {
   min-height: 100vh;
 }
 
-/* === ГЛАВНЫЙ МАКЕТ ПРИЛОЖЕНИЯ === */
+/* === MAIN APPLICATION LAYOUT === */
 
 .app {
   min-height: 100vh;
@@ -38,7 +38,7 @@ body {
   justify-content: center;
 }
 
-/* === МАКЕТ С НАВИГАЦИЕЙ === */
+/* === LAYOUT WITH NAVIGATION === */
 
 .app-layout {
   min-height: 100vh;
@@ -82,10 +82,10 @@ body {
   padding-right: var(--spacing-lg);
 }
 
-/* === МАКЕТ СТРАНИЦ === */
+/* === PAGE LAYOUT === */
 
 .page {
-  min-height: calc(100vh - 120px); /* Примерная высота хедера */
+  min-height: calc(100vh - 120px); /* Approximate header height */
 }
 
 .page-header {
@@ -106,7 +106,7 @@ body {
   font-weight: var(--font-weight-normal);
 }
 
-/* === МАКЕТ ДАШБОРДА === */
+/* === DASHBOARD LAYOUT === */
 
 .dashboard-container {
   max-width: var(--container-xl);
@@ -135,7 +135,7 @@ body {
   gap: var(--spacing-lg);
 }
 
-/* === МАКЕТ ЛОГИНА === */
+/* === LOGIN LAYOUT === */
 
 .login-container {
   background: var(--color-bg-primary);
@@ -147,7 +147,7 @@ body {
   margin: var(--spacing-2xl);
 }
 
-/* === СЕТКИ === */
+/* === GRIDS === */
 
 .grid {
   display: grid;
@@ -169,9 +169,9 @@ body {
   grid-template-columns: repeat(4, 1fr);
 }
 
-/* === АДАПТИВНЫЕ МЕДИА-ЗАПРОСЫ === */
+/* === RESPONSIVE MEDIA QUERIES === */
 
-/* Мобильные устройства (до 480px) */
+/* Mobile devices (up to 480px) */
 @media (max-width: 480px) {
   .app-header-content {
     padding: 0 var(--spacing-sm);
@@ -207,14 +207,14 @@ body {
     padding: var(--spacing-xl);
   }
 
-  /* Сетки на мобильных */
+  /* Grids on mobile */
   .grid-cols-2,
   .grid-cols-3,
   .grid-cols-4 {
     grid-template-columns: 1fr;
   }
 
-  /* Формы на мобильных */
+  /* Forms on mobile */
   .form-row {
     flex-direction: column;
     gap: var(--spacing-md);
@@ -226,7 +226,7 @@ body {
   }
 }
 
-/* Планшеты (481px - 768px) */
+/* Tablets (481px - 768px) */
 @media (max-width: 768px) {
   .app-main {
     padding: 0 var(--spacing-md) var(--spacing-xl) var(--spacing-md);
@@ -245,13 +245,13 @@ body {
     justify-content: center;
   }
 
-  /* Сетки на планшетах */
+  /* Grids on tablets */
   .grid-cols-3,
   .grid-cols-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Формы на планшетах */
+  /* Forms on tablets */
   .form-row {
     flex-direction: column;
     gap: var(--spacing-md);
@@ -259,7 +259,7 @@ body {
   }
 }
 
-/* Маленькие десктопы (769px - 1024px) */
+/* Small desktops (769px - 1024px) */
 @media (max-width: 1024px) {
   .dashboard-container {
     padding: var(--spacing-lg);
@@ -270,9 +270,9 @@ body {
   }
 }
 
-/* === СПЕЦИАЛЬНЫЕ МАКЕТЫ === */
+/* === SPECIAL LAYOUTS === */
 
-/* Центрированный контент */
+/* Centered content */
 .centered-content {
   display: flex;
   flex-direction: column;
@@ -283,7 +283,7 @@ body {
   padding: var(--spacing-2xl);
 }
 
-/* Двухколоночный макет */
+/* Two-column layout */
 .two-column {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -297,7 +297,7 @@ body {
   }
 }
 
-/* Сайдбар макет */
+/* Sidebar layout */
 .sidebar-layout {
   display: grid;
   grid-template-columns: 250px 1fr;
@@ -319,10 +319,10 @@ body {
   box-shadow: var(--shadow-sm);
   height: fit-content;
   position: sticky;
-  top: calc(80px + var(--spacing-2xl)); /* Высота хедера + отступ */
+  top: calc(80px + var(--spacing-2xl)); /* Header height + spacing */
 }
 
-/* === УТИЛИТЫ МАКЕТА === */
+/* === LAYOUT UTILITIES === */
 
 .full-height {
   height: 100vh;
@@ -341,7 +341,7 @@ body {
   height: fit-content;
 }
 
-/* === СКРЫТЬ/ПОКАЗАТЬ НА РАЗНЫХ ЭКРАНАХ === */
+/* === HIDE/SHOW ON DIFFERENT SCREENS === */
 
 .hide-mobile {
   display: block;

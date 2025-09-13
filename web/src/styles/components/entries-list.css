@@ -1,6 +1,6 @@
-/* Стили для списка записей калорий - CalorieEntriesList компонент */
+/* Styles for calorie entries list - CalorieEntriesList component */
 
-/* === ОСНОВНОЙ КОНТЕЙНЕР === */
+/* === MAIN CONTAINER === */
 
 .entries-list {
   display: flex;
@@ -8,7 +8,7 @@
   gap: var(--spacing-xl);
 }
 
-/* === СЕКЦИЯ ДАТЫ === */
+/* === DATE SECTION === */
 
 .date-section {
   border-radius: var(--radius-lg);
@@ -34,7 +34,7 @@
   border-color: var(--color-border-success);
 }
 
-/* === ЗАГОЛОВОК ДАТЫ === */
+/* === DATE HEADER === */
 
 .date-header {
   margin: 0;
@@ -81,7 +81,7 @@
   margin: 0;
 }
 
-/* === СОДЕРЖИМОЕ ЗАГОЛОВКА === */
+/* === HEADER CONTENT === */
 
 .date-header__content {
   display: flex;
@@ -120,7 +120,7 @@
   font-size: var(--font-size-base);
 }
 
-/* === СВОДКА ПИТАТЕЛЬНЫХ ВЕЩЕСТВ === */
+/* === NUTRIENTS SUMMARY === */
 
 .nutrients-summary {
   display: flex;
@@ -135,7 +135,7 @@
   flex: 0 0 auto;
 }
 
-/* === СПИСОК ЗАПИСЕЙ === */
+/* === ENTRIES LIST === */
 
 .entries-list__items {
   list-style: none;
@@ -143,7 +143,7 @@
   margin: 0;
 }
 
-/* === ИТОГИ ДНЯ === */
+/* === DAILY TOTALS === */
 
 .daily-totals {
   margin-top: var(--spacing-lg);
@@ -181,7 +181,7 @@
   flex: 0 0 auto;
 }
 
-/* === ПУСТОЕ СОСТОЯНИЕ === */
+/* === EMPTY STATE === */
 
 .entries-list__empty {
   text-align: center;
@@ -189,7 +189,7 @@
   color: var(--color-gray-600);
 }
 
-/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
+/* === MOBILE ADAPTATION === */
 
 @media (max-width: 640px) {
   .date-section {
@@ -204,7 +204,7 @@
 }
 
 @media (max-width: 768px) {
-  /* Сводка питательных веществ - 2 в ряд на мобильных */
+  /* Nutrients summary - 2 in a row on mobile */
   .nutrients-summary {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -221,7 +221,7 @@
     line-height: var(--line-height-tight);
   }
 
-  /* Итоги дня - питательные вещества 2 в ряд */
+  /* Daily totals - nutrients 2 in a row */
   .daily-totals__nutrients {
     display: flex !important;
     flex-wrap: wrap !important;

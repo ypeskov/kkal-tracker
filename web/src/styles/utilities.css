@@ -1,6 +1,6 @@
-/* Утилитарные классы - переиспользуемые стили для быстрой разработки */
+/* Utility classes - reusable styles for rapid development */
 
-/* === FLEXBOX УТИЛИТЫ === */
+/* === FLEXBOX UTILITIES === */
 .flex {
   display: flex;
 }
@@ -61,7 +61,7 @@
   flex-shrink: 0;
 }
 
-/* === СПЕЙСИНГИ === */
+/* === SPACING === */
 .gap-xs { gap: var(--spacing-xs); }
 .gap-sm { gap: var(--spacing-sm); }
 .gap-md { gap: var(--spacing-md); }
@@ -118,7 +118,7 @@
 .py-lg { padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg); }
 .py-xl { padding-top: var(--spacing-xl); padding-bottom: var(--spacing-xl); }
 
-/* === РАЗМЕРЫ === */
+/* === SIZES === */
 .w-full { width: 100%; }
 .w-auto { width: auto; }
 .w-fit { width: fit-content; }
@@ -131,7 +131,7 @@
 .min-w-0 { min-width: 0; }
 .min-h-0 { min-height: 0; }
 
-/* === ПОЗИЦИОНИРОВАНИЕ === */
+/* === POSITIONING === */
 .relative { position: relative; }
 .absolute { position: absolute; }
 .fixed { position: fixed; }
@@ -153,7 +153,7 @@
   white-space: nowrap;
 }
 
-/* === ТИПОГРАФИКА === */
+/* === TYPOGRAPHY === */
 .text-xs { font-size: var(--font-size-xs); }
 .text-sm { font-size: var(--font-size-sm); }
 .text-base { font-size: var(--font-size-base); }
@@ -173,7 +173,7 @@
 .leading-normal { line-height: var(--line-height-normal); }
 .leading-relaxed { line-height: var(--line-height-relaxed); }
 
-/* === ЦВЕТА ТЕКСТА === */
+/* === TEXT COLORS === */
 .text-primary { color: var(--color-primary); }
 .text-success { color: var(--color-success); }
 .text-success-dark { color: var(--color-success-dark); }
@@ -183,7 +183,7 @@
 .text-gray-700 { color: var(--color-gray-700); }
 .text-gray-800 { color: var(--color-gray-800); }
 
-/* === ФОНЫ === */
+/* === BACKGROUNDS === */
 .bg-white { background-color: var(--color-bg-primary); }
 .bg-gray-50 { background-color: var(--color-gray-50); }
 .bg-gray-100 { background-color: var(--color-gray-100); }
@@ -192,7 +192,7 @@
 .bg-success { background-color: var(--color-success); }
 .bg-success-light { background-color: var(--color-bg-success-light); }
 
-/* === ГРАНИЦЫ === */
+/* === BORDERS === */
 .border { border: 1px solid var(--color-border-medium); }
 .border-0 { border: none; }
 .border-light { border: 1px solid var(--color-border-light); }
@@ -206,7 +206,7 @@
 .rounded-lg { border-radius: var(--radius-lg); }
 .rounded-full { border-radius: 50%; }
 
-/* === ТЕНИ === */
+/* === SHADOWS === */
 .shadow-sm { box-shadow: var(--shadow-sm); }
 .shadow-md { box-shadow: var(--shadow-md); }
 .shadow-lg { box-shadow: var(--shadow-lg); }
@@ -214,7 +214,7 @@
 .shadow-primary { box-shadow: var(--shadow-primary); }
 .shadow-success { box-shadow: var(--shadow-success); }
 
-/* === ПЕРЕХОДЫ === */
+/* === TRANSITIONS === */
 .transition-fast { transition: all var(--transition-fast); }
 .transition-normal { transition: all var(--transition-normal); }
 .transition-slow { transition: all var(--transition-slow); }
@@ -222,12 +222,12 @@
 .transition-colors { transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast); }
 .transition-transform { transition: transform var(--transition-fast); }
 
-/* === КУРСОР === */
+/* === CURSOR === */
 .cursor-pointer { cursor: pointer; }
 .cursor-default { cursor: default; }
 .cursor-not-allowed { cursor: not-allowed; }
 
-/* === ПРОЧЕЕ === */
+/* === MISC === */
 .opacity-50 { opacity: 0.5; }
 .opacity-80 { opacity: 0.8; }
 
@@ -238,8 +238,8 @@
 /* === Z-INDEX === */
 .z-modal-high { z-index: 1001; }
 
-/* === ТРАНСФОРМАЦИИ === */
-.transform { transform: translateZ(0); /* Включает аппаратное ускорение */ }
+/* === TRANSFORMS === */
+.transform { transform: translateZ(0); /* Enables hardware acceleration */ }
 .translate-x-0 { transform: translateX(0); }
 .translate-x-1 { transform: translateX(2px); }
 .translate-x-2 { transform: translateX(3px); }
@@ -249,7 +249,7 @@
 .rotate-0 { transform: rotate(0deg); }
 .rotate-90 { transform: rotate(-90deg); }
 
-/* === HOVER СОСТОЯНИЯ === */
+/* === HOVER STATES === */
 .hover\:bg-gray-50:hover { background-color: var(--color-gray-50); }
 .hover\:border-primary:hover { border-color: var(--color-primary); }
 .hover\:text-gray-800:hover { color: var(--color-gray-800); }
@@ -257,7 +257,7 @@
 .hover\:translate-x-1:hover { transform: translateX(2px); }
 .hover\:translate-y-1:hover { transform: translateY(-1px); }
 
-/* === ФОКУС СОСТОЯНИЯ === */
+/* === FOCUS STATES === */
 .focus\:outline-none:focus { outline: none; }
 .focus\:ring:focus { box-shadow: 0 0 0 2px var(--color-primary-light); }
 .focus\:ring-success:focus { box-shadow: 0 0 0 2px var(--color-success-light); }

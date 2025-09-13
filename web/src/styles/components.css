@@ -1,8 +1,8 @@
-/* Глобальные компоненты - переиспользуемые стили для основных UI элементов */
+/* Global components - reusable styles for main UI elements */
 
-/* === ФОРМЫ === */
+/* === FORMS === */
 
-/* Базовые стили для всех форм */
+/* Base styles for all forms */
 .form {
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
   font-size: var(--font-size-sm);
 }
 
-/* Инпуты */
+/* Inputs */
 .form-input,
 .form-select,
 .form-textarea {
@@ -59,14 +59,14 @@
   color: var(--color-gray-500);
 }
 
-/* Readonly поля */
+/* Readonly fields */
 .form-input--readonly {
   background-color: var(--color-bg-disabled) !important;
   cursor: not-allowed !important;
   color: var(--color-gray-600);
 }
 
-/* Состояние ошибки */
+/* Error state */
 .form-input--error,
 .form-select--error,
 .form-textarea--error {
@@ -79,9 +79,9 @@
   margin-top: var(--spacing-xs);
 }
 
-/* === КНОПКИ === */
+/* === BUTTONS === */
 
-/* Базовая кнопка */
+/* Base button */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -104,7 +104,7 @@
   opacity: 0.6;
 }
 
-/* Варианты кнопок */
+/* Button variants */
 .btn--primary {
   background-color: var(--color-primary);
   color: white;
@@ -152,7 +152,7 @@
   color: white;
 }
 
-/* Размеры кнопок */
+/* Button sizes */
 .btn--sm {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
@@ -170,7 +170,7 @@
   width: 100%;
 }
 
-/* === КАРТОЧКИ === */
+/* === CARDS === */
 
 .card {
   background: var(--color-bg-primary);
@@ -217,7 +217,7 @@
   background: var(--color-bg-secondary);
 }
 
-/* === СПИСКИ === */
+/* === LISTS === */
 
 .list {
   list-style: none;
@@ -243,7 +243,7 @@
   background-color: var(--color-gray-50);
 }
 
-/* === БЕЙДЖИ === */
+/* === BADGES === */
 
 .badge {
   display: inline-flex;
@@ -270,7 +270,7 @@
   color: var(--color-gray-700);
 }
 
-/* === КОНТЕЙНЕРЫ === */
+/* === CONTAINERS === */
 
 .container {
   width: 100%;
@@ -295,7 +295,7 @@
   margin-bottom: var(--spacing-md);
 }
 
-/* === РАЗДЕЛИТЕЛИ === */
+/* === DIVIDERS === */
 
 .divider {
   border: none;
@@ -309,7 +309,7 @@
   background-color: var(--color-border-medium);
 }
 
-/* === ЗАГРУЗКА === */
+/* === LOADING === */
 
 .loading {
   display: flex;
@@ -335,7 +335,7 @@
   }
 }
 
-/* === АЛЕРТЫ === */
+/* === ALERTS === */
 
 .alert {
   padding: var(--spacing-lg);
