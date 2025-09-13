@@ -36,4 +36,8 @@ if [ "$PUSH" == true ]; then
     echo "Successfully pushed."
 fi
 
+# Write the tag to version.txt
+echo "Writing tag v${TAG} to version.txt..."
+echo "v${TAG}" > version.txt
+
 echo "Done."
