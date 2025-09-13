@@ -200,12 +200,12 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-4">
-            {/* Update and Cancel buttons together on the left */}
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between items-center mt-8 pt-5 border-t border-gray-200 gap-3">
+            {/* Update and Cancel buttons together */}
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 type="submit"
-                className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                className="btn-primary px-3 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed flex-1 sm:flex-initial"
                 disabled={isUpdating || isDeleting || !editFoodName || !editWeight || !editKcalPer100g}
               >
                 {isUpdating ? t('common.loading') + '...' : t('dashboard.updateEntry')}
@@ -213,18 +213,18 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               <button
                 type="button"
                 onClick={onCancel}
-                className="btn-secondary px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                className="btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed flex-1 sm:flex-initial"
                 disabled={isUpdating || isDeleting}
               >
                 {t('dashboard.cancel')}
               </button>
             </div>
 
-            {/* Delete button on the right */}
+            {/* Delete button */}
             <button
               type="button"
               onClick={onDelete}
-              className="btn-danger px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-danger px-3 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto"
               disabled={isUpdating || isDeleting}
             >
               {t('dashboard.delete')}
