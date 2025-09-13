@@ -84,7 +84,7 @@
 
   .total-submit-row .btn {
     width: 100% !important;
-    margin-top: var(--spacing-lg) !important;
+    margin-top: var(--spacing-xs) !important;
     align-self: stretch !important;
   }
 }

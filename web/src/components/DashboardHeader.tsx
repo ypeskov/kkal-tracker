@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from './LanguageSwitcher';
 
 interface User {
   id: number;
@@ -8,26 +7,15 @@ interface User {
 
 interface DashboardHeaderProps {
   user?: User;
-  onLogout?: () => void;
 }
 
-export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
+export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const { t } = useTranslation();
 
   return (
     <header className="dashboard-header">
       <div>
-        <h1>{t('dashboard.title')}</h1>
-        <p>{t('auth.welcome')}, {user?.email}!</p>
-      </div>
-      <div className="header-controls">
-        <LanguageSwitcher />
-        <button
-          onClick={onLogout}
-          className="btn btn--danger"
-        >
-          {t('auth.logout')}
-        </button>
+        <p className="welcome-message">{t('auth.welcome')}, {user?.email}!</p>
       </div>
     </header>
   );

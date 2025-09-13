@@ -15,7 +15,7 @@ import { RouterContext } from '../router';
 type FilterType = 'today' | 'yesterday' | 'lastWeek' | 'lastMonth' | 'customRange';
 
 export default function DashboardPage() {
-  const { user, onLogout } = useRouteContext({ from: '__root__' }) as RouterContext;
+  const { user } = useRouteContext({ from: '__root__' }) as RouterContext;
   const [filterType, setFilterType] = useState<FilterType>('today');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
@@ -111,12 +111,6 @@ export default function DashboardPage() {
     },
   });
 
-  const handleLogout = () => {
-    ingredientService.clearCache();
-    if (onLogout) {
-      onLogout();
-    }
-  };
 
   const handleEdit = (entry: any) => {
     setEditingEntry(entry);
@@ -142,7 +136,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container">
-      <DashboardHeader user={user} onLogout={handleLogout} />
+      <DashboardHeader user={user} />
 
       <AddFoodEntryForm 
         onSubmit={addEntryMutation.mutate} 
