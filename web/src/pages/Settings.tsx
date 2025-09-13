@@ -4,9 +4,13 @@ export default function Settings() {
   const { t } = useTranslation();
 
   return (
-    <div>
-      <h2>{t('settings.title')}</h2>
-      <p>{t('settings.wip')}</p>
+    <div className="page">
+      <div className="page-header">
+        <h2 className="page-title">{t('settings.title')}</h2>
+      </div>
+      <div className="card p-lg">
+        <p>{t('settings.wip')}</p>
+      </div>
     </div>
   );
 }

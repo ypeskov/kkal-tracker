@@ -1,170 +1,84 @@
-/* Mobile-responsive form styles */
+/* Dashboard-специфичные стили с использованием глобальной системы */
 .dashboard-container {
-  max-width: 1200px;
+  max-width: var(--container-xl);
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--spacing-lg);
 }
 
 .food-form {
-  background: #f9f9f9;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
 }
 
 .form-row {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   margin-bottom: 0.1rem;
   align-items: end;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
+/* form-group теперь в глобальной системе - убираем дублирование */
 
-.form-group label {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: #333;
-  font-size: 0.9rem;
-}
+/* form-group label теперь в глобальной системе */
 
-.form-group input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
-}
+/* form-group input теперь в глобальной системе */
 
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-}
+/* focus состояния теперь в глобальной системе */
 
-.readonly-field {
-  background-color: #f5f5f5 !important;
-  cursor: not-allowed !important;
-  color: #666;
-}
+/* readonly поля теперь в глобальной системе как form-input--readonly */
 
-.submit-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 100px;
-  height: 54px;
-  align-self: flex-end;
-}
+/* Кнопки теперь в глобальной системе как btn btn--primary */
 
-.submit-btn:hover:not(:disabled) {
-  background-color: #0056b3;
-}
+/* hover состояния кнопок в глобальной системе */
 
-.submit-btn:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
+/* disabled состояния кнопок в глобальной системе */
 
-/* Header styles */
+/* Dashboard header стили */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
-/* Entry list styles */
-.entry-item {
-  background: white;
-  padding: 0.3rem;
-  margin-bottom: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
-}
+/* Entry list стили теперь в специализированных файлах */
+/* entry-item теперь в components/entry-item.css */
 
-.entry-item:hover {
-  background: #f8f9fa;
-  border-color: #007bff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transform: translateY(-1px);
-}
+/* hover состояния теперь в entry-item.css */
 
-.entry-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
+/* entry-header теперь в entry-item.css */
 
-.entry-details {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.9em;
-  color: #666;
-  flex-wrap: wrap;
-}
+/* entry-details теперь в entry-item.css */
 
 .total-calories {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #e9ecef;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 1.1rem;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-gray-200);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
   text-align: center;
 }
 
-/* Date section styling */
-.date-section {
-  position: relative;
-  transition: all 0.3s ease;
-}
+/* Date section стили теперь в entries-list.css */
 
-.date-section:hover {
-  transform: translateX(2px);
-}
+/* hover эффекты теперь в entries-list.css */
 
-.date-header {
-  position: sticky;
-  top: 60px;
-  z-index: 10;
-  backdrop-filter: blur(5px);
-}
+/* date-header стили теперь в entries-list.css */
 
-/* Collapsible date header styles */
-.date-header-clickable {
-  user-select: none;
-  transition: all 0.2s ease;
-}
+/* Collapsible стили теперь в entries-list.css */
 
-.date-header-clickable:hover {
-  transform: translateX(3px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12) !important;
-}
+/* hover эффекты теперь в entries-list.css */
 
-.date-header-clickable:active {
-  transform: translateX(1px);
-}
+/* active состояния теперь в entries-list.css */
 
 /* Mobile responsive breakpoints */
 @media (max-width: 640px) {
@@ -172,136 +86,45 @@
     flex-wrap: wrap;
     justify-content: center;
   }
-  
-  .date-section {
-    padding: 0.5rem !important;
-    margin-bottom: 1rem !important;
-  }
-  
-  .date-header {
-    font-size: 0.95rem !important;
-    padding: 0.5rem 0.75rem !important;
-  }
+
+  /* Date section стили теперь в entries-list.css */
 }
 
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 0.5rem;
+    padding: var(--spacing-sm);
   }
-  
-  .food-form {
-    padding: 1rem;
-  }
-  
-  .form-row {
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 0.1rem;
-    align-items: stretch;
-  }
-  
-  .form-group {
-    min-width: 100%;
-  }
-  
-  .submit-btn {
-    width: 100%;
-    margin-top: 1rem;
-  }
-  
-  
-  .entry-details {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.25rem !important;
-    margin-left: 0 !important;
-  }
-  
-  .entry-details span {
-    flex: 0 0 calc(50% - 0.125rem);
-    text-align: center;
-    padding: 0.2rem;
-    background-color: rgba(0, 123, 255, 0.05);
-    border-radius: 4px;
-    font-size: 0.85em;
-    line-height: 1.2;
-  }
+
+  /* food-form стили теперь в food-form.css */
+  /* entry-details стили теперь в entry-item.css */
 }
 
 @media (max-width: 480px) {
   .dashboard-container {
-    padding: 0.25rem;
+    padding: var(--spacing-xs);
   }
-  
-  .food-form {
-    padding: 0.75rem;
-  }
-  
+
+  /* food-form стили теперь в food-form.css */
+
   .dashboard-header {
     flex-direction: column !important;
-    gap: 1rem;
+    gap: var(--spacing-lg);
     text-align: center;
   }
-  
+
   .dashboard-header > div:first-child {
     text-align: center;
   }
-  
+
   .header-controls {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--spacing-md);
     width: 100%;
   }
-  
+
   .header-controls button {
     width: 100%;
   }
-  
 }
 
-/* Nutrition fields styling */
-.form-row:nth-child(3) .form-group {
-  min-width: calc(33.33% - 0.67rem);
-}
-
-@media (max-width: 768px) {
-  .form-row:nth-child(3) .form-group {
-    min-width: 100%;
-  }
-}
-
-/* Nutrition summary - 2 per line on mobile */
-@media (max-width: 768px) {
-  .nutrition-summary {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.25rem !important;
-  }
-  
-  .nutrition-summary span {
-    flex: 0 0 calc(50% - 0.125rem);
-    text-align: center;
-    padding: 0.2rem;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    font-size: 0.85em;
-    line-height: 1.2;
-  }
-  
-  /* Daily totals nutrients - 2 per line on mobile */
-  .daily-totals-nutrients {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.25rem !important;
-  }
-  
-  .daily-totals-nutrients span {
-    flex: 0 0 calc(50% - 0.125rem);
-    text-align: center;
-    padding: 0.2rem;
-    background-color: rgba(40, 167, 69, 0.1);
-    border-radius: 4px;
-    font-size: 0.85em;
-    line-height: 1.2;
-  }
-}
+/* Nutrition стили теперь в food-form.css и entries-list.css */

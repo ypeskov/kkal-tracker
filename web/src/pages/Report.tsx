@@ -4,9 +4,13 @@ export default function Report() {
   const { t } = useTranslation();
 
   return (
-    <div>
-      <h2>{t('report.title')}</h2>
-      <p>{t('report.wip')}</p>
+    <div className="page">
+      <div className="page-header">
+        <h2 className="page-title">{t('report.title')}</h2>
+      </div>
+      <div className="card p-lg">
+        <p>{t('report.wip')}</p>
+      </div>
     </div>
   );
 }

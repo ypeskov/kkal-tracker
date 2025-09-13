@@ -1,0 +1,121 @@
+/* CSS Custom Properties - Глобальные переменные для всего приложения */
+
+:root {
+  /* === ЦВЕТОВАЯ ПАЛИТРА === */
+
+  /* Основные цвета */
+  --color-primary: #007bff;
+  --color-primary-hover: #0056b3;
+  --color-primary-light: rgba(0, 123, 255, 0.1);
+
+  /* Цвета состояний */
+  --color-success: #28a745;
+  --color-success-alt: #52c41a;
+  --color-success-light: rgba(40, 167, 69, 0.1);
+  --color-success-dark: #2d5016;
+  --color-error: #dc3545;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+
+  /* Серые оттенки */
+  --color-gray-50: #f8f9fa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e9ecef;
+  --color-gray-300: #dee2e6;
+  --color-gray-400: #ddd;
+  --color-gray-500: #6c757d;
+  --color-gray-600: #666;
+  --color-gray-700: #495057;
+  --color-gray-800: #333;
+  --color-gray-900: #1a1a1a;
+
+  /* Фоновые цвета */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9f9f9;
+  --color-bg-tertiary: #f0f4f8;
+  --color-bg-success: #e8f5e9;
+  --color-bg-success-light: #e8f5e8;
+  --color-bg-disabled: #f5f5f5;
+
+  /* Границы */
+  --color-border-light: #e0e0e0;
+  --color-border-medium: #ddd;
+  --color-border-dark: #dee2e6;
+  --color-border-primary: #4a90e2;
+  --color-border-success: #c3e6c8;
+  --color-border-tertiary: #d1dae3;
+
+  /* === РАЗМЕРЫ И ОТСТУПЫ === */
+
+  /* Спейсинги */
+  --spacing-xs: 0.25rem;    /* 4px */
+  --spacing-sm: 0.5rem;     /* 8px */
+  --spacing-md: 0.75rem;    /* 12px */
+  --spacing-lg: 1rem;       /* 16px */
+  --spacing-xl: 1.5rem;     /* 24px */
+  --spacing-2xl: 2rem;      /* 32px */
+  --spacing-3xl: 3rem;      /* 48px */
+
+  /* Радиусы скругления */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* === ТИПОГРАФИКА === */
+
+  /* Размеры шрифтов */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.85rem;    /* 13.6px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.1rem;     /* 17.6px */
+  --font-size-xl: 1.25rem;    /* 20px */
+
+  /* Веса шрифтов */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Высоты строк */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* === ТЕНИ === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  /* Цветные тени */
+  --shadow-primary: 0 2px 8px rgba(74, 144, 226, 0.15);
+  --shadow-success: 0 2px 8px rgba(82, 196, 26, 0.15);
+
+  /* === ПЕРЕХОДЫ === */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* === РАЗМЕРЫ КОНТЕЙНЕРОВ === */
+  --container-sm: 600px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1200px;
+
+  /* === БРЕЙКПОИНТЫ (для медиа-запросов) === */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 640px;
+  --breakpoint-lg: 768px;
+  --breakpoint-xl: 1024px;
+
+  /* === ВЫСОТЫ И ШИРИНЫ === */
+  --input-height: 54px;
+  --button-height: 54px;
+  --button-min-width: 100px;
+
+  /* === Z-INDEX === */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-modal: 1000;
+  --z-tooltip: 1100;
+}

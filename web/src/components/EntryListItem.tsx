@@ -21,46 +21,24 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
   const actualProteins = entry.proteins ? (entry.proteins * entry.weight / 100) : null;
 
   return (
-    <li className="entry-item" onClick={() => onEdit(entry)} style={{ cursor: 'pointer' }}>
-      <div className="entry-header" style={{ 
-        display: 'flex',
-        alignItems: 'center',
-        width: '100%'
-      }}>
-        <span style={{ 
-          fontSize: '0.85rem', 
-          color: '#6c757d',
-          width: '15%',
-          minWidth: '45px',
-          fontWeight: 'normal',
-          flexShrink: 0
-        }}>
+    <li className="entry-item" onClick={() => onEdit(entry)}>
+      <div className="entry-item__header">
+        <span className="entry-item__time">
           {formatTime(entry.meal_datetime)}
         </span>
-        <strong style={{ 
-          width: '60%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          paddingRight: '0.5rem'
-        }}>{entry.food}</strong>
-        <strong style={{
-          width: '25%',
-          textAlign: 'right',
-          flexShrink: 0,
-          whiteSpace: 'nowrap'
-        }}>{entry.calories} {t('dashboard.kcal')}</strong>
+        <strong className="entry-item__food">{entry.food}</strong>
+        <strong className="entry-item__calories">{entry.calories} {t('dashboard.kcal')}</strong>
       </div>
-      <div className="entry-details">
-        <span>{t('dashboard.weight')}: {entry.weight}g</span>
+      <div className="entry-item__details">
+        <span className="entry-item__detail">{t('dashboard.weight')}: {entry.weight}g</span>
         {actualFats !== null ? (
-          <span>{t('dashboard.fatsConsumed')}: {actualFats.toFixed(1)}g</span>
+          <span className="entry-item__detail">{t('dashboard.fatsConsumed')}: {actualFats.toFixed(1)}g</span>
         ) : null}
         {actualCarbs !== null ? (
-          <span>{t('dashboard.carbsConsumed')}: {actualCarbs.toFixed(1)}g</span>
+          <span className="entry-item__detail">{t('dashboard.carbsConsumed')}: {actualCarbs.toFixed(1)}g</span>
         ) : null}
         {actualProteins !== null ? (
-          <span>{t('dashboard.proteinsConsumed')}: {actualProteins.toFixed(1)}g</span>
+          <span className="entry-item__detail">{t('dashboard.proteinsConsumed')}: {actualProteins.toFixed(1)}g</span>
         ) : null}
       </div>
     </li>

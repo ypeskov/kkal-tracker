@@ -1,0 +1,248 @@
+/* Главный файл глобальных стилей - импортирует все системы стилей */
+
+/* Импорт основных файлов стилей */
+@import './variables.css';
+@import './layout.css';
+@import './components.css';
+@import './utilities.css';
+@import './components/index.css';
+
+/* === ГЛОБАЛЬНЫЕ СБРОС СТИЛЕЙ === */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === УЛУЧШЕННЫЕ СКРОЛЛБАРЫ === */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-400);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-500);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-400) var(--color-gray-100);
+}
+
+/* === УЛУЧШЕННЫЕ ФОКУС СТИЛИ === */
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* === ТИПОГРАФИКА === */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-gray-800);
+}
+
+h1 {
+  font-size: 2.25rem; /* 36px */
+}
+
+h2 {
+  font-size: 1.875rem; /* 30px */
+}
+
+h3 {
+  font-size: 1.5rem; /* 24px */
+}
+
+h4 {
+  font-size: 1.25rem; /* 20px */
+}
+
+h5 {
+  font-size: 1.125rem; /* 18px */
+}
+
+h6 {
+  font-size: 1rem; /* 16px */
+}
+
+p {
+  margin: 0 0 var(--spacing-lg) 0;
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* === СПИСКИ === */
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  list-style: none;
+}
+
+/* === ИЗОБРАЖЕНИЯ === */
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* === ТАБЛИЦЫ === */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+th {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  background-color: var(--color-gray-50);
+}
+
+/* === СПЕЦИАЛЬНЫЕ СОСТОЯНИЯ === */
+
+/* Отключение анимаций для пользователей с проблемами вестибулярного аппарата */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Высокий контраст для пользователей с ограниченным зрением */
+@media (prefers-contrast: high) {
+  :root {
+    --color-gray-400: #666;
+    --color-gray-500: #333;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* === УТИЛИТЫ ДЛЯ ДОСТУПНОСТИ === */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === ОТЛАДОЧНЫЕ СТИЛИ (убрать в продакшене) === */
+
+/* Подсветка всех элементов для отладки макета */
+/*
+.debug * {
+  outline: 1px solid red;
+}
+*/
+
+/* === ВРЕМЕННЫЕ СТИЛИ ДЛЯ СОВМЕСТИМОСТИ === */
+
+/* Обратная совместимость со старыми классами */
+.error {
+  color: var(--color-error);
+  margin-top: var(--spacing-sm);
+}
+
+/* Переходные стили, которые будут удалены после рефакторинга */
+.btn.submit-btn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  min-width: var(--button-min-width);
+  height: var(--button-height);
+  align-self: flex-end;
+}
+
+.btn.submit-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.btn.submit-btn:disabled {
+  background-color: var(--color-gray-500);
+  cursor: not-allowed;
+}
+
+/* Старые классы Dashboard.css для обратной совместимости */
+.readonly-field {
+  background-color: var(--color-bg-disabled) !important;
+  cursor: not-allowed !important;
+  color: var(--color-gray-600);
+}

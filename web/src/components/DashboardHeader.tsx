@@ -22,10 +22,9 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
       </div>
       <div className="header-controls">
         <LanguageSwitcher />
-        <button 
+        <button
           onClick={onLogout}
-          className="btn"
-          style={{ backgroundColor: '#dc3545' }}
+          className="btn btn--danger"
         >
           {t('auth.logout')}
         </button>

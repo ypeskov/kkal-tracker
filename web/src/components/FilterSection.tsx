@@ -29,16 +29,16 @@ export default function FilterSection({
   const { t } = useTranslation();
 
   return (
-    <div className="filter-section" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="filterType" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+    <div className="card mb-lg p-lg">
+      <div className="mb-lg">
+        <label htmlFor="filterType" className="form-group label font-bold mb-sm">
           {t('dashboard.filterBy')}:
         </label>
-        <select 
+        <select
           id="filterType"
-          value={filterType} 
+          value={filterType}
           onChange={(e) => onFilterChange(e.target.value as FilterType)}
-          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', marginRight: '1rem' }}
+          className="form-input mr-lg"
         >
           <option value="today">{t('dashboard.today')}</option>
           <option value="yesterday">{t('dashboard.yesterday')}</option>
@@ -49,9 +49,9 @@ export default function FilterSection({
       </div>
       
       {filterType === 'customRange' && (
-        <div className="custom-date-range" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex gap-lg items-center flex-wrap">
           <div>
-            <label htmlFor="dateFrom" style={{ display: 'block', marginBottom: '0.25rem' }}>
+            <label htmlFor="dateFrom" className="form-group label mb-xs">
               {t('dashboard.dateFrom')}:
             </label>
             <input
@@ -59,11 +59,11 @@ export default function FilterSection({
               id="dateFrom"
               value={customDateFrom}
               onChange={(e) => onCustomDateFromChange(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+              className="form-input"
             />
           </div>
           <div>
-            <label htmlFor="dateTo" style={{ display: 'block', marginBottom: '0.25rem' }}>
+            <label htmlFor="dateTo" className="form-group label mb-xs">
               {t('dashboard.dateTo')}:
             </label>
             <input
@@ -71,18 +71,18 @@ export default function FilterSection({
               id="dateTo"
               value={customDateTo}
               onChange={(e) => onCustomDateToChange(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+              className="form-input"
             />
           </div>
         </div>
       )}
       
-      <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#e8f5e8', borderRadius: '4px', fontWeight: 'bold', color: '#2d5016' }}>
-        <div style={{ marginBottom: '0.5rem' }}>
+      <div className="mt-lg p-md bg-success-light rounded-sm font-bold text-success-dark">
+        <div className="mb-sm">
           {t('dashboard.totalCaloriesFiltered')} {nutritionTotals.calories} {t('dashboard.kcal')}
         </div>
         {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0) && (
-          <div className="nutrition-summary" style={{ display: 'flex', gap: '1rem', fontSize: '0.9em', flexWrap: 'wrap' }}>
+          <div className="flex gap-lg text-sm flex-wrap">
             {nutritionTotals.fats > 0 && (
               <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)}g</span>
             )}

@@ -1,0 +1,18 @@
+/* Индекс компонентных стилей - импорт всех стилей компонентов */
+
+/* Специализированные стили компонентов */
+@import './entries-list.css';
+@import './entry-item.css';
+@import './food-form.css';
+@import './modal-forms.css';
+
+/*
+  Здесь будут добавлены другие компонентные стили по мере рефакторинга:
+
+  @import './filter-section.css';
+  @import './hamburger-menu.css';
+  @import './language-switcher.css';
+  @import './dashboard-header.css';
+
+  И т.д.
+*/

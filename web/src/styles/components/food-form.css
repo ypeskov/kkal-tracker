@@ -1,0 +1,90 @@
+/* Стили для форм добавления/редактирования еды */
+
+/* === ОСНОВНАЯ ФОРМА === */
+
+.food-form {
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.food-form .form-row {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: 0.1rem;
+  align-items: end;
+}
+
+/* === МОБИЛЬНЫЕ СТИЛИ С КОНКРЕТНЫМИ КЛАССАМИ === */
+
+@media (max-width: 768px) {
+  .food-form {
+    padding: var(--spacing-lg);
+  }
+
+  /* Название еды - полная ширина */
+  .food-name-row {
+    flex-direction: column !important;
+    gap: var(--spacing-md) !important;
+    align-items: stretch !important;
+  }
+
+  .food-name-row .form-group {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Вес и калории - 2 в ряд */
+  .weight-calories-row {
+    flex-direction: row !important;
+    gap: var(--spacing-md) !important;
+  }
+
+  .weight-calories-row .form-group {
+    flex: 1 !important;
+    min-width: calc(50% - var(--spacing-md) / 2) !important;
+    max-width: calc(50% - var(--spacing-md) / 2) !important;
+  }
+
+  /* Разбиваем нутриенты на мобильных: жиры+углеводы в первой строке, белки во второй */
+  .fats-carbs-proteins-row {
+    display: block !important;
+  }
+
+  .fats-carbs-proteins-row .form-group:nth-child(1),
+  .fats-carbs-proteins-row .form-group:nth-child(2) {
+    display: inline-block !important;
+    width: calc(50% - var(--spacing-md) / 2) !important;
+    margin-right: var(--spacing-md) !important;
+    vertical-align: top !important;
+  }
+
+  .fats-carbs-proteins-row .form-group:nth-child(2) {
+    margin-right: 0 !important;
+  }
+
+  .fats-carbs-proteins-row .form-group:nth-child(3) {
+    display: block !important;
+    width: calc(50% - var(--spacing-md) / 2) !important;
+    margin-top: var(--spacing-md) !important;
+  }
+
+  /* Общие калории и кнопка */
+  .total-submit-row {
+    flex-direction: column !important;
+    gap: var(--spacing-lg) !important;
+    align-items: stretch !important;
+  }
+
+  .total-submit-row .form-group {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .total-submit-row .btn {
+    width: 100% !important;
+    margin-top: var(--spacing-lg) !important;
+    align-self: stretch !important;
+  }
+}
