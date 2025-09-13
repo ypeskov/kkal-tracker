@@ -15,7 +15,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   return (
     <header className="dashboard-header">
       <div>
-        <p>{t('auth.welcome')}, {user?.email}!</p>
+        <p className="welcome-message">{t('auth.welcome')}, {user?.email}!</p>
       </div>
     </header>
   );
