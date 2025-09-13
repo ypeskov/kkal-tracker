@@ -61,7 +61,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   return (
     <section className="mb-8">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('dashboard.addFoodEntry')}</h2>
-      <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <form onSubmit={handleSubmit} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
         {/* Desktop: all fields in grid layout, Mobile: standard responsive */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Food name - full width on desktop and mobile */}
