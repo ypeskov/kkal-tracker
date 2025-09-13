@@ -79,31 +79,35 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             </div>
           </div>
 
-          {/* Weight - mobile: part of horizontal pair, desktop: normal column */}
+          {/* Weight - mobile: labels on top, inputs below */}
           <div className="flex flex-col md:flex-col">
-            <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 lg:hidden">
-              <label htmlFor="weight" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.weight')}:</label>
-              <input
-                type="number"
-                id="weight"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-                min="0"
-                step="0.1"
-              />
-              <label htmlFor="kcalPer100g" className="font-medium text-gray-800 text-sm self-center text-right">{t('dashboard.kcalPer100g')}:</label>
-              <input
-                type="number"
-                id="kcalPer100g"
-                value={kcalPer100g}
-                onChange={(e) => setKcalPer100g(e.target.value)}
-                className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-                min="0"
-                step="0.1"
-              />
+            <div className="lg:hidden mb-4">
+              <div className="flex justify-between mb-1">
+                <label htmlFor="weight" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.weight')}:</label>
+                <label htmlFor="kcalPer100g" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.kcalPer100g')}:</label>
+              </div>
+              <div className="flex justify-between">
+                <input
+                  type="number"
+                  id="weight"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.1"
+                />
+                <input
+                  type="number"
+                  id="kcalPer100g"
+                  value={kcalPer100g}
+                  onChange={(e) => setKcalPer100g(e.target.value)}
+                  className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.1"
+                />
+              </div>
             </div>
 
             {/* Desktop weight field */}
@@ -138,42 +142,52 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        {/* Mobile: Fats+Carbs horizontal layout */}
-        <div className="grid grid-cols-[20%_30%_20%_30%] gap-1 mb-4 lg:hidden">
-          <label htmlFor="fats" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.fats')}:</label>
-          <input
-            type="number"
-            id="fats"
-            value={fats}
-            onChange={(e) => setFats(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            min="0"
-            step="0.1"
-          />
-          <label htmlFor="carbs" className="font-medium text-gray-800 text-sm self-center text-right">{t('dashboard.carbs')}:</label>
-          <input
-            type="number"
-            id="carbs"
-            value={carbs}
-            onChange={(e) => setCarbs(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            min="0"
-            step="0.1"
-          />
+        {/* Mobile: Fats+Carbs - labels on top, inputs below */}
+        <div className="lg:hidden mb-4">
+          <div className="flex justify-between mb-1">
+            <label htmlFor="fats" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.fats')}:</label>
+            <label htmlFor="carbs" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.carbs')}:</label>
+          </div>
+          <div className="flex justify-between">
+            <input
+              type="number"
+              id="fats"
+              value={fats}
+              onChange={(e) => setFats(e.target.value)}
+              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="0"
+              step="0.1"
+            />
+            <input
+              type="number"
+              id="carbs"
+              value={carbs}
+              onChange={(e) => setCarbs(e.target.value)}
+              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="0"
+              step="0.1"
+            />
+          </div>
         </div>
 
-        {/* Mobile: Proteins at 50% width */}
-        <div className="grid grid-cols-[20%_30%] gap-1 mb-4 lg:hidden">
-          <label htmlFor="proteins" className="font-medium text-gray-800 text-sm self-center">{t('dashboard.proteins')}:</label>
-          <input
-            type="number"
-            id="proteins"
-            value={proteins}
-            onChange={(e) => setProteins(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            min="0"
-            step="0.1"
-          />
+        {/* Mobile: Proteins - two-row layout like paired fields */}
+        <div className="lg:hidden mb-4">
+          <div className="flex justify-between mb-1">
+            <label htmlFor="proteins" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.proteins')}:</label>
+            <div className="w-[45%]"></div>
+          </div>
+          <div className="flex justify-between">
+            <input
+              type="number"
+              id="proteins"
+              value={proteins}
+              onChange={(e) => setProteins(e.target.value)}
+              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="0"
+              step="0.1"
+            />
+            <div className="w-[45%]"></div>
+          </div>
         </div>
 
         {/* Desktop: all 3 in one row */}
