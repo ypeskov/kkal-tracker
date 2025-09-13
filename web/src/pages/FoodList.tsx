@@ -5,7 +5,7 @@ import { ingredientService, Ingredient, CreateIngredientData, UpdateIngredientDa
 import EditIngredientModal from '../components/EditIngredientModal';
 import AddIngredientModal from '../components/AddIngredientModal';
 import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
-import './FoodList.css';
+// FoodList.css imports removed - using Tailwind CSS
 
 export default function FoodList() {
   const { t } = useTranslation();
@@ -99,38 +99,46 @@ export default function FoodList() {
   };
 
   if (isLoading) {
-    return <div className="loading">{t('common.loading')}</div>;
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-gray-600 text-lg">{t('common.loading')}</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="error">{t('common.error')}</div>;
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-red-600 text-lg">{t('common.error')}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="food-list-container">
-      <div className="food-list-header">
-        <h2>{t('foodList.title')}</h2>
-        
-        <div className="food-list-controls">
-          <button 
-            className="btn btn-primary"
+    <div className="max-w-screen-xl mx-auto p-5 md:p-8">
+      <div className="mb-8">
+        <h2 className="mb-5 text-gray-800 text-3xl font-semibold">{t('foodList.title')}</h2>
+
+        <div className="flex flex-col md:flex-row gap-5 items-stretch md:items-center mb-5">
+          <button
+            className="btn-primary px-5 py-2.5 text-sm font-medium uppercase tracking-wide transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={handleAddNew}
           >
             {t('foodList.addNew')}
           </button>
           
-          <div className="filter-input">
+          <div className="relative flex-1 max-w-md">
             <input
               type="text"
               placeholder={t('foodList.filterPlaceholder')}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="form-input"
+              className="w-full py-2.5 pl-4 pr-12 border border-gray-300 rounded text-sm transition-colors duration-300 focus:outline-none focus:border-green-500 placeholder-gray-500"
             />
             {filterText && (
               <button
                 type="button"
-                className="filter-clear-btn"
+                className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center p-2.5 text-gray-500 text-2xl leading-none transition-colors duration-200 hover:text-gray-700 active:text-gray-800"
                 onClick={() => setFilterText('')}
                 aria-label={t('common.clear')}
               >
@@ -141,21 +149,21 @@ export default function FoodList() {
         </div>
       </div>
 
-      <div className="food-list-table-container">
-        <table className="food-list-table">
-          <thead>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <table className="w-full border-collapse">
+          <thead className="bg-gray-100">
             <tr>
-              <th>{t('foodList.name')}</th>
-              <th>{t('foodList.calories')}</th>
-              <th>{t('foodList.proteins')}</th>
-              <th>{t('foodList.carbs')}</th>
-              <th>{t('foodList.fats')}</th>
+              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.name')}</th>
+              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.calories')}</th>
+              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.proteins')}</th>
+              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.carbs')}</th>
+              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.fats')}</th>
             </tr>
           </thead>
           <tbody>
             {filteredIngredients.length === 0 ? (
               <tr>
-                <td colSpan={5} className="no-data">
+                <td colSpan={5} className="text-center text-gray-500 italic py-10 text-base">
                   {t('foodList.noIngredients')}
                 </td>
               </tr>
@@ -163,14 +171,14 @@ export default function FoodList() {
               filteredIngredients.map((ingredient) => (
                 <tr
                   key={ingredient.id}
-                  className="food-list-row"
+                  className="border-b border-gray-200 cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-50 md:hover:translate-x-0.5 md:hover:shadow-[inset_3px_0_0_theme(colors.green.500)] active:bg-gray-200"
                   onClick={() => handleRowClick(ingredient)}
                 >
-                  <td>{ingredient.name}</td>
-                  <td>{ingredient.kcalPer100g}</td>
-                  <td>{ingredient.proteins ?? '-'}</td>
-                  <td>{ingredient.carbs ?? '-'}</td>
-                  <td>{ingredient.fats ?? '-'}</td>
+                  <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs font-medium text-slate-700">{ingredient.name}</td>
+                  <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">{ingredient.kcalPer100g}</td>
+                  <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">{ingredient.proteins ?? '-'}</td>
+                  <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">{ingredient.carbs ?? '-'}</td>
+                  <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">{ingredient.fats ?? '-'}</td>
                 </tr>
               ))
             )}

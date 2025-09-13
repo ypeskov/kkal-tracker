@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Ingredient, ingredientService } from '../api/ingredients'
-import './FoodAutocomplete.css'
+// FoodAutocomplete.css imports removed - using Tailwind CSS
 
 interface FoodAutocompleteProps {
   value: string
@@ -105,7 +105,7 @@ export default function FoodAutocomplete({
   }
 
   return (
-    <div className="food-autocomplete">
+    <div className="relative w-full">
       <input
         ref={inputRef}
         type="text"
@@ -118,20 +118,22 @@ export default function FoodAutocomplete({
         placeholder={placeholder}
         required={required}
         autoComplete="off"
-        className="form-input"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-colors placeholder-gray-400"
       />
       
       {showSuggestions && suggestions.length > 0 && (
-        <div ref={listRef} className="autocomplete-suggestions">
+        <div ref={listRef} className="absolute top-full left-0 right-0 bg-white border border-gray-300 border-t-0 rounded-b shadow-lg max-h-48 overflow-y-auto z-50">
           {suggestions.map((ingredient, index) => (
             <div
               key={ingredient.id}
-              className={`suggestion-item ${index === selectedIndex ? 'selected' : ''}`}
+              className={`p-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-100 ${
+                index === selectedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'
+              }`}
               onClick={() => handleSuggestionClick(ingredient)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
-              <div className="suggestion-name">{ingredient.name}</div>
-              <div className="suggestion-details">
+              <div className="font-medium text-gray-800 mb-1">{ingredient.name}</div>
+              <div className="text-sm text-gray-600 leading-tight">
                 {ingredient.kcalPer100g} kcal/100g
                 {ingredient.proteins && ` • ${ingredient.proteins}g protein`}
                 {ingredient.carbs && ` • ${ingredient.carbs}g carbs`}

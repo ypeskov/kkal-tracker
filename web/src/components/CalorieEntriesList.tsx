@@ -92,12 +92,12 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
   };
 
   return (
-    <section>
-      <h2>{t('dashboard.todayEntries')}</h2>
+    <section className="mb-8">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('dashboard.todayEntries')}</h2>
       {entries?.length === 0 ? (
-        <p>{t('dashboard.noEntries')}</p>
+        <p className="text-center py-8 text-gray-600">{t('dashboard.noEntries')}</p>
       ) : (
-        <div className="entries-list">
+        <div className="flex flex-col gap-6">
           {Object.keys(entriesByDate)
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // Sort dates desc (newest first)
             .map((dateKey, index) => {
@@ -105,47 +105,51 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
               const dailyTotals = calculateDailyTotals(entriesByDate[dateKey]);
               
               return (
-                <div key={dateKey} className={`date-section ${
-                  index % 2 === 0 ? 'date-section--primary' : 'date-section--secondary'
+                <div key={dateKey} className={`rounded-lg p-4 mb-6 border shadow-md relative transition-all duration-200 hover:translate-x-0.5 ${
+                  index % 2 === 0
+                    ? 'bg-blue-50 border-blue-200'
+                    : 'bg-green-50 border-green-200'
                 }`}>
                   {/* Clickable date header with total */}
                   <div
                     onClick={() => hasMultipleDates && toggleDateExpansion(dateKey)}
-                    className={`date-header ${
-                      index % 2 === 0 ? 'date-header--primary' : 'date-header--secondary'
+                    className={`m-0 p-4 text-lg font-semibold rounded-md transition-all duration-200 ${
+                      index % 2 === 0
+                        ? 'text-blue-800 bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 shadow-blue-200'
+                        : 'text-green-800 bg-gradient-to-r from-white to-green-50 border-l-4 border-green-500 shadow-green-200'
                     } ${
-                      hasMultipleDates ? 'date-header--clickable' : ''
+                      hasMultipleDates ? 'cursor-pointer select-none hover:translate-x-1 hover:shadow-lg active:translate-x-0.5' : ''
                     } ${
-                      isExpanded ? 'date-header--expanded' : 'date-header--collapsed'
-                    }`}
+                      isExpanded ? 'mb-4' : 'mb-0'
+                    } shadow-md`}
                   >
-                    <div className="date-header__content">
-                      <div className="date-header__title">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         {hasMultipleDates && (
-                          <span className={`date-header__toggle ${
-                            isExpanded ? 'date-header__toggle--expanded' : 'date-header__toggle--collapsed'
+                          <span className={`inline-block w-5 h-5 leading-5 text-center text-sm font-bold transition-transform duration-200 ${
+                            isExpanded ? 'rotate-0' : '-rotate-90'
                           }`}>
                             ▼
                           </span>
                         )}
                         <span>{formatDateHeader(dateKey)}</span>
                       </div>
-                      <span className="date-header__calories">
+                      <span className="text-green-600 font-bold text-base">
                         {dailyTotals.calories} {t('dashboard.kcal')}
                       </span>
                     </div>
                     
                     {/* Show nutrient summary in header when collapsed */}
                     {!isExpanded && (dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
-                      <div className="nutrients-summary">
+                      <div className="flex flex-wrap gap-4 text-sm mt-2 opacity-80 md:gap-4 sm:gap-2">
                         {dailyTotals.fats > 0 && (
-                          <span className="nutrients-summary__item">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
+                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
                         )}
                         {dailyTotals.carbs > 0 && (
-                          <span className="nutrients-summary__item">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
                         )}
                         {dailyTotals.proteins > 0 && (
-                          <span className="nutrients-summary__item">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
                         )}
                       </div>
                     )}
@@ -154,29 +158,29 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                   {/* Entries list - only visible when expanded */}
                   {isExpanded && (
                     <>
-                      <ul className="entries-list__items">
+                      <ul className="list-none p-0 m-0">
                         {entriesByDate[dateKey].map((entry: any) => (
                           <EntryListItem key={entry.id} entry={entry} onEdit={onEdit} />
                         ))}
                       </ul>
 
                       {/* Daily totals footer - only when expanded */}
-                      <div className="daily-totals">
-                        <div className="daily-totals">
-                          <div className="daily-totals__header">
-                            <span className="daily-totals__label">{t('dashboard.total')}:</span>
-                            <span className="daily-totals__calories">{dailyTotals.calories} {t('dashboard.kcal')}</span>
+                      <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-300">
+                        <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-300">
+                          <div className="flex items-center justify-between font-bold text-sm mb-2">
+                            <span className="text-gray-700">{t('dashboard.total')}:</span>
+                            <span className="text-green-600">{dailyTotals.calories} {t('dashboard.kcal')}</span>
                           </div>
                           {(dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
-                            <div className="daily-totals__nutrients">
+                            <div className="flex flex-wrap gap-2 text-sm md:gap-2 sm:gap-1">
                               {dailyTotals.fats > 0 && (
-                                <span className="daily-totals__nutrient">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
                               )}
                               {dailyTotals.carbs > 0 && (
-                                <span className="daily-totals__nutrient">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
                               )}
                               {dailyTotals.proteins > 0 && (
-                                <span className="daily-totals__nutrient">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
                               )}
                             </div>
                           )}

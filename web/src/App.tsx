@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Login from './components/Login';
 import { authService } from './api/auth';
-import './App.css';
+// App.css imports removed - using Tailwind CSS
 import { router } from './router';
 import { RouterProvider } from '@tanstack/react-router';
 
@@ -40,11 +40,17 @@ function App() {
   };
 
   if (isInitializing || isLoading) {
-    return <div>{t('common.loading')}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-600 text-lg">{t('common.loading')}</div>
+      </div>
+    );
   }
 
   return (
-    <div className={`app ${!isAuthenticated ? 'login-mode' : ''}`}>
+    <div className={`min-h-screen bg-gray-100 ${
+      !isAuthenticated ? 'flex flex-col items-center justify-center' : ''
+    }`}>
       {!isAuthenticated ? (
         <Login onLogin={() => setIsAuthenticated(true)} />
       ) : (
