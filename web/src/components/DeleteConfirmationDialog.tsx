@@ -20,8 +20,8 @@ export default function DeleteConfirmationDialog({
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white rounded-lg max-w-sm w-full max-w-[90%] p-6 shadow-xl animate-slideUp text-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn px-4">
+      <div className="bg-white rounded-lg w-full md:w-[600px] lg:w-[700px] p-8 shadow-xl animate-slideUp text-center">
         <h3 className="text-red-600 mt-0 mb-4 text-lg font-medium">
           {title || t('dashboard.confirmDelete')}
         </h3>

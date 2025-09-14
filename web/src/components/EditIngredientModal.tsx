@@ -56,8 +56,8 @@ export default function EditIngredientModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn" onClick={onCancel}>
-      <div className="bg-white rounded-lg max-w-2xl w-full max-w-[90%] max-h-[90vh] overflow-y-auto shadow-xl animate-slideUp" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn px-4" onClick={onCancel}>
+      <div className="bg-white rounded-lg w-full md:w-[600px] lg:w-[700px] max-h-[90vh] overflow-y-auto shadow-xl animate-slideUp" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
           <h2 className="text-xl font-medium text-gray-800 m-0">{t('foodList.editIngredient')}</h2>
           <button

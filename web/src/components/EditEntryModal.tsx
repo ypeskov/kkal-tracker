@@ -67,8 +67,8 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   if (!entry) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-w-[90%] max-h-[90vh] overflow-y-auto shadow-xl animate-slideUp">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn px-4">
+      <div className="bg-white rounded-lg w-full md:w-[600px] lg:w-[700px] max-h-[90vh] overflow-y-auto shadow-xl animate-slideUp">
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
           <h2 className="text-xl font-medium text-gray-800 m-0">{t('dashboard.editEntry')}</h2>
         </div>
