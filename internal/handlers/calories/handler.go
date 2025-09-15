@@ -72,9 +72,19 @@ func (h *Handler) CreateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
 	}
 
-	result, err := h.calorieService.CreateEntry(userID,
-		req.Food, req.Calories, req.Weight, req.KcalPer100g,
-		req.Fats, req.Carbs, req.Proteins, mealDatetime)
+	serviceReq := &calorieservice.CreateEntryRequest{
+		UserID:       userID,
+		Food:         req.Food,
+		Calories:     req.Calories,
+		Weight:       req.Weight,
+		KcalPer100g:  req.KcalPer100g,
+		Fats:         req.Fats,
+		Carbs:        req.Carbs,
+		Proteins:     req.Proteins,
+		MealDatetime: mealDatetime,
+	}
+
+	result, err := h.calorieService.CreateEntry(serviceReq)
 	if err != nil {
 		h.logger.Error("Failed to create calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -121,7 +131,20 @@ func (h *Handler) UpdateEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
 	}
 
-	entry, err := h.calorieService.UpdateEntry(entryID, userID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, mealDatetime)
+	serviceReq := &calorieservice.UpdateEntryRequest{
+		EntryID:      entryID,
+		UserID:       userID,
+		Food:         req.Food,
+		Calories:     req.Calories,
+		Weight:       req.Weight,
+		KcalPer100g:  req.KcalPer100g,
+		Fats:         req.Fats,
+		Carbs:        req.Carbs,
+		Proteins:     req.Proteins,
+		MealDatetime: mealDatetime,
+	}
+
+	entry, err := h.calorieService.UpdateEntry(serviceReq)
 	if err != nil {
 		h.logger.Error("Failed to update calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")

@@ -23,53 +23,50 @@ func NewService(calorieRepo repositories.CalorieEntryRepository, ingredientRepo 
 	}
 }
 
-func (s *Service) CreateEntry(userID int,
-	food string, calories int, weight float64, kcalPer100g float64,
-	fats, carbs, proteins *float64, mealDatetime time.Time) (*CreateEntryResult, error) {
-
+func (s *Service) CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, error) {
 	// Validate calories
-	if calories <= 0 {
+	if req.Calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")
 	}
 
 	// Validate weight
-	if weight <= 0 {
+	if req.Weight <= 0 {
 		return nil, errors.New("weight must be greater than 0")
 	}
 
 	// Validate kcal per 100g
-	if kcalPer100g <= 0 {
+	if req.KcalPer100g <= 0 {
 		return nil, errors.New("kcal per 100g must be greater than 0")
 	}
 
 	// Validate food name
-	if food == "" {
+	if req.Food == "" {
 		return nil, errors.New("food name is required")
 	}
 
 	newIngredientCreated := false
 
 	// Check if ingredient exists, if not create it
-	_, err := s.ingredientRepo.GetUserIngredientByName(userID, food)
+	_, err := s.ingredientRepo.GetUserIngredientByName(req.UserID, req.Food)
 	if err != nil {
 		// Ingredient doesn't exist, create it
-		_, createErr := s.ingredientRepo.CreateOrUpdateUserIngredient(userID, food, kcalPer100g, fats, carbs, proteins)
+		_, createErr := s.ingredientRepo.CreateOrUpdateUserIngredient(req.UserID, req.Food, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
 		if createErr != nil {
-			s.logger.Error("Failed to create user ingredient", "error", createErr, "user_id", userID, "food", food)
+			s.logger.Error("Failed to create user ingredient", "error", createErr, "user_id", req.UserID, "food", req.Food)
 			// Don't fail the calorie entry creation if ingredient creation fails
 		} else {
-			s.logger.Info("New user ingredient created", "user_id", userID, "food", food, "kcalPer100g", kcalPer100g)
+			s.logger.Info("New user ingredient created", "user_id", req.UserID, "food", req.Food, "kcalPer100g", req.KcalPer100g)
 			newIngredientCreated = true
 		}
 	}
 
-	entry, err := s.calorieRepo.Create(userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime)
+	entry, err := s.calorieRepo.Create(req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.MealDatetime)
 	if err != nil {
-		s.logger.Error("Failed to create calorie entry", "error", err, "user_id", userID)
+		s.logger.Error("Failed to create calorie entry", "error", err, "user_id", req.UserID)
 		return nil, err
 	}
 
-	s.logger.Info("Calorie entry created", "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
+	s.logger.Info("Calorie entry created", "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight, "kcalPer100g", req.KcalPer100g, "meal_datetime", req.MealDatetime)
 
 	return &CreateEntryResult{
 		Entry:                entry,
@@ -141,33 +138,33 @@ func (s *Service) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]
 	return entries, nil
 }
 
-func (s *Service) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+func (s *Service) UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, error) {
 	// Validate calories
-	if calories <= 0 {
+	if req.Calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")
 	}
 
 	// Validate weight
-	if weight <= 0 {
+	if req.Weight <= 0 {
 		return nil, errors.New("weight must be greater than 0")
 	}
 
 	// Validate kcal per 100g
-	if kcalPer100g <= 0 {
+	if req.KcalPer100g <= 0 {
 		return nil, errors.New("kcal per 100g must be greater than 0")
 	}
 
 	// Validate food name
-	if food == "" {
+	if req.Food == "" {
 		return nil, errors.New("food name is required")
 	}
 
-	entry, err := s.calorieRepo.Update(entryID, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime)
+	entry, err := s.calorieRepo.Update(req.EntryID, req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.MealDatetime)
 	if err != nil {
-		s.logger.Error("Failed to update calorie entry", "error", err, "entry_id", entryID, "user_id", userID)
+		s.logger.Error("Failed to update calorie entry", "error", err, "entry_id", req.EntryID, "user_id", req.UserID)
 		return nil, err
 	}
 
-	s.logger.Info("Calorie entry updated", "entry_id", entryID, "user_id", userID, "food", food, "calories", calories, "weight", weight, "kcalPer100g", kcalPer100g, "meal_datetime", mealDatetime)
+	s.logger.Info("Calorie entry updated", "entry_id", req.EntryID, "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight, "kcalPer100g", req.KcalPer100g, "meal_datetime", req.MealDatetime)
 	return entry, nil
 }
