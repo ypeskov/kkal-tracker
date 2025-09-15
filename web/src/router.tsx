@@ -3,7 +3,7 @@ import Root from './components/Root';
 import DashboardPage from './pages/DashboardPage';
 import FoodList from './pages/FoodList';
 import Report from './pages/Report';
-import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 
 export interface User {
   id: number;
@@ -37,17 +37,17 @@ const reportRoute = createRoute({
   component: Report,
 });
 
-const settingsRoute = createRoute({
+const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/settings',
-  component: Settings,
+  path: '/profile',
+  component: Profile,
 });
 
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   foodListRoute,
   reportRoute,
-  settingsRoute,
+  profileRoute,
 ]);
 
 export const router = createRouter({

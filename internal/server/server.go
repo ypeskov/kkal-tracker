@@ -15,6 +15,7 @@ import (
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	"ypeskov/kkal-tracker/internal/repositories/sqlite"
+	"ypeskov/kkal-tracker/internal/routes/api"
 	"ypeskov/kkal-tracker/internal/routes/web"
 	"ypeskov/kkal-tracker/internal/services"
 
@@ -92,6 +93,7 @@ func (s *Server) Start() *http.Server {
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.NewHandler(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(s.ingredientRepo, s.logger)
+	profileHandler := api.NewProfileHandler(s.db, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -103,6 +105,10 @@ func (s *Server) Start() *http.Server {
 
 	ingredientsGroup := apiGroup.Group("/ingredients", authMiddleware.RequireAuth)
 	ingredientHandler.RegisterRoutes(ingredientsGroup)
+
+	// Profile routes require authentication
+	profileGroup := apiGroup.Group("", authMiddleware.RequireAuth)
+	profileHandler.RegisterRoutes(profileGroup)
 
 	web.RegisterStaticRoutes(e, s.staticFiles)
 

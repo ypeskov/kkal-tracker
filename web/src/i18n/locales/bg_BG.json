@@ -68,19 +68,37 @@
     "title": "Отчети",
     "wip": "В разработка"
   },
-  "settings": {
-    "title": "Настройки",
-    "wip": "В разработка"
+  "profile": {
+    "title": "Профил",
+    "information": "Информация",
+    "physicalParameters": "Физически параметри",
+    "firstName": "Име",
+    "lastName": "Фамилия",
+    "email": "Електронна поща",
+    "language": "Език на интерфейса",
+    "age": "Възраст",
+    "weight": "Тегло (кг)",
+    "height": "Височина (см)",
+    "save": "Запази",
+    "saving": "Запазване...",
+    "saveSuccess": "Профилът е актуализиран успешно",
+    "saveError": "Неуспешно актуализиране на профила",
+    "unsavedChanges": "Незапазени промени",
+    "unsavedChangesMessage": "Имате незапазени промени. Искате ли да ги запазите?",
+    "discardChanges": "Отхвърли",
+    "saveChanges": "Запази промените"
   },
   "nav": {
     "dashboard": "Табло",
     "foodList": "Списък храни",
     "reports": "Отчети",
-    "settings": "Настройки"
+    "profile": "Профил"
   },
   "common": {
     "loading": "Зарежда се...",
     "error": "Възникна грешка",
+    "success": "Успешно",
+    "ok": "ОК",
     "create": "Създай",
     "creating": "Създава се...",
     "update": "Актуализирай",

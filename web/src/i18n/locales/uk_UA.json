@@ -68,19 +68,37 @@
     "title": "Звіти",
     "wip": "В розробці"
   },
-  "settings": {
-    "title": "Налаштування",
-    "wip": "В розробці"
+  "profile": {
+    "title": "Профіль",
+    "information": "Інформація",
+    "physicalParameters": "Фізичні параметри",
+    "firstName": "Ім'я",
+    "lastName": "Прізвище",
+    "email": "Електронна пошта",
+    "language": "Мова інтерфейсу",
+    "age": "Вік",
+    "weight": "Вага (кг)",
+    "height": "Зріст (см)",
+    "save": "Зберегти",
+    "saving": "Збереження...",
+    "saveSuccess": "Профіль успішно оновлено",
+    "saveError": "Не вдалося оновити профіль",
+    "unsavedChanges": "Незбережені зміни",
+    "unsavedChangesMessage": "У вас є незбережені зміни. Бажаєте їх зберегти?",
+    "discardChanges": "Відхилити",
+    "saveChanges": "Зберегти зміни"
   },
   "nav": {
     "dashboard": "Дашборд",
     "foodList": "Продукти",
     "reports": "Звіти",
-    "settings": "Налаштування"
+    "profile": "Профіль"
   },
   "common": {
     "loading": "Завантаження...",
     "error": "Сталася помилка",
+    "success": "Успішно",
+    "ok": "ОК",
     "create": "Створити",
     "creating": "Створення...",
     "update": "Оновити",

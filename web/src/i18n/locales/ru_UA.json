@@ -68,19 +68,37 @@
     "title": "Отчёты",
     "wip": "В разработке"
   },
-  "settings": {
-    "title": "Настройки",
-    "wip": "В разработке"
+  "profile": {
+    "title": "Профиль",
+    "information": "Информация",
+    "physicalParameters": "Физические параметры",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "email": "Электронная почта",
+    "language": "Язык интерфейса",
+    "age": "Возраст",
+    "weight": "Вес (кг)",
+    "height": "Рост (см)",
+    "save": "Сохранить",
+    "saving": "Сохранение...",
+    "saveSuccess": "Профиль успешно обновлен",
+    "saveError": "Не удалось обновить профиль",
+    "unsavedChanges": "Несохраненные изменения",
+    "unsavedChangesMessage": "У вас есть несохраненные изменения. Хотите их сохранить?",
+    "discardChanges": "Отменить",
+    "saveChanges": "Сохранить изменения"
   },
   "nav": {
     "dashboard": "Дашборд",
     "foodList": "Продукты",
     "reports": "Отчёты",
-    "settings": "Настройки"
+    "profile": "Профиль"
   },
   "common": {
     "loading": "Загрузка...",
     "error": "Произошла ошибка",
+    "success": "Успешно",
+    "ok": "ОК",
     "create": "Создать",
     "creating": "Создание...",
     "update": "Обновить",

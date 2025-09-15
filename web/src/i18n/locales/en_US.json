@@ -68,19 +68,37 @@
     "title": "Reports",
     "wip": "Work in progress"
   },
-  "settings": {
-    "title": "Settings",
-    "wip": "Work in progress"
+  "profile": {
+    "title": "Profile",
+    "information": "Information",
+    "physicalParameters": "Physical Parameters",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "language": "Interface Language",
+    "age": "Age",
+    "weight": "Weight (kg)",
+    "height": "Height (cm)",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveSuccess": "Profile updated successfully",
+    "saveError": "Failed to update profile",
+    "unsavedChanges": "Unsaved Changes",
+    "unsavedChangesMessage": "You have unsaved changes. Do you want to save them?",
+    "discardChanges": "Discard",
+    "saveChanges": "Save Changes"
   },
   "nav": {
     "dashboard": "Dashboard",
     "foodList": "Food List",
     "reports": "Reports",
-    "settings": "Settings"
+    "profile": "Profile"
   },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
+    "success": "Success",
+    "ok": "OK",
     "create": "Create",
     "creating": "Creating...",
     "update": "Update",

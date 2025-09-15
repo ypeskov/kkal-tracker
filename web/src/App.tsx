@@ -6,6 +6,12 @@ import { authService } from './api/auth';
 // App.css imports removed - using Tailwind CSS
 import { router } from './router';
 import { RouterProvider } from '@tanstack/react-router';
+import i18n from './i18n';
+
+// Helper function to convert backend language codes to i18n format
+const convertLanguageCode = (backendCode: string): string => {
+  return backendCode.replace('_', '-');
+};
 
 function App() {
   const { t } = useTranslation();
@@ -20,7 +26,7 @@ function App() {
     setIsInitializing(false);
   }, []);
 
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, error } = useQuery({
     queryKey: ['user'],
     queryFn: authService.getCurrentUser,
     retry: false,
@@ -34,12 +40,22 @@ function App() {
     }
   }, [error, isAuthenticated]);
 
+  // Apply user's language preference when user data is loaded
+  useEffect(() => {
+    if (user && user.language) {
+      const i18nLanguage = convertLanguageCode(user.language);
+      if (i18n.language !== i18nLanguage) {
+        i18n.changeLanguage(i18nLanguage);
+      }
+    }
+  }, [user]);
+
   const handleLogout = () => {
     authService.logout();
     setIsAuthenticated(false);
   };
 
-  if (isInitializing || isLoading) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-600 text-lg">{t('common.loading')}</div>
@@ -54,7 +70,7 @@ function App() {
       {!isAuthenticated ? (
         <Login onLogin={() => setIsAuthenticated(true)} />
       ) : (
-        <RouterProvider router={router} context={{ user, onLogout: handleLogout }} />
+        <RouterProvider router={router} context={{ user: user || undefined, onLogout: handleLogout }} />
       )}
     </div>
   );

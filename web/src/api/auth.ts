@@ -6,6 +6,7 @@ interface LoginRequest {
 interface User {
   id: number
   email: string
+  language?: string
 }
 
 class AuthService {
