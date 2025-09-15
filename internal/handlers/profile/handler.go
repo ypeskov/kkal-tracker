@@ -6,27 +6,27 @@ import (
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/models"
-	"ypeskov/kkal-tracker/internal/repositories/sqlite"
+	"ypeskov/kkal-tracker/internal/repositories"
 
 	"github.com/labstack/echo/v4"
 )
 
-type ProfileHandler struct {
+type Handler struct {
 	db       *sql.DB
-	userRepo *sqlite.UserRepository
+	userRepo repositories.UserRepository
 	logger   *slog.Logger
 }
 
-func NewProfileHandler(db *sql.DB, logger *slog.Logger) *ProfileHandler {
-	return &ProfileHandler{
+func NewProfileHandler(db *sql.DB, userRepo repositories.UserRepository, logger *slog.Logger) *Handler {
+	return &Handler{
 		db:       db,
-		userRepo: sqlite.NewUserRepository(db, logger),
+		userRepo: userRepo,
 		logger:   logger,
 	}
 }
 
 // GetProfile returns the current user's profile
-func (h *ProfileHandler) GetProfile(c echo.Context) error {
+func (h *Handler) GetProfile(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("Getting profile", slog.Int("user_id", userID))
 
@@ -67,7 +67,7 @@ func (h *ProfileHandler) GetProfile(c echo.Context) error {
 }
 
 // UpdateProfile updates the current user's profile
-func (h *ProfileHandler) UpdateProfile(c echo.Context) error {
+func (h *Handler) UpdateProfile(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("Updating profile", slog.Int("user_id", userID))
 
@@ -114,7 +114,7 @@ func (h *ProfileHandler) UpdateProfile(c echo.Context) error {
 }
 
 // RegisterRoutes registers the profile routes
-func (h *ProfileHandler) RegisterRoutes(g *echo.Group) {
+func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/profile", h.GetProfile)
 	g.PUT("/profile", h.UpdateProfile)
 }

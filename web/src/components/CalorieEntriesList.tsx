@@ -141,15 +141,15 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                     
                     {/* Show nutrient summary in header when collapsed */}
                     {!isExpanded && (dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
-                      <div className="flex flex-wrap gap-4 text-sm mt-2 opacity-80 md:gap-4 sm:gap-2">
+                      <div className="flex md:flex-row md:gap-6 sm:flex-wrap sm:gap-2 text-sm mt-2 opacity-80">
                         {dailyTotals.fats > 0 && (
-                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
                         )}
                         {dailyTotals.carbs > 0 && (
-                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
                         )}
                         {dailyTotals.proteins > 0 && (
-                          <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
                         )}
                       </div>
                     )}

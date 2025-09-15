@@ -93,7 +93,7 @@ func (s *Server) Start() *http.Server {
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.NewHandler(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(s.ingredientRepo, s.logger)
-	profileHandler := profile.NewProfileHandler(s.db, s.logger)
+	profileHandler := profile.NewProfileHandler(s.db, s.userRepo, s.logger)
 
 	apiGroup := e.Group("/api")
 

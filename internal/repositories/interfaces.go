@@ -12,6 +12,9 @@ type UserRepository interface {
 	CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error)
 	GetByID(id int) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
+	UpdateProfile(userID int, profile *models.ProfileUpdateRequest) error
+	GetLatestWeight(userID int) (*float64, error)
+	AddWeightEntry(userID int, weight float64) error
 }
 
 // CalorieEntryRepository defines the contract for calorie entry data access
