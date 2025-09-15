@@ -1,4 +1,4 @@
-package api
+package profile
 
 import (
 	"database/sql"

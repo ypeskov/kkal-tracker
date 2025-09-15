@@ -12,11 +12,11 @@ import (
 	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
+	"ypeskov/kkal-tracker/internal/handlers/profile"
+	"ypeskov/kkal-tracker/internal/handlers/static"
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	"ypeskov/kkal-tracker/internal/repositories/sqlite"
-	"ypeskov/kkal-tracker/internal/routes/api"
-	"ypeskov/kkal-tracker/internal/routes/web"
 	"ypeskov/kkal-tracker/internal/services"
 
 	"github.com/labstack/echo/v4"
@@ -93,7 +93,7 @@ func (s *Server) Start() *http.Server {
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.NewHandler(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(s.ingredientRepo, s.logger)
-	profileHandler := api.NewProfileHandler(s.db, s.logger)
+	profileHandler := profile.NewProfileHandler(s.db, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -110,7 +110,8 @@ func (s *Server) Start() *http.Server {
 	profileGroup := apiGroup.Group("", authMiddleware.RequireAuth)
 	profileHandler.RegisterRoutes(profileGroup)
 
-	web.RegisterStaticRoutes(e, s.staticFiles)
+	staticHandler := static.NewHandler(s.staticFiles)
+	staticHandler.RegisterRoutes(e)
 
 	s.logger.Info("Server configured", "port", s.config.Port, "database_type", s.config.DatabaseType)
 

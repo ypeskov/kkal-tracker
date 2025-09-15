@@ -26,7 +26,7 @@ function App() {
     setIsInitializing(false);
   }, []);
 
-  const { data: user, error } = useQuery({
+  const { data: user, error, isLoading: isUserLoading } = useQuery({
     queryKey: ['user'],
     queryFn: authService.getCurrentUser,
     retry: false,
@@ -55,7 +55,7 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  if (isInitializing) {
+  if (isInitializing || (isAuthenticated && isUserLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-600 text-lg">{t('common.loading')}</div>
@@ -70,7 +70,7 @@ function App() {
       {!isAuthenticated ? (
         <Login onLogin={() => setIsAuthenticated(true)} />
       ) : (
-        <RouterProvider router={router} context={{ user: user || undefined, onLogout: handleLogout }} />
+        <RouterProvider router={router} context={{ user: user!, onLogout: handleLogout }} />
       )}
     </div>
   );
