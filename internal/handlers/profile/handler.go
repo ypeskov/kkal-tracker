@@ -5,17 +5,17 @@ import (
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/dto"
-	"ypeskov/kkal-tracker/internal/services"
+	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	profileService *services.ProfileService
+	profileService *profileservice.Service
 	logger         *slog.Logger
 }
 
-func NewProfileHandler(profileService *services.ProfileService, logger *slog.Logger) *Handler {
+func NewProfileHandler(profileService *profileservice.Service, logger *slog.Logger) *Handler {
 	return &Handler{
 		profileService: profileService,
 		logger:         logger,

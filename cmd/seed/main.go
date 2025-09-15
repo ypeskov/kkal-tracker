@@ -29,7 +29,7 @@ func main() {
 	appLogger := logger.New(cfg)
 
 	// Initialize database
-	db, err := database.New(cfg.DatabasePath)
+	db, err := database.New(cfg.DatabasePath, appLogger)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}

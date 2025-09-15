@@ -36,7 +36,7 @@ func main() {
 	cfg := config.New()
 	appLogger := logger.New(cfg)
 
-	db, err := database.New(cfg.DatabasePath)
+	db, err := database.New(cfg.DatabasePath, appLogger)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}

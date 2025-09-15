@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"ypeskov/kkal-tracker/internal/models"
-	"ypeskov/kkal-tracker/internal/services"
+	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	calorieService *services.CalorieService
+	calorieService *calorieservice.Service
 	logger         *slog.Logger
 }
 
@@ -28,7 +28,7 @@ type CreateEntryRequest struct {
 	MealDatetime string   `json:"meal_datetime" validate:"required"`
 }
 
-func NewHandler(calorieService *services.CalorieService, logger *slog.Logger) *Handler {
+func NewHandler(calorieService *calorieservice.Service, logger *slog.Logger) *Handler {
 	return &Handler{
 		calorieService: calorieService,
 		logger:         logger,

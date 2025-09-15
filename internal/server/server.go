@@ -17,7 +17,9 @@ import (
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	"ypeskov/kkal-tracker/internal/repositories/sqlite"
-	"ypeskov/kkal-tracker/internal/services"
+	authservice "ypeskov/kkal-tracker/internal/services/auth"
+	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
+	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
@@ -87,9 +89,9 @@ func (s *Server) Start() *http.Server {
 	jwtService := auth.NewJWTService(s.config.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 
-	authService := services.NewAuthService(s.userRepo, jwtService, s.logger)
-	calorieService := services.NewCalorieService(s.calorieRepo, s.ingredientRepo, s.logger)
-	profileService := services.NewProfileService(s.db, s.userRepo, s.logger)
+	authService := authservice.NewService(s.userRepo, jwtService, s.logger)
+	calorieService := calorieservice.NewService(s.calorieRepo, s.ingredientRepo, s.logger)
+	profileService := profileservice.NewService(s.db, s.userRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.NewHandler(calorieService, s.logger)

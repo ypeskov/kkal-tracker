@@ -1,4 +1,4 @@
-package services
+package profile
 
 import (
 	"database/sql"
@@ -8,14 +8,14 @@ import (
 	"ypeskov/kkal-tracker/internal/repositories"
 )
 
-type ProfileService struct {
+type Service struct {
 	db       *sql.DB
 	userRepo repositories.UserRepository
 	logger   *slog.Logger
 }
 
-func NewProfileService(db *sql.DB, userRepo repositories.UserRepository, logger *slog.Logger) *ProfileService {
-	return &ProfileService{
+func NewService(db *sql.DB, userRepo repositories.UserRepository, logger *slog.Logger) *Service {
+	return &Service{
 		db:       db,
 		userRepo: userRepo,
 		logger:   logger,
@@ -23,7 +23,7 @@ func NewProfileService(db *sql.DB, userRepo repositories.UserRepository, logger 
 }
 
 // GetProfile retrieves the user profile and returns a DTO
-func (s *ProfileService) GetProfile(userID int) (*dto.ProfileResponse, error) {
+func (s *Service) GetProfile(userID int) (*dto.ProfileResponse, error) {
 	s.logger.Debug("Getting profile", slog.Int("user_id", userID))
 
 	user, err := s.userRepo.GetByID(userID)
@@ -53,7 +53,7 @@ func (s *ProfileService) GetProfile(userID int) (*dto.ProfileResponse, error) {
 }
 
 // UpdateProfile updates the user profile, passing DTO directly to repository
-func (s *ProfileService) UpdateProfile(userID int, req *dto.ProfileUpdateRequest) error {
+func (s *Service) UpdateProfile(userID int, req *dto.ProfileUpdateRequest) error {
 	s.logger.Debug("Updating profile", slog.Int("user_id", userID))
 
 	// Start transaction for atomic updates

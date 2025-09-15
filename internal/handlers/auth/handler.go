@@ -6,13 +6,13 @@ import (
 	"net/http"
 
 	"ypeskov/kkal-tracker/internal/middleware"
-	"ypeskov/kkal-tracker/internal/services"
+	authservice "ypeskov/kkal-tracker/internal/services/auth"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	authService *services.AuthService
+	authService *authservice.Service
 	logger      *slog.Logger
 }
 
@@ -36,7 +36,7 @@ type LoginResponse struct {
 	User  ResponseUser `json:"user"`
 }
 
-func NewHandler(authService *services.AuthService, logger *slog.Logger) *Handler {
+func NewHandler(authService *authservice.Service, logger *slog.Logger) *Handler {
 	return &Handler{
 		authService: authService,
 		logger:      logger,
@@ -51,7 +51,7 @@ func (h *Handler) Login(c echo.Context) error {
 
 	user, token, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, services.ErrInvalidCredentials) {
+		if errors.Is(err, authservice.ErrInvalidCredentials) {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 		}
 		h.logger.Error("Login failed", "error", err)
@@ -99,7 +99,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 
 	user, err := h.authService.GetCurrentUser(userID)
 	if err != nil {
-		if errors.Is(err, services.ErrUserNotFound) {
+		if errors.Is(err, authservice.ErrUserNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, "User not found")
 		}
 		h.logger.Error("Failed to get current user", "error", err)

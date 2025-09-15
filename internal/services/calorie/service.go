@@ -1,4 +1,4 @@
-package services
+package calorie
 
 import (
 	"errors"
@@ -9,31 +9,21 @@ import (
 	"ypeskov/kkal-tracker/internal/repositories"
 )
 
-var (
-	ErrInvalidDate   = errors.New("invalid date format")
-	ErrEntryNotFound = errors.New("calorie entry not found")
-)
-
-type CalorieService struct {
+type Service struct {
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
 	logger         *slog.Logger
 }
 
-func NewCalorieService(calorieRepo repositories.CalorieEntryRepository, ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *CalorieService {
-	return &CalorieService{
+func NewService(calorieRepo repositories.CalorieEntryRepository, ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Service {
+	return &Service{
 		calorieRepo:    calorieRepo,
 		ingredientRepo: ingredientRepo,
 		logger:         logger,
 	}
 }
 
-type CreateEntryResult struct {
-	Entry                *models.CalorieEntry `json:"entry"`
-	NewIngredientCreated bool                 `json:"new_ingredient_created"`
-}
-
-func (s *CalorieService) CreateEntry(userID int,
+func (s *Service) CreateEntry(userID int,
 	food string, calories int, weight float64, kcalPer100g float64,
 	fats, carbs, proteins *float64, mealDatetime time.Time) (*CreateEntryResult, error) {
 
@@ -87,7 +77,7 @@ func (s *CalorieService) CreateEntry(userID int,
 	}, nil
 }
 
-func (s *CalorieService) DeleteEntry(entryID, userID int) error {
+func (s *Service) DeleteEntry(entryID, userID int) error {
 	err := s.calorieRepo.Delete(entryID, userID)
 	if err != nil {
 		s.logger.Error("Failed to delete calorie entry", "error", err, "entry_id", entryID, "user_id", userID)
@@ -98,7 +88,7 @@ func (s *CalorieService) DeleteEntry(entryID, userID int) error {
 	return nil
 }
 
-func (s *CalorieService) GetTotalCaloriesForDate(userID int, date string) (int, error) {
+func (s *Service) GetTotalCaloriesForDate(userID int, date string) (int, error) {
 	// Use date range with same date for both from and to
 	entries, err := s.GetEntriesByDateRange(userID, date, date)
 	if err != nil {
@@ -113,7 +103,7 @@ func (s *CalorieService) GetTotalCaloriesForDate(userID int, date string) (int, 
 	return total, nil
 }
 
-func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[string]int, error) {
+func (s *Service) GetWeeklyStats(userID int, startDate string) (map[string]int, error) {
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
 		return nil, ErrInvalidDate
@@ -136,7 +126,7 @@ func (s *CalorieService) GetWeeklyStats(userID int, startDate string) (map[strin
 	return stats, nil
 }
 
-func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
+func (s *Service) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
 	entries, err := s.calorieRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
 	if err != nil {
 		s.logger.Error("failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
@@ -151,7 +141,7 @@ func (s *CalorieService) GetEntriesByDateRange(userID int, dateFrom, dateTo stri
 	return entries, nil
 }
 
-func (s *CalorieService) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+func (s *Service) UpdateEntry(entryID, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
 	// Validate calories
 	if calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")

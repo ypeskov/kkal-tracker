@@ -1,4 +1,4 @@
-package services
+package auth
 
 import (
 	"database/sql"
@@ -12,26 +12,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserNotFound       = errors.New("user not found")
-)
-
-type AuthService struct {
+type Service struct {
 	userRepo   repositories.UserRepository
 	jwtService *auth.JWTService
 	logger     *slog.Logger
 }
 
-func NewAuthService(userRepo repositories.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *AuthService {
-	return &AuthService{
+func NewService(userRepo repositories.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *Service {
+	return &Service{
 		userRepo:   userRepo,
 		jwtService: jwtService,
 		logger:     logger,
 	}
 }
 
-func (s *AuthService) Login(email, password string) (*models.User, string, error) {
+func (s *Service) Login(email, password string) (*models.User, string, error) {
 	user, err := s.userRepo.GetByEmail(email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -54,7 +49,7 @@ func (s *AuthService) Login(email, password string) (*models.User, string, error
 	return user, token, nil
 }
 
-func (s *AuthService) GetCurrentUser(userID int) (*models.User, error) {
+func (s *Service) GetCurrentUser(userID int) (*models.User, error) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -67,7 +62,7 @@ func (s *AuthService) GetCurrentUser(userID int) (*models.User, error) {
 	return user, nil
 }
 
-func (s *AuthService) Register(email, password, languageCode string) (*models.User, string, error) {
+func (s *Service) Register(email, password, languageCode string) (*models.User, string, error) {
 	// Check if user already exists
 	existingUser, err := s.userRepo.GetByEmail(email)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
