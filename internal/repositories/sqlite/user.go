@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 
+	"ypeskov/kkal-tracker/internal/dto"
 	"ypeskov/kkal-tracker/internal/models"
 )
 
@@ -82,7 +83,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 	r.logger.Debug("Getting user by ID", slog.Int("id", id))
 
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`
@@ -97,6 +98,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
+		&user.Weight,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -116,7 +118,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	r.logger.Debug("Getting user by email", slog.String("email", email))
 
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`
@@ -131,6 +133,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
+		&user.Weight,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -147,12 +150,12 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 }
 
 // UpdateProfile updates user profile information
-func (r *UserRepository) UpdateProfile(userID int, profile *models.ProfileUpdateRequest) error {
+func (r *UserRepository) UpdateProfile(userID int, profile *dto.ProfileUpdateRequest) error {
 	r.logger.Debug("Updating user profile", slog.Int("user_id", userID))
 
 	query := `
 		UPDATE users
-		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, language = ?, updated_at = datetime('now')
+		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, weight = ?, language = ?, updated_at = datetime('now')
 		WHERE id = ?
 	`
 
@@ -162,35 +165,12 @@ func (r *UserRepository) UpdateProfile(userID int, profile *models.ProfileUpdate
 		profile.Email,
 		profile.Age,
 		profile.Height,
+		profile.Weight,
 		profile.Language,
 		userID,
 	)
 
 	return err
-}
-
-// GetLatestWeight returns the most recent weight entry for a user
-func (r *UserRepository) GetLatestWeight(userID int) (*float64, error) {
-	r.logger.Debug("Getting latest weight", slog.Int("user_id", userID))
-
-	query := `
-		SELECT weight
-		FROM weight_history
-		WHERE user_id = ?
-		ORDER BY recorded_at DESC
-		LIMIT 1
-	`
-
-	var weight float64
-	err := r.db.QueryRow(query, userID).Scan(&weight)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &weight, nil
 }
 
 // AddWeightEntry adds a new weight entry to the history
