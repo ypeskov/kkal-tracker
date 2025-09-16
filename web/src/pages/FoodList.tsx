@@ -127,7 +127,7 @@ export default function FoodList() {
             {t('foodList.addNew')}
           </button>
           
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1">
             <input
               type="text"
               placeholder={t('foodList.filterPlaceholder')}
@@ -153,11 +153,11 @@ export default function FoodList() {
         <table className="w-full border-collapse">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.name')}</th>
-              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.calories')}</th>
-              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.proteins')}</th>
-              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.carbs')}</th>
-              <th className="p-4 md:p-4 p-2.5 text-left font-semibold text-gray-600 text-sm md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.fats')}</th>
+              <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.name')}</th>
+              <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.calories')}</th>
+              <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.proteins')}</th>
+              <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.carbs')}</th>
+              <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">{t('foodList.fats')}</th>
             </tr>
           </thead>
           <tbody>
