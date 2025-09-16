@@ -16,9 +16,9 @@ import (
 	"ypeskov/kkal-tracker/internal/handlers/static"
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
-	"ypeskov/kkal-tracker/internal/repositories/sqlite"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
+	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 
 	"github.com/labstack/echo/v4"
@@ -40,9 +40,9 @@ type Server struct {
 func (s *Server) setupRepositories() error {
 	switch s.config.DatabaseType {
 	case "sqlite":
-		s.userRepo = sqlite.NewUserRepository(s.db, s.logger)
-		s.calorieRepo = sqlite.NewCalorieEntryRepository(s.db, s.logger)
-		s.ingredientRepo = sqlite.NewIngredientRepository(s.db, s.logger)
+		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		// TODO: Implement PostgreSQL repositories when needed
@@ -90,12 +90,13 @@ func (s *Server) Start() *http.Server {
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 
 	authService := authservice.NewService(s.userRepo, jwtService, s.logger)
-	calorieService := calorieservice.NewService(s.calorieRepo, s.ingredientRepo, s.logger)
+	calorieService := calorieservice.New(s.calorieRepo, s.ingredientRepo, s.logger)
+	ingredientService := ingredientservice.NewService(s.ingredientRepo, s.logger)
 	profileService := profileservice.NewService(s.db, s.userRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.NewHandler(calorieService, s.logger)
-	ingredientHandler := ingredients.NewHandler(s.ingredientRepo, s.logger)
+	ingredientHandler := ingredients.NewHandler(ingredientService, s.logger)
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
 
 	apiGroup := e.Group("/api")

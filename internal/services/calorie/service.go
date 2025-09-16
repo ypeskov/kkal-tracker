@@ -15,7 +15,9 @@ type Service struct {
 	logger         *slog.Logger
 }
 
-func NewService(calorieRepo repositories.CalorieEntryRepository, ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Service {
+func New(calorieRepo repositories.CalorieEntryRepository,
+	ingredientRepo repositories.IngredientRepository,
+	logger *slog.Logger) *Service {
 	return &Service{
 		calorieRepo:    calorieRepo,
 		ingredientRepo: ingredientRepo,

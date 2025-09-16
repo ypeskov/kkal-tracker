@@ -1,4 +1,4 @@
-package sqlite
+package repositories
 
 import (
 	"database/sql"
@@ -8,32 +8,33 @@ import (
 	"ypeskov/kkal-tracker/internal/models"
 )
 
-type IngredientRepository struct {
-	db     *sql.DB
-	logger *slog.Logger
+type IngredientRepositoryImpl struct {
+	db        *sql.DB
+	logger    *slog.Logger
+	sqlLoader *SqlLoaderInstance
 }
 
-func NewIngredientRepository(db *sql.DB, logger *slog.Logger) *IngredientRepository {
-	return &IngredientRepository{
-		db:     db,
-		logger: logger,
+func NewIngredientRepository(db *sql.DB, logger *slog.Logger, dialect Dialect) *IngredientRepositoryImpl {
+	sqlLoader := NewSqlLoader(dialect)
+
+	return &IngredientRepositoryImpl{
+		db:        db,
+		logger:    logger,
+		sqlLoader: sqlLoader,
 	}
 }
 
 // Search user ingredients for autocomplete
-func (r *IngredientRepository) SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error) {
 	r.logger.Debug("Searching user ingredients",
 		slog.Int("user_id", userID),
 		slog.String("query", query),
 		slog.Int("limit", limit))
 
-	sqlQuery := `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = ? AND name LIKE ?
-		ORDER BY name
-		LIMIT ?
-	`
+	sqlQuery, err := r.sqlLoader.Load(QuerySearchUserIngredients)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := r.db.Query(sqlQuery, userID, "%"+query+"%", limit)
 	if err != nil {
@@ -66,15 +67,13 @@ func (r *IngredientRepository) SearchUserIngredients(userID int, query string, l
 }
 
 // Get all user ingredients for session storage
-func (r *IngredientRepository) GetAllUserIngredients(userID int) ([]*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) GetAllUserIngredients(userID int) ([]*models.UserIngredient, error) {
 	r.logger.Debug("Getting all user ingredients", slog.Int("user_id", userID))
 
-	sqlQuery := `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = ?
-		ORDER BY name
-	`
+	sqlQuery, err := r.sqlLoader.Load(QueryGetAllUserIngredients)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := r.db.Query(sqlQuery, userID)
 	if err != nil {
@@ -107,15 +106,14 @@ func (r *IngredientRepository) GetAllUserIngredients(userID int) ([]*models.User
 }
 
 // GetUserIngredientByName Get user ingredient by name
-func (r *IngredientRepository) GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error) {
-	query := `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = ? AND name = ?
-	`
+func (r *IngredientRepositoryImpl) GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error) {
+	query, err := r.sqlLoader.Load(QueryGetUserIngredientByName)
+	if err != nil {
+		return nil, err
+	}
 
 	ingredient := &models.UserIngredient{}
-	err := r.db.QueryRow(query, userID, name).Scan(
+	err = r.db.QueryRow(query, userID, name).Scan(
 		&ingredient.ID,
 		&ingredient.UserID,
 		&ingredient.Name,
@@ -136,7 +134,7 @@ func (r *IngredientRepository) GetUserIngredientByName(userID int, name string) 
 }
 
 // CreateOrUpdateUserIngredient Create or update user ingredient (check first, then insert/update)
-func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Creating or updating user ingredient",
 		slog.Int("user_id", userID),
 		slog.String("name", name),
@@ -146,8 +144,9 @@ func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name str
 	_, err := r.GetUserIngredientByName(userID, name)
 	if err == nil {
 		// Ingredient exists, update it
+		// Note: This uses a special simplified update query
 		updateQuery := `
-			UPDATE user_ingredients 
+			UPDATE user_ingredients
 			SET kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
 			WHERE user_id = ? AND name = ?
 		`
@@ -159,10 +158,10 @@ func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name str
 	}
 
 	// Ingredient doesn't exist, create it
-	insertQuery := `
-		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`
+	insertQuery, err := r.sqlLoader.Load(QueryInsertUserIngredient)
+	if err != nil {
+		return nil, err
+	}
 	_, err = r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
 	if err != nil {
 		return nil, err
@@ -173,7 +172,7 @@ func (r *IngredientRepository) CreateOrUpdateUserIngredient(userID int, name str
 }
 
 // Copy global ingredients to user ingredients table in specified language
-func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageCode string) error {
+func (r *IngredientRepositoryImpl) CopyGlobalIngredientsToUser(userID int, languageCode string) error {
 	r.logger.Debug("Copying global ingredients to user",
 		slog.Int("user_id", userID),
 		slog.String("language", languageCode))
@@ -186,7 +185,11 @@ func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageC
 
 	// First check if user already has ingredients
 	var count int
-	err = tx.QueryRow("SELECT COUNT(*) FROM user_ingredients WHERE user_id = ?", userID).Scan(&count)
+	countQuery, err := r.sqlLoader.Load(QueryCountUserIngredients)
+	if err != nil {
+		return err
+	}
+	err = tx.QueryRow(countQuery, userID).Scan(&count)
 	if err != nil {
 		return err
 	}
@@ -199,19 +202,18 @@ func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageC
 	}
 
 	// Insert only if user has no ingredients yet (prevents duplicates)
-	query := `
-		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id)
-		SELECT ?, gin.name, gi.kcal_per_100g, gi.fats, gi.carbs, gi.proteins, gi.id
-		FROM global_ingredients gi
-		INNER JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
-		WHERE gin.language_code = ?
-		AND NOT EXISTS (
-			SELECT 1 FROM user_ingredients ui 
-			WHERE ui.user_id = ? AND ui.name = gin.name
-		)
-	`
+	query, err := r.sqlLoader.Load(QueryCopyGlobalIngredientsToUser)
+	if err != nil {
+		return err
+	}
 
-	_, err = tx.Exec(query, userID, languageCode, userID)
+	// For SQLite, we need to pass userID twice (for the main query and the NOT EXISTS)
+	if r.sqlLoader.Dialect == DialectSQLite {
+		_, err = tx.Exec(query, userID, languageCode, userID)
+	} else {
+		// PostgreSQL uses numbered placeholders, userID is $1 and referenced twice
+		_, err = tx.Exec(query, userID, languageCode)
+	}
 	if err != nil {
 		return err
 	}
@@ -220,7 +222,7 @@ func (r *IngredientRepository) CopyGlobalIngredientsToUser(userID int, languageC
 }
 
 // Admin functions for global ingredients
-func (r *IngredientRepository) CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins *float64, names map[string]string) (*models.GlobalIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins *float64, names map[string]string) (*models.GlobalIngredient, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return nil, err
@@ -229,10 +231,11 @@ func (r *IngredientRepository) CreateGlobalIngredient(kcalPer100g float64, fats,
 
 	// Insert global ingredient
 	now := time.Now().UTC()
-	result, err := tx.Exec(
-		"INSERT INTO global_ingredients (kcal_per_100g, fats, carbs, proteins, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-		kcalPer100g, fats, carbs, proteins, now, now,
-	)
+	insertQuery, err := r.sqlLoader.Load(QueryInsertGlobalIngredient)
+	if err != nil {
+		return nil, err
+	}
+	result, err := tx.Exec(insertQuery, kcalPer100g, fats, carbs, proteins, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -243,11 +246,12 @@ func (r *IngredientRepository) CreateGlobalIngredient(kcalPer100g float64, fats,
 	}
 
 	// Insert names
+	nameQuery, err := r.sqlLoader.Load(QueryInsertGlobalIngredientName)
+	if err != nil {
+		return nil, err
+	}
 	for langCode, name := range names {
-		_, err = tx.Exec(
-			"INSERT INTO global_ingredient_names (ingredient_id, language_code, name) VALUES (?, ?, ?)",
-			ingredientID, langCode, name,
-		)
+		_, err = tx.Exec(nameQuery, ingredientID, langCode, name)
 		if err != nil {
 			return nil, err
 		}
@@ -260,15 +264,14 @@ func (r *IngredientRepository) CreateGlobalIngredient(kcalPer100g float64, fats,
 	return r.GetGlobalIngredientByID(int(ingredientID))
 }
 
-func (r *IngredientRepository) GetGlobalIngredientByID(id int) (*models.GlobalIngredient, error) {
-	query := `
-		SELECT id, kcal_per_100g, fats, carbs, proteins, created_at, updated_at
-		FROM global_ingredients
-		WHERE id = ?
-	`
+func (r *IngredientRepositoryImpl) GetGlobalIngredientByID(id int) (*models.GlobalIngredient, error) {
+	query, err := r.sqlLoader.Load(QueryGetGlobalIngredientByID)
+	if err != nil {
+		return nil, err
+	}
 
 	ingredient := &models.GlobalIngredient{}
-	err := r.db.QueryRow(query, id).Scan(
+	err = r.db.QueryRow(query, id).Scan(
 		&ingredient.ID,
 		&ingredient.KcalPer100g,
 		&ingredient.Fats,
@@ -292,12 +295,11 @@ func (r *IngredientRepository) GetGlobalIngredientByID(id int) (*models.GlobalIn
 	return ingredient, nil
 }
 
-func (r *IngredientRepository) getGlobalIngredientNames(ingredientID int) (map[string]string, error) {
-	query := `
-		SELECT language_code, name
-		FROM global_ingredient_names
-		WHERE ingredient_id = ?
-	`
+func (r *IngredientRepositoryImpl) getGlobalIngredientNames(ingredientID int) (map[string]string, error) {
+	query, err := r.sqlLoader.Load(QueryGetGlobalIngredientNames)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := r.db.Query(query, ingredientID)
 	if err != nil {
@@ -319,15 +321,14 @@ func (r *IngredientRepository) getGlobalIngredientNames(ingredientID int) (map[s
 }
 
 // GetUserIngredientByID Get user ingredient by ID
-func (r *IngredientRepository) GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error) {
-	query := `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = ? AND id = ?
-	`
+func (r *IngredientRepositoryImpl) GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error) {
+	query, err := r.sqlLoader.Load(QueryGetUserIngredientByID)
+	if err != nil {
+		return nil, err
+	}
 
 	ingredient := &models.UserIngredient{}
-	err := r.db.QueryRow(query, userID, ingredientID).Scan(
+	err = r.db.QueryRow(query, userID, ingredientID).Scan(
 		&ingredient.ID,
 		&ingredient.UserID,
 		&ingredient.Name,
@@ -348,16 +349,16 @@ func (r *IngredientRepository) GetUserIngredientByID(userID int, ingredientID in
 }
 
 // CreateUserIngredient Create a new user ingredient
-func (r *IngredientRepository) CreateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Creating user ingredient",
 		slog.Int("user_id", userID),
 		slog.String("name", name),
 		slog.Float64("kcal_per_100g", kcalPer100g))
 
-	insertQuery := `
-		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`
+	insertQuery, err := r.sqlLoader.Load(QueryInsertUserIngredient)
+	if err != nil {
+		return nil, err
+	}
 	result, err := r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
 	if err != nil {
 		return nil, err
@@ -373,19 +374,18 @@ func (r *IngredientRepository) CreateUserIngredient(userID int, name string, kca
 }
 
 // UpdateUserIngredient Update an existing user ingredient
-func (r *IngredientRepository) UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Updating user ingredient",
 		slog.Int("user_id", userID),
 		slog.Int("ingredient_id", ingredientID),
 		slog.String("name", name),
 		slog.Float64("kcal_per_100g", kcalPer100g))
 
-	updateQuery := `
-		UPDATE user_ingredients 
-		SET name = ?, kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
-		WHERE user_id = ? AND id = ?
-	`
-	_, err := r.db.Exec(updateQuery, name, kcalPer100g, fats, carbs, proteins, userID, ingredientID)
+	updateQuery, err := r.sqlLoader.Load(QueryUpdateUserIngredient)
+	if err != nil {
+		return nil, err
+	}
+	_, err = r.db.Exec(updateQuery, name, kcalPer100g, fats, carbs, proteins, userID, ingredientID)
 	if err != nil {
 		return nil, err
 	}
@@ -394,15 +394,15 @@ func (r *IngredientRepository) UpdateUserIngredient(userID int, ingredientID int
 }
 
 // DeleteUserIngredient Delete a user ingredient
-func (r *IngredientRepository) DeleteUserIngredient(userID int, ingredientID int) error {
+func (r *IngredientRepositoryImpl) DeleteUserIngredient(userID int, ingredientID int) error {
 	r.logger.Debug("Deleting user ingredient",
 		slog.Int("user_id", userID),
 		slog.Int("ingredient_id", ingredientID))
 
-	deleteQuery := `
-		DELETE FROM user_ingredients
-		WHERE user_id = ? AND id = ?
-	`
+	deleteQuery, err := r.sqlLoader.Load(QueryDeleteUserIngredient)
+	if err != nil {
+		return err
+	}
 	result, err := r.db.Exec(deleteQuery, userID, ingredientID)
 	if err != nil {
 		return err

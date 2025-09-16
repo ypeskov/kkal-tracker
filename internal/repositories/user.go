@@ -1,4 +1,4 @@
-package sqlite
+package repositories
 
 import (
 	"database/sql"
@@ -8,24 +8,28 @@ import (
 	"ypeskov/kkal-tracker/internal/models"
 )
 
-type UserRepository struct {
-	db     *sql.DB
-	logger *slog.Logger
+type UserRepositoryImpl struct {
+	db        *sql.DB
+	logger    *slog.Logger
+	sqlLoader *SqlLoaderInstance
 }
 
-func NewUserRepository(db *sql.DB, logger *slog.Logger) *UserRepository {
-	return &UserRepository{
-		db:     db,
-		logger: logger,
+func NewUserRepository(db *sql.DB, logger *slog.Logger, dialect Dialect) *UserRepositoryImpl {
+	sqlLoader := NewSqlLoader(dialect)
+
+	return &UserRepositoryImpl{
+		db:        db,
+		logger:    logger,
+		sqlLoader: sqlLoader,
 	}
 }
 
-func (r *UserRepository) Create(email, passwordHash string) (*models.User, error) {
+func (r *UserRepositoryImpl) Create(email, passwordHash string) (*models.User, error) {
 	r.logger.Debug("Creating user", slog.String("email", email))
 	return r.CreateWithLanguage(email, passwordHash, "en_US")
 }
 
-func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error) {
+func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error) {
 	r.logger.Debug("Creating user with language",
 		slog.String("email", email),
 		slog.String("language", languageCode))
@@ -38,10 +42,10 @@ func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode st
 	defer tx.Rollback()
 
 	// Create the user with language preference
-	query := `
-		INSERT INTO users (email, password_hash, language)
-		VALUES (?, ?, ?)
-	`
+	query, err := r.sqlLoader.Load(QueryInsertUser)
+	if err != nil {
+		return nil, err
+	}
 
 	result, err := tx.Exec(query, email, passwordHash, languageCode)
 	if err != nil {
@@ -56,13 +60,10 @@ func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode st
 	r.logger.Debug("User created in database", slog.Int64("id", id))
 
 	// Copy global ingredients to user_ingredients
-	copyQuery := `
-		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id)
-		SELECT ?, gin.name, gi.kcal_per_100g, gi.fats, gi.carbs, gi.proteins, gi.id
-		FROM global_ingredients gi
-		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
-		WHERE gin.language_code = ?
-	`
+	copyQuery, err := r.sqlLoader.Load(QueryCopyGlobalIngredients)
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = tx.Exec(copyQuery, id, languageCode)
 	if err != nil {
@@ -79,18 +80,17 @@ func (r *UserRepository) CreateWithLanguage(email, passwordHash, languageCode st
 	return r.GetByID(int(id))
 }
 
-func (r *UserRepository) GetByID(id int) (*models.User, error) {
+func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 	r.logger.Debug("Getting user by ID", slog.Int("id", id))
 
-	query := `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
-		FROM users
-		WHERE id = ?
-	`
+	query, err := r.sqlLoader.Load(QueryGetUserByID)
+	if err != nil {
+		return nil, err
+	}
 
 	user := &models.User{}
 	var language sql.NullString
-	err := r.db.QueryRow(query, id).Scan(
+	err = r.db.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -114,18 +114,17 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 	r.logger.Debug("Getting user by email", slog.String("email", email))
 
-	query := `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
-		FROM users
-		WHERE email = ?
-	`
+	query, err := r.sqlLoader.Load(QueryGetUserByEmail)
+	if err != nil {
+		return nil, err
+	}
 
 	user := &models.User{}
 	var language sql.NullString
-	err := r.db.QueryRow(query, email).Scan(
+	err = r.db.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -150,16 +149,15 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 }
 
 // UpdateProfile updates user profile information
-func (r *UserRepository) UpdateProfile(userID int, profile *dto.ProfileUpdateRequest) error {
+func (r *UserRepositoryImpl) UpdateProfile(userID int, profile *dto.ProfileUpdateRequest) error {
 	r.logger.Debug("Updating user profile", slog.Int("user_id", userID))
 
-	query := `
-		UPDATE users
-		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, weight = ?, language = ?, updated_at = datetime('now')
-		WHERE id = ?
-	`
+	query, err := r.sqlLoader.Load(QueryUpdateUserProfile)
+	if err != nil {
+		return err
+	}
 
-	_, err := r.db.Exec(query,
+	_, err = r.db.Exec(query,
 		profile.FirstName,
 		profile.LastName,
 		profile.Email,
@@ -174,14 +172,14 @@ func (r *UserRepository) UpdateProfile(userID int, profile *dto.ProfileUpdateReq
 }
 
 // AddWeightEntry adds a new weight entry to the history
-func (r *UserRepository) AddWeightEntry(userID int, weight float64) error {
+func (r *UserRepositoryImpl) AddWeightEntry(userID int, weight float64) error {
 	r.logger.Debug("Adding weight entry", slog.Int("user_id", userID), slog.Float64("weight", weight))
 
-	query := `
-		INSERT INTO weight_history (user_id, weight)
-		VALUES (?, ?)
-	`
+	query, err := r.sqlLoader.Load(QueryAddWeightEntry)
+	if err != nil {
+		return err
+	}
 
-	_, err := r.db.Exec(query, userID, weight)
+	_, err = r.db.Exec(query, userID, weight)
 	return err
 }

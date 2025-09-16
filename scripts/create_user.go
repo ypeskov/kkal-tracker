@@ -9,7 +9,7 @@ import (
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/database"
 	"ypeskov/kkal-tracker/internal/logger"
-	"ypeskov/kkal-tracker/internal/repositories/sqlite"
+	"ypeskov/kkal-tracker/internal/repositories"
 
 	"github.com/joho/godotenv"
 )
@@ -53,7 +53,7 @@ func main() {
 		log.Fatal("Failed to hash password:", err)
 	}
 
-	userRepo := sqlite.NewUserRepository(db, appLogger)
+	userRepo := repositories.NewUserRepository(db, appLogger, repositories.DialectSQLite)
 
 	user, err := userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode)
 	if err != nil {

@@ -6,20 +6,20 @@ import (
 	"net/http"
 	"strconv"
 
-	"ypeskov/kkal-tracker/internal/repositories"
+	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	ingredientRepo repositories.IngredientRepository
-	logger         *slog.Logger
+	ingredientService *ingredientservice.Service
+	logger            *slog.Logger
 }
 
-func NewHandler(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Handler {
+func NewHandler(ingredientService *ingredientservice.Service, logger *slog.Logger) *Handler {
 	return &Handler{
-		ingredientRepo: ingredientRepo,
-		logger:         logger,
+		ingredientService: ingredientService,
+		logger:            logger,
 	}
 }
 
@@ -43,7 +43,7 @@ type UpdateRequest struct {
 func (h *Handler) GetAllIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 
-	ingredients, err := h.ingredientRepo.GetAllUserIngredients(userID)
+	ingredients, err := h.ingredientService.GetAllIngredients(userID)
 	if err != nil {
 		h.logger.Error("Failed to get user ingredients", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -58,10 +58,6 @@ func (h *Handler) SearchIngredients(c echo.Context) error {
 	query := c.QueryParam("q")
 	limitParam := c.QueryParam("limit")
 
-	if query == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Query parameter 'q' is required")
-	}
-
 	// Default limit to 10
 	limit := 10
 	if limitParam != "" {
@@ -70,8 +66,17 @@ func (h *Handler) SearchIngredients(c echo.Context) error {
 		}
 	}
 
-	ingredients, err := h.ingredientRepo.SearchUserIngredients(userID, query, limit)
+	serviceReq := &ingredientservice.SearchIngredientsRequest{
+		UserID: userID,
+		Query:  query,
+		Limit:  limit,
+	}
+
+	ingredients, err := h.ingredientService.SearchIngredients(serviceReq)
 	if err != nil {
+		if err == ingredientservice.ErrEmptyQuery {
+			return echo.NewHTTPError(http.StatusBadRequest, "Query parameter 'q' is required")
+		}
 		h.logger.Error("Failed to search user ingredients", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
@@ -87,7 +92,7 @@ func (h *Handler) GetIngredientByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
 
-	ingredient, err := h.ingredientRepo.GetUserIngredientByID(userID, ingredientID)
+	ingredient, err := h.ingredientService.GetIngredientByID(userID, ingredientID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
@@ -102,7 +107,7 @@ func (h *Handler) GetIngredientByID(c echo.Context) error {
 // CreateIngredient Create a new user ingredient
 func (h *Handler) CreateIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
-	
+
 	var req CreateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
@@ -112,9 +117,16 @@ func (h *Handler) CreateIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	ingredient, err := h.ingredientRepo.CreateUserIngredient(
-		userID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
-	)
+	serviceReq := &ingredientservice.CreateIngredientRequest{
+		UserID:      userID,
+		Name:        req.Name,
+		KcalPer100g: req.KcalPer100g,
+		Fats:        req.Fats,
+		Carbs:       req.Carbs,
+		Proteins:    req.Proteins,
+	}
+
+	ingredient, err := h.ingredientService.CreateIngredient(serviceReq)
 	if err != nil {
 		h.logger.Error("Failed to create user ingredient", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -140,9 +152,17 @@ func (h *Handler) UpdateIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	ingredient, err := h.ingredientRepo.UpdateUserIngredient(
-		userID, ingredientID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
-	)
+	serviceReq := &ingredientservice.UpdateIngredientRequest{
+		IngredientID: ingredientID,
+		UserID:       userID,
+		Name:         req.Name,
+		KcalPer100g:  req.KcalPer100g,
+		Fats:         req.Fats,
+		Carbs:        req.Carbs,
+		Proteins:     req.Proteins,
+	}
+
+	ingredient, err := h.ingredientService.UpdateIngredient(serviceReq)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
@@ -162,7 +182,7 @@ func (h *Handler) DeleteIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
 
-	err = h.ingredientRepo.DeleteUserIngredient(userID, ingredientID)
+	err = h.ingredientService.DeleteIngredient(userID, ingredientID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
