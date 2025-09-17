@@ -82,7 +82,15 @@
     "edit_weight_entry": "Edit Weight Entry",
     "date": "Date",
     "no_weight_entries": "No weight entries found",
-    "confirm_delete_weight": "Are you sure you want to delete this weight entry?"
+    "confirm_delete_weight": "Are you sure you want to delete this weight entry?",
+    "period": "Period",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "min_weight": "Min Weight",
+    "max_weight": "Max Weight",
+    "avg_weight": "Avg Weight"
   },
   "profile": {
     "title": "Profile",

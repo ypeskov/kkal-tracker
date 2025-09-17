@@ -82,7 +82,15 @@
     "edit_weight_entry": "Редагувати запис ваги",
     "date": "Дата",
     "no_weight_entries": "Записи ваги не знайдено",
-    "confirm_delete_weight": "Ви впевнені, що хочете видалити цей запис ваги?"
+    "confirm_delete_weight": "Ви впевнені, що хочете видалити цей запис ваги?",
+    "period": "Період",
+    "daily": "Щоденно",
+    "weekly": "Тижнево",
+    "monthly": "Місячно",
+    "yearly": "Річно",
+    "min_weight": "Мін. вага",
+    "max_weight": "Макс. вага",
+    "avg_weight": "Сер. вага"
   },
   "profile": {
     "title": "Профіль",
