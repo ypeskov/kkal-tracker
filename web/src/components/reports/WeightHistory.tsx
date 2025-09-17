@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -13,6 +13,7 @@ interface WeightHistoryProps {
 export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const weightInputRef = useRef<HTMLInputElement>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default to descending (newest first)
@@ -119,6 +120,16 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     setSortOrder(current => current === 'desc' ? 'asc' : 'desc');
   };
 
+  // Focus weight input when form is shown
+  useEffect(() => {
+    if (showAddForm && weightInputRef.current) {
+      // Small delay to ensure the form is rendered before focusing
+      setTimeout(() => {
+        weightInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showAddForm]);
+
   if (isLoading) {
     return <div className="text-center py-8">{t('common.loading')}</div>;
   }
@@ -138,6 +149,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                   {t('report.weight')} (kg)
                 </label>
                 <input
+                  ref={weightInputRef}
                   type="number"
                   step="0.01"
                   min="1"
