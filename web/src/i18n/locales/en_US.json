@@ -90,7 +90,8 @@
     "yearly": "Yearly",
     "min_weight": "Min Weight",
     "max_weight": "Max Weight",
-    "avg_weight": "Avg Weight"
+    "avg_weight": "Avg Weight",
+    "avg_calories_per_day": "Avg Calories/Day"
   },
   "profile": {
     "title": "Profile",

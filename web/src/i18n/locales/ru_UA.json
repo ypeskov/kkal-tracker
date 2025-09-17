@@ -90,7 +90,8 @@
     "yearly": "Ежегодно",
     "min_weight": "Мин. вес",
     "max_weight": "Макс. вес",
-    "avg_weight": "Ср. вес"
+    "avg_weight": "Ср. вес",
+    "avg_calories_per_day": "Ср. калории/день"
   },
   "profile": {
     "title": "Профиль",

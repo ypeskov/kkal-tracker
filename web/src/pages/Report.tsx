@@ -130,6 +130,23 @@ export default function Report() {
     };
   }, [aggregatedData.weightData]);
 
+  // Calculate average calories per day
+  const avgCaloriesPerDay = useMemo(() => {
+    if (!reportData || !reportData.calorie_history || reportData.calorie_history.length === 0) {
+      return 0;
+    }
+
+    // Get all unique dates from calorie history
+    const uniqueDates = new Set(reportData.calorie_history.map(item => item.date));
+    const totalDays = uniqueDates.size;
+
+    // Calculate total calories
+    const totalCalories = reportData.calorie_history.reduce((sum, item) => sum + item.calories, 0);
+
+    // Return average calories per day
+    return Math.round(totalCalories / totalDays);
+  }, [reportData]);
+
   return (
     <div className="page">
       <div className="page-header">
@@ -241,25 +258,35 @@ export default function Report() {
       {/* Tab Content */}
       {activeTab === 'chart' ? (
         <div className="space-y-4">
-          {/* Weight Statistics */}
-          {showWeight && aggregatedData.weightData.length > 0 && (
+          {/* Weight and Calories Statistics */}
+          {(showWeight && aggregatedData.weightData.length > 0) || avgCaloriesPerDay > 0 ? (
             <div className="card p-4">
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center text-center">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-600">{t('report.min_weight')}</span>
-                  <span className="text-xl font-bold text-blue-600">{weightStats.min} kg</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-600">{t('report.max_weight')}</span>
-                  <span className="text-xl font-bold text-blue-600">{weightStats.max} kg</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-600">{t('report.avg_weight')}</span>
-                  <span className="text-xl font-bold text-blue-600">{weightStats.average} kg</span>
-                </div>
+                {showWeight && aggregatedData.weightData.length > 0 && (
+                  <>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-600">{t('report.min_weight')}</span>
+                      <span className="text-xl font-bold text-blue-600">{weightStats.min} kg</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-600">{t('report.max_weight')}</span>
+                      <span className="text-xl font-bold text-blue-600">{weightStats.max} kg</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-600">{t('report.avg_weight')}</span>
+                      <span className="text-xl font-bold text-blue-600">{weightStats.average} kg</span>
+                    </div>
+                  </>
+                )}
+                {avgCaloriesPerDay > 0 && (
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-600">{t('report.avg_calories_per_day')}</span>
+                    <span className="text-xl font-bold text-green-600">{avgCaloriesPerDay} kcal</span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Chart */}
           <div className="card p-4">

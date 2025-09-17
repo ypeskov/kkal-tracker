@@ -90,7 +90,8 @@
     "yearly": "Річно",
     "min_weight": "Мін. вага",
     "max_weight": "Макс. вага",
-    "avg_weight": "Сер. вага"
+    "avg_weight": "Сер. вага",
+    "avg_calories_per_day": "Сер. калорії/день"
   },
   "profile": {
     "title": "Профіль",
