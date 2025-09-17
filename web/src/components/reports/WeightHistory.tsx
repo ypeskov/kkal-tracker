@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { weightService, WeightEntry } from '../../api/weight';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface WeightHistoryProps {
   dateFrom?: string;
@@ -15,6 +15,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default to descending (newest first)
   const [formData, setFormData] = useState({
     weight: '',
     recorded_at: format(new Date(), 'yyyy-MM-dd'),
@@ -25,6 +26,22 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     queryKey: ['weightHistory', dateFrom, dateTo],
     queryFn: () => weightService.getWeightHistory(dateFrom, dateTo),
   });
+
+  // Sort weight history on frontend
+  const sortedWeightHistory = useMemo(() => {
+    if (!weightHistory) return [];
+
+    return [...weightHistory].sort((a, b) => {
+      const dateA = new Date(a.recorded_at);
+      const dateB = new Date(b.recorded_at);
+
+      if (sortOrder === 'desc') {
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      } else {
+        return dateA.getTime() - dateB.getTime(); // Oldest first
+      }
+    });
+  }, [weightHistory, sortOrder]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -96,6 +113,10 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
       weight: '',
       recorded_at: format(new Date(), 'yyyy-MM-dd'),
     });
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(current => current === 'desc' ? 'asc' : 'desc');
   };
 
   if (isLoading) {
@@ -177,20 +198,32 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
         <table className="w-full">
           <thead>
             <tr className="border-b">
-              <th className="text-left p-3 font-medium">{t('report.date')}</th>
+              <th className="text-left p-3 font-medium">
+                <button
+                  onClick={toggleSortOrder}
+                  className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                >
+                  {t('report.date')}
+                  {sortOrder === 'desc' ? (
+                    <ArrowDown size={16} className="text-blue-600" />
+                  ) : (
+                    <ArrowUp size={16} className="text-blue-600" />
+                  )}
+                </button>
+              </th>
               <th className="text-left p-3 font-medium">{t('report.weight')}</th>
               <th className="text-right p-3 font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
-            {!weightHistory || weightHistory.length === 0 ? (
+            {!sortedWeightHistory || sortedWeightHistory.length === 0 ? (
               <tr>
                 <td colSpan={3} className="text-center p-8 text-gray-500">
                   {t('report.no_weight_entries')}
                 </td>
               </tr>
             ) : (
-              weightHistory.map((entry) => (
+              sortedWeightHistory.map((entry) => (
                 <tr key={entry.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">
                     {format(new Date(entry.recorded_at), 'PPP')}
