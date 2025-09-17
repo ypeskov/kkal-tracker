@@ -139,7 +139,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
                 min="0"
-                step="0.1"
+                step="0.01"
               />
             </div>
           </div>

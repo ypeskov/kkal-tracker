@@ -19,6 +19,13 @@ const (
 	QueryUpdateCalorieEntry           = "updateCalorieEntry"
 	QueryDeleteCalorieEntry           = "deleteCalorieEntry"
 
+	// Weight History queries
+	QueryGetWeightHistory            = "getWeightHistory"
+	QueryGetWeightHistoryByDateRange = "getWeightHistoryByDateRange"
+	QueryCreateWeightHistory         = "createWeightHistory"
+	QueryUpdateWeightHistory         = "updateWeightHistory"
+	QueryDeleteWeightHistory         = "deleteWeightHistory"
+
 	// Ingredient queries
 	QuerySearchUserIngredients       = "searchUserIngredients"
 	QueryGetAllUserIngredients       = "getAllUserIngredients"
@@ -113,6 +120,62 @@ func getQueries() map[string]string {
 		buildKey(QueryAddWeightEntry, DialectPostgres): `
 		INSERT INTO weight_history (user_id, weight)
 		VALUES ($1, $2)
+	`,
+
+		// Weight History queries
+		buildKey(QueryGetWeightHistory, DialectSQLite): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = ?
+		ORDER BY recorded_at DESC
+	`,
+		buildKey(QueryGetWeightHistory, DialectPostgres): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = $1
+		ORDER BY recorded_at DESC
+	`,
+
+		buildKey(QueryGetWeightHistoryByDateRange, DialectSQLite): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = ? AND recorded_at >= ? AND recorded_at <= ?
+		ORDER BY recorded_at ASC
+	`,
+		buildKey(QueryGetWeightHistoryByDateRange, DialectPostgres): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = $1 AND recorded_at >= $2 AND recorded_at <= $3
+		ORDER BY recorded_at ASC
+	`,
+
+		buildKey(QueryCreateWeightHistory, DialectSQLite): `
+		INSERT INTO weight_history (user_id, weight, recorded_at)
+		VALUES (?, ?, ?)
+	`,
+		buildKey(QueryCreateWeightHistory, DialectPostgres): `
+		INSERT INTO weight_history (user_id, weight, recorded_at)
+		VALUES ($1, $2, $3)
+	`,
+
+		buildKey(QueryUpdateWeightHistory, DialectSQLite): `
+		UPDATE weight_history
+		SET weight = ?, recorded_at = ?
+		WHERE id = ? AND user_id = ?
+	`,
+		buildKey(QueryUpdateWeightHistory, DialectPostgres): `
+		UPDATE weight_history
+		SET weight = $1, recorded_at = $2
+		WHERE id = $3 AND user_id = $4
+	`,
+
+		buildKey(QueryDeleteWeightHistory, DialectSQLite): `
+		DELETE FROM weight_history
+		WHERE id = ? AND user_id = ?
+	`,
+		buildKey(QueryDeleteWeightHistory, DialectPostgres): `
+		DELETE FROM weight_history
+		WHERE id = $1 AND user_id = $2
 	`,
 
 		// CalorieEntry queries

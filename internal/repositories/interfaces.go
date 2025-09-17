@@ -29,6 +29,15 @@ type CalorieEntryRepository interface {
 	Delete(id, userID int) error
 }
 
+// WeightHistoryRepository defines the contract for weight history data access
+type WeightHistoryRepository interface {
+	GetByUserID(userID int) ([]*models.WeightHistory, error)
+	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.WeightHistory, error)
+	Create(userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
+	Update(id, userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
+	Delete(id, userID int) error
+}
+
 // IngredientRepository defines the contract for ingredient data access
 type IngredientRepository interface {
 	// SearchUserIngredients User ingredients

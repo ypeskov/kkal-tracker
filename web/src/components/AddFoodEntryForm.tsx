@@ -95,7 +95,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
                   className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                   min="0"
-                  step="0.1"
+                  step="0.01"
                 />
                 <input
                   type="number"
@@ -105,7 +105,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
                   className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                   min="0"
-                  step="0.1"
+                  step="0.01"
                 />
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
               min="0"
-              step="0.1"
+              step="0.01"
             />
           </div>
         </div>

@@ -66,7 +66,23 @@
   },
   "report": {
     "title": "Звіти",
-    "wip": "В розробці"
+    "wip": "В розробці",
+    "charts_tab": "Графіки",
+    "weight_history_tab": "Історія ваги",
+    "date_from": "З",
+    "date_to": "До",
+    "show_weight": "Показати вагу",
+    "show_calories": "Показати калорії",
+    "weight": "Вага",
+    "calories": "Калорії",
+    "weight_kg": "Вага (кг)",
+    "calories_kcal": "Калорії (ккал)",
+    "select_metric": "Будь ласка, оберіть хоча б одну метрику для відображення",
+    "add_weight_entry": "Додати запис ваги",
+    "edit_weight_entry": "Редагувати запис ваги",
+    "date": "Дата",
+    "no_weight_entries": "Записи ваги не знайдено",
+    "confirm_delete_weight": "Ви впевнені, що хочете видалити цей запис ваги?"
   },
   "profile": {
     "title": "Профіль",
@@ -106,6 +122,9 @@
     "delete": "Видалити",
     "deleting": "Видалення...",
     "cancel": "Скасувати",
+    "edit": "Редагувати",
+    "save": "Зберегти",
+    "actions": "Дії",
     "clear": "Очистити"
   },
   "language": {

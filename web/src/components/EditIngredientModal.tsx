@@ -86,7 +86,7 @@ export default function EditIngredientModal({
             <input
               id="kcalPer100g"
               type="number"
-              step="0.1"
+              step="0.01"
               min="0"
               value={kcalPer100g}
               onChange={(e) => setKcalPer100g(e.target.value)}
