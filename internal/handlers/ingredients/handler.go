@@ -42,13 +42,15 @@ type UpdateRequest struct {
 // GetAllIngredients Get all user ingredients for session storage caching
 func (h *Handler) GetAllIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
+	h.logger.Debug("GetAllIngredients called", "user_id", userID)
 
 	ingredients, err := h.ingredientService.GetAllIngredients(userID)
 	if err != nil {
-		h.logger.Error("Failed to get user ingredients", "error", err)
+		h.logger.Error("failed to get user ingredients", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("GetAllIngredients returning ingredients", "user_id", userID, "count", len(ingredients))
 	return c.JSON(http.StatusOK, ingredients)
 }
 
@@ -57,6 +59,7 @@ func (h *Handler) SearchIngredients(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	query := c.QueryParam("q")
 	limitParam := c.QueryParam("limit")
+	h.logger.Debug("SearchIngredients called", "user_id", userID, "query", query, "limit_param", limitParam)
 
 	// Default limit to 10
 	limit := 10
@@ -81,6 +84,7 @@ func (h *Handler) SearchIngredients(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("SearchIngredients returning results", "user_id", userID, "query", query, "count", len(ingredients))
 	return c.JSON(http.StatusOK, ingredients)
 }
 
@@ -89,8 +93,10 @@ func (h *Handler) GetIngredientByID(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		h.logger.Debug("GetIngredientByID failed - invalid ID", "user_id", userID, "id_param", c.Param("id"), "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
+	h.logger.Debug("GetIngredientByID called", "user_id", userID, "ingredient_id", ingredientID)
 
 	ingredient, err := h.ingredientService.GetIngredientByID(userID, ingredientID)
 	if err != nil {
@@ -101,19 +107,23 @@ func (h *Handler) GetIngredientByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("GetIngredientByID returning ingredient", "user_id", userID, "ingredient_id", ingredientID, "name", ingredient.Name)
 	return c.JSON(http.StatusOK, ingredient)
 }
 
 // CreateIngredient Create a new user ingredient
 func (h *Handler) CreateIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
+	h.logger.Debug("CreateIngredient called", "user_id", userID)
 
 	var req CreateRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("CreateIngredient failed - invalid request body", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
 	if err := c.Validate(req); err != nil {
+		h.logger.Debug("CreateIngredient failed - validation error", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -132,6 +142,7 @@ func (h *Handler) CreateIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("CreateIngredient successful", "user_id", userID, "ingredient_id", ingredient.ID, "name", ingredient.Name)
 	return c.JSON(http.StatusCreated, ingredient)
 }
 
@@ -140,15 +151,19 @@ func (h *Handler) UpdateIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		h.logger.Debug("UpdateIngredient failed - invalid ID", "user_id", userID, "id_param", c.Param("id"), "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
+	h.logger.Debug("UpdateIngredient called", "user_id", userID, "ingredient_id", ingredientID)
 
 	var req UpdateRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("UpdateIngredient failed - invalid request body", "user_id", userID, "ingredient_id", ingredientID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
 	if err := c.Validate(req); err != nil {
+		h.logger.Debug("UpdateIngredient failed - validation error", "user_id", userID, "ingredient_id", ingredientID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -171,6 +186,7 @@ func (h *Handler) UpdateIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("UpdateIngredient successful", "user_id", userID, "ingredient_id", ingredientID, "name", ingredient.Name)
 	return c.JSON(http.StatusOK, ingredient)
 }
 
@@ -179,8 +195,10 @@ func (h *Handler) DeleteIngredient(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		h.logger.Debug("DeleteIngredient failed - invalid ID", "user_id", userID, "id_param", c.Param("id"), "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
 	}
+	h.logger.Debug("DeleteIngredient called", "user_id", userID, "ingredient_id", ingredientID)
 
 	err = h.ingredientService.DeleteIngredient(userID, ingredientID)
 	if err != nil {
@@ -191,6 +209,7 @@ func (h *Handler) DeleteIngredient(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("DeleteIngredient successful", "user_id", userID, "ingredient_id", ingredientID)
 	return c.NoContent(http.StatusNoContent)
 }
 

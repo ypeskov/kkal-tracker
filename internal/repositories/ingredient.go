@@ -19,20 +19,18 @@ func NewIngredientRepository(db *sql.DB, logger *slog.Logger, dialect Dialect) *
 
 	return &IngredientRepositoryImpl{
 		db:        db,
-		logger:    logger,
+		logger:    logger.With(slog.String("repo", "IngredientRepository")),
 		sqlLoader: sqlLoader,
 	}
 }
 
 // Search user ingredients for autocomplete
 func (r *IngredientRepositoryImpl) SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error) {
-	r.logger.Debug("Searching user ingredients",
-		slog.Int("user_id", userID),
-		slog.String("query", query),
-		slog.Int("limit", limit))
+	r.logger.Debug("searching user ingredients", slog.Int("user_id", userID), slog.String("query", query), slog.Int("limit", limit))
 
 	sqlQuery, err := r.sqlLoader.Load(QuerySearchUserIngredients)
 	if err != nil {
+		r.logger.Error("failed to load SQL query", "error", err)
 		return nil, err
 	}
 
@@ -68,10 +66,11 @@ func (r *IngredientRepositoryImpl) SearchUserIngredients(userID int, query strin
 
 // Get all user ingredients for session storage
 func (r *IngredientRepositoryImpl) GetAllUserIngredients(userID int) ([]*models.UserIngredient, error) {
-	r.logger.Debug("Getting all user ingredients", slog.Int("user_id", userID))
+	r.logger.Debug("getting all user ingredients", slog.Int("user_id", userID))
 
 	sqlQuery, err := r.sqlLoader.Load(QueryGetAllUserIngredients)
 	if err != nil {
+		r.logger.Error("failed to load SQL query QueryGetAllUserIngredients", "error", err)
 		return nil, err
 	}
 

@@ -25,37 +25,47 @@ func NewProfileHandler(profileService *profileservice.Service, logger *slog.Logg
 // GetProfile returns the current user's profile
 func (h *Handler) GetProfile(c echo.Context) error {
 	userID := c.Get("user_id").(int)
+	h.logger.Debug("GetProfile called", "user_id", userID)
 
 	// Service returns DTO directly
 	profile, err := h.profileService.GetProfile(userID)
 	if err != nil {
+		h.logger.Error("Failed to get user profile", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user profile")
 	}
 
+	h.logger.Debug("GetProfile returning profile", "user_id", userID, "email", profile.Email)
 	return c.JSON(http.StatusOK, profile)
 }
 
 // UpdateProfile updates the current user's profile
 func (h *Handler) UpdateProfile(c echo.Context) error {
 	userID := c.Get("user_id").(int)
+	h.logger.Debug("UpdateProfile called", "user_id", userID)
 
 	// Bind to DTO which has validation tags
 	var req dto.ProfileUpdateRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("UpdateProfile failed - invalid request body", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request")
 	}
 
 	// Validate request
 	if err := c.Validate(&req); err != nil {
+		h.logger.Debug("UpdateProfile failed - validation error", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	h.logger.Debug("UpdateProfile request", "user_id", userID, "email", req.Email, "first_name", req.FirstName, "last_name", req.LastName)
+
 	// Pass DTO directly to service - service handles conversion
 	if err := h.profileService.UpdateProfile(userID, &req); err != nil {
+		h.logger.Error("Failed to update profile", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update profile")
 	}
 
 	// Return updated profile
+	h.logger.Debug("UpdateProfile successful", "user_id", userID)
 	return h.GetProfile(c)
 }
 

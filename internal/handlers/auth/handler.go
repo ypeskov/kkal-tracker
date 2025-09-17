@@ -44,10 +44,15 @@ func NewHandler(authService *authservice.Service, logger *slog.Logger) *Handler 
 }
 
 func (h *Handler) Login(c echo.Context) error {
+	h.logger.Debug("Login called")
+
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("Login failed - invalid request body", "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
+
+	h.logger.Debug("Login attempt", "email", req.Email)
 
 	user, token, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
@@ -61,8 +66,8 @@ func (h *Handler) Login(c echo.Context) error {
 	responseUser := ResponseUser{
 		Email: user.Email,
 	}
-	h.logger.Debug("%+v", "responseUser", responseUser)
 
+	h.logger.Debug("Login successful", "email", user.Email)
 	return c.JSON(http.StatusOK, LoginResponse{
 		Token: token,
 		User:  responseUser,
@@ -70,10 +75,15 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) Register(c echo.Context) error {
+	h.logger.Debug("Register called")
+
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("Register failed - invalid request body", "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
+
+	h.logger.Debug("Registration attempt", "email", req.Email, "language", req.LanguageCode)
 
 	user, token, err := h.authService.Register(req.Email, req.Password, req.LanguageCode)
 	if err != nil {
@@ -88,6 +98,7 @@ func (h *Handler) Register(c echo.Context) error {
 		Email: user.Email,
 	}
 
+	h.logger.Debug("Registration successful", "email", user.Email, "language", req.LanguageCode)
 	return c.JSON(http.StatusCreated, &LoginResponse{
 		Token: token,
 		User:  responseUser,
@@ -96,6 +107,7 @@ func (h *Handler) Register(c echo.Context) error {
 
 func (h *Handler) GetCurrentUser(c echo.Context) error {
 	userID := c.Get("user_id").(int)
+	h.logger.Debug("GetCurrentUser called", "user_id", userID)
 
 	user, err := h.authService.GetCurrentUser(userID)
 	if err != nil {
@@ -106,6 +118,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("GetCurrentUser successful", "user_id", userID, "email", user.Email)
 	return c.JSON(http.StatusOK, user)
 }
 

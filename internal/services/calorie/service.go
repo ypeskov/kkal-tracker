@@ -21,11 +21,13 @@ func New(calorieRepo repositories.CalorieEntryRepository,
 	return &Service{
 		calorieRepo:    calorieRepo,
 		ingredientRepo: ingredientRepo,
-		logger:         logger,
+		logger:         logger.With("service", "calorie"),
 	}
 }
 
 func (s *Service) CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, error) {
+	s.logger.Debug("CreateEntry called", "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight)
+
 	// Validate calories
 	if req.Calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")
@@ -70,13 +72,18 @@ func (s *Service) CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, erro
 
 	s.logger.Info("Calorie entry created", "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight, "kcalPer100g", req.KcalPer100g, "meal_datetime", req.MealDatetime)
 
-	return &CreateEntryResult{
+	result := &CreateEntryResult{
 		Entry:                entry,
 		NewIngredientCreated: newIngredientCreated,
-	}, nil
+	}
+
+	s.logger.Debug("CreateEntry completed successfully", "user_id", req.UserID, "entry_id", entry.ID)
+	return result, nil
 }
 
 func (s *Service) DeleteEntry(entryID, userID int) error {
+	s.logger.Debug("DeleteEntry called", "entry_id", entryID, "user_id", userID)
+
 	err := s.calorieRepo.Delete(entryID, userID)
 	if err != nil {
 		s.logger.Error("Failed to delete calorie entry", "error", err, "entry_id", entryID, "user_id", userID)
@@ -84,10 +91,13 @@ func (s *Service) DeleteEntry(entryID, userID int) error {
 	}
 
 	s.logger.Info("Calorie entry deleted", "entry_id", entryID, "user_id", userID)
+	s.logger.Debug("DeleteEntry completed successfully", "entry_id", entryID, "user_id", userID)
 	return nil
 }
 
 func (s *Service) GetTotalCaloriesForDate(userID int, date string) (int, error) {
+	s.logger.Debug("GetTotalCaloriesForDate called", "user_id", userID, "date", date)
+
 	// Use date range with same date for both from and to
 	entries, err := s.GetEntriesByDateRange(userID, date, date)
 	if err != nil {
@@ -99,10 +109,13 @@ func (s *Service) GetTotalCaloriesForDate(userID int, date string) (int, error) 
 		total += entry.Calories
 	}
 
+	s.logger.Debug("GetTotalCaloriesForDate completed successfully", "user_id", userID, "date", date, "total", total)
 	return total, nil
 }
 
 func (s *Service) GetWeeklyStats(userID int, startDate string) (map[string]int, error) {
+	s.logger.Debug("GetWeeklyStats called", "user_id", userID, "start_date", startDate)
+
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
 		return nil, ErrInvalidDate
@@ -122,10 +135,13 @@ func (s *Service) GetWeeklyStats(userID int, startDate string) (map[string]int, 
 		stats[dateStr] = total
 	}
 
+	s.logger.Debug("GetWeeklyStats completed successfully", "user_id", userID, "start_date", startDate, "days_count", len(stats))
 	return stats, nil
 }
 
 func (s *Service) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error) {
+	s.logger.Debug("GetEntriesByDateRange called", "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
+
 	entries, err := s.calorieRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
 	if err != nil {
 		s.logger.Error("failed to get calorie entries by date range", "error", err, "user_id", userID, "date_from", dateFrom, "date_to", dateTo)
@@ -137,10 +153,13 @@ func (s *Service) GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]
 		entries = []*models.CalorieEntry{}
 	}
 
+	s.logger.Debug("GetEntriesByDateRange completed successfully", "user_id", userID, "date_from", dateFrom, "date_to", dateTo, "count", len(entries))
 	return entries, nil
 }
 
 func (s *Service) UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, error) {
+	s.logger.Debug("UpdateEntry called", "entry_id", req.EntryID, "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight)
+
 	// Validate calories
 	if req.Calories <= 0 {
 		return nil, errors.New("calories must be greater than 0")
@@ -168,5 +187,6 @@ func (s *Service) UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, er
 	}
 
 	s.logger.Info("Calorie entry updated", "entry_id", req.EntryID, "user_id", req.UserID, "food", req.Food, "calories", req.Calories, "weight", req.Weight, "kcalPer100g", req.KcalPer100g, "meal_datetime", req.MealDatetime)
+	s.logger.Debug("UpdateEntry completed successfully", "entry_id", req.EntryID, "user_id", req.UserID)
 	return entry, nil
 }
