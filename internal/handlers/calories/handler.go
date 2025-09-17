@@ -17,21 +17,10 @@ type Handler struct {
 	logger         *slog.Logger
 }
 
-type CreateEntryRequest struct {
-	Food         string   `json:"food" validate:"required"`
-	Calories     int      `json:"calories" validate:"required,min=1"`
-	Weight       float64  `json:"weight" validate:"required,min=0.1"`
-	KcalPer100g  float64  `json:"kcalPer100g" validate:"required,min=0.1"`
-	Fats         *float64 `json:"fats,omitempty"`
-	Carbs        *float64 `json:"carbs,omitempty"`
-	Proteins     *float64 `json:"proteins,omitempty"`
-	MealDatetime string   `json:"meal_datetime" validate:"required"`
-}
-
-func NewHandler(calorieService *calorieservice.Service, logger *slog.Logger) *Handler {
+func New(calorieService *calorieservice.Service, logger *slog.Logger) *Handler {
 	return &Handler{
 		calorieService: calorieService,
-		logger:         logger,
+		logger:         logger.With("handler", "calories"),
 	}
 }
 
@@ -39,6 +28,7 @@ func (h *Handler) GetEntries(c echo.Context) error {
 	userID := c.Get("user_id").(int)
 	dateFrom := c.QueryParam("dateFrom")
 	dateTo := c.QueryParam("dateTo")
+	h.logger.Debug("GetEntries called", "user_id", userID, "dateFrom", dateFrom, "dateTo", dateTo)
 
 	var entries []*models.CalorieEntry
 	var err error
@@ -55,6 +45,7 @@ func (h *Handler) GetEntries(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
+	h.logger.Debug("GetEntries returning entries", "count", len(entries))
 	return c.JSON(http.StatusOK, entries)
 }
 

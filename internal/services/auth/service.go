@@ -18,15 +18,17 @@ type Service struct {
 	logger     *slog.Logger
 }
 
-func NewService(userRepo repositories.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *Service {
+func New(userRepo repositories.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *Service {
 	return &Service{
 		userRepo:   userRepo,
 		jwtService: jwtService,
-		logger:     logger,
+		logger:     logger.With("service", "auth"),
 	}
 }
 
 func (s *Service) Login(email, password string) (*models.User, string, error) {
+	s.logger.Debug("Login called", "email", email)
+
 	user, err := s.userRepo.GetByEmail(email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -37,6 +39,7 @@ func (s *Service) Login(email, password string) (*models.User, string, error) {
 	}
 
 	if !user.CheckPassword(password) {
+		s.logger.Debug("Login failed - invalid password", "email", email)
 		return nil, "", ErrInvalidCredentials
 	}
 
@@ -46,10 +49,13 @@ func (s *Service) Login(email, password string) (*models.User, string, error) {
 		return nil, "", err
 	}
 
+	s.logger.Debug("Login successful", "email", email, "user_id", user.ID)
 	return user, token, nil
 }
 
 func (s *Service) GetCurrentUser(userID int) (*models.User, error) {
+	s.logger.Debug("GetCurrentUser called", "user_id", userID)
+
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -59,10 +65,13 @@ func (s *Service) GetCurrentUser(userID int) (*models.User, error) {
 		return nil, err
 	}
 
+	s.logger.Debug("GetCurrentUser successful", "user_id", userID, "email", user.Email)
 	return user, nil
 }
 
 func (s *Service) Register(email, password, languageCode string) (*models.User, string, error) {
+	s.logger.Debug("Register called", "email", email, "language", languageCode)
+
 	// Check if user already exists
 	existingUser, err := s.userRepo.GetByEmail(email)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -71,6 +80,7 @@ func (s *Service) Register(email, password, languageCode string) (*models.User, 
 	}
 
 	if existingUser != nil {
+		s.logger.Debug("Register failed - user already exists", "email", email)
 		return nil, "", errors.New("user already exists")
 	}
 
@@ -99,5 +109,6 @@ func (s *Service) Register(email, password, languageCode string) (*models.User, 
 		return nil, "", err
 	}
 
+	s.logger.Debug("Register successful", "email", email, "user_id", user.ID, "language", languageCode)
 	return user, token, nil
 }

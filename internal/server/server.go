@@ -89,13 +89,13 @@ func (s *Server) Start() *http.Server {
 	jwtService := auth.NewJWTService(s.config.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 
-	authService := authservice.NewService(s.userRepo, jwtService, s.logger)
+	authService := authservice.New(s.userRepo, jwtService, s.logger)
 	calorieService := calorieservice.New(s.calorieRepo, s.ingredientRepo, s.logger)
-	ingredientService := ingredientservice.NewService(s.ingredientRepo, s.logger)
-	profileService := profileservice.NewService(s.db, s.userRepo, s.logger)
+	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
+	profileService := profileservice.New(s.db, s.userRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
-	calorieHandler := calories.NewHandler(calorieService, s.logger)
+	calorieHandler := calories.New(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(ingredientService, s.logger)
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
 
@@ -114,7 +114,7 @@ func (s *Server) Start() *http.Server {
 	profileGroup := apiGroup.Group("", authMiddleware.RequireAuth)
 	profileHandler.RegisterRoutes(profileGroup)
 
-	staticHandler := static.NewHandler(s.staticFiles)
+	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)
 
 	s.logger.Info("Server configured", "port", s.config.Port, "database_type", s.config.DatabaseType)

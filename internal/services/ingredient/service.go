@@ -12,26 +12,31 @@ type Service struct {
 	logger         *slog.Logger
 }
 
-func NewService(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Service {
+func New(ingredientRepo repositories.IngredientRepository, logger *slog.Logger) *Service {
 	return &Service{
 		ingredientRepo: ingredientRepo,
-		logger:         logger,
+		logger:         logger.With("service", "ingredient"),
 	}
 }
 
 func (s *Service) GetAllIngredients(userID int) ([]*models.UserIngredient, error) {
+	s.logger.Debug("GetAllIngredients called", "user_id", userID)
+
 	ingredients, err := s.ingredientRepo.GetAllUserIngredients(userID)
 	if err != nil {
 		s.logger.Error("Failed to get user ingredients", "error", err, "user_id", userID)
 		return nil, err
 	}
 
-	s.logger.Debug("Retrieved user ingredients", "user_id", userID, "count", len(ingredients))
+	s.logger.Debug("GetAllIngredients completed successfully", "user_id", userID, "count", len(ingredients))
 	return ingredients, nil
 }
 
 func (s *Service) SearchIngredients(req *SearchIngredientsRequest) ([]*models.UserIngredient, error) {
+	s.logger.Debug("SearchIngredients called", "user_id", req.UserID, "query", req.Query, "limit", req.Limit)
+
 	if req.Query == "" {
+		s.logger.Debug("SearchIngredients failed - empty query", "user_id", req.UserID)
 		return nil, ErrEmptyQuery
 	}
 
@@ -45,23 +50,28 @@ func (s *Service) SearchIngredients(req *SearchIngredientsRequest) ([]*models.Us
 		return nil, err
 	}
 
-	s.logger.Debug("Searched user ingredients", "user_id", req.UserID, "query", req.Query, "limit", req.Limit, "results", len(ingredients))
+	s.logger.Debug("SearchIngredients completed successfully", "user_id", req.UserID, "query", req.Query, "limit", req.Limit, "results", len(ingredients))
 	return ingredients, nil
 }
 
 func (s *Service) GetIngredientByID(userID, ingredientID int) (*models.UserIngredient, error) {
+	s.logger.Debug("GetIngredientByID called", "user_id", userID, "ingredient_id", ingredientID)
+
 	ingredient, err := s.ingredientRepo.GetUserIngredientByID(userID, ingredientID)
 	if err != nil {
 		s.logger.Error("Failed to get user ingredient by ID", "error", err, "user_id", userID, "ingredient_id", ingredientID)
 		return nil, err
 	}
 
-	s.logger.Debug("Retrieved user ingredient by ID", "user_id", userID, "ingredient_id", ingredientID, "name", ingredient.Name)
+	s.logger.Debug("GetIngredientByID completed successfully", "user_id", userID, "ingredient_id", ingredientID, "name", ingredient.Name)
 	return ingredient, nil
 }
 
 func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIngredient, error) {
+	s.logger.Debug("CreateIngredient called", "user_id", req.UserID, "name", req.Name, "kcal_per_100g", req.KcalPer100g)
+
 	if err := s.validateCreateRequest(req); err != nil {
+		s.logger.Debug("CreateIngredient failed - validation error", "user_id", req.UserID, "error", err)
 		return nil, err
 	}
 
@@ -73,12 +83,15 @@ func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	s.logger.Info("User ingredient created", "user_id", req.UserID, "ingredient_id", ingredient.ID, "name", req.Name, "kcalPer100g", req.KcalPer100g)
+	s.logger.Debug("CreateIngredient completed successfully", "user_id", req.UserID, "ingredient_id", ingredient.ID, "name", req.Name)
 	return ingredient, nil
 }
 
 func (s *Service) UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIngredient, error) {
+	s.logger.Debug("UpdateIngredient called", "user_id", req.UserID, "ingredient_id", req.IngredientID, "name", req.Name, "kcal_per_100g", req.KcalPer100g)
+
 	if err := s.validateUpdateRequest(req); err != nil {
+		s.logger.Debug("UpdateIngredient failed - validation error", "user_id", req.UserID, "ingredient_id", req.IngredientID, "error", err)
 		return nil, err
 	}
 
@@ -90,18 +103,20 @@ func (s *Service) UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	s.logger.Info("User ingredient updated", "user_id", req.UserID, "ingredient_id", req.IngredientID, "name", req.Name, "kcalPer100g", req.KcalPer100g)
+	s.logger.Debug("UpdateIngredient completed successfully", "user_id", req.UserID, "ingredient_id", req.IngredientID, "name", req.Name)
 	return ingredient, nil
 }
 
 func (s *Service) DeleteIngredient(userID, ingredientID int) error {
+	s.logger.Debug("DeleteIngredient called", "user_id", userID, "ingredient_id", ingredientID)
+
 	err := s.ingredientRepo.DeleteUserIngredient(userID, ingredientID)
 	if err != nil {
 		s.logger.Error("Failed to delete user ingredient", "error", err, "user_id", userID, "ingredient_id", ingredientID)
 		return err
 	}
 
-	s.logger.Info("User ingredient deleted", "user_id", userID, "ingredient_id", ingredientID)
+	s.logger.Debug("DeleteIngredient completed successfully", "user_id", userID, "ingredient_id", ingredientID)
 	return nil
 }
 
