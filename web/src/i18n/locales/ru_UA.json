@@ -66,7 +66,23 @@
   },
   "report": {
     "title": "Отчёты",
-    "wip": "В разработке"
+    "wip": "В разработке",
+    "charts_tab": "Графики",
+    "weight_history_tab": "История веса",
+    "date_from": "С",
+    "date_to": "По",
+    "show_weight": "Показать вес",
+    "show_calories": "Показать калории",
+    "weight": "Вес",
+    "calories": "Калории",
+    "weight_kg": "Вес (кг)",
+    "calories_kcal": "Калории (ккал)",
+    "select_metric": "Пожалуйста, выберите хотя бы одну метрику для отображения",
+    "add_weight_entry": "Добавить запись веса",
+    "edit_weight_entry": "Редактировать запись веса",
+    "date": "Дата",
+    "no_weight_entries": "Записи веса не найдены",
+    "confirm_delete_weight": "Вы уверены, что хотите удалить эту запись веса?"
   },
   "profile": {
     "title": "Профиль",
@@ -106,6 +122,9 @@
     "delete": "Удалить",
     "deleting": "Удаление...",
     "cancel": "Отмена",
+    "edit": "Редактировать",
+    "save": "Сохранить",
+    "actions": "Действия",
     "clear": "Очистить"
   },
   "language": {

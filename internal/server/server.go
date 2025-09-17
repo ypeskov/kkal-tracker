@@ -13,13 +13,16 @@ import (
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
 	"ypeskov/kkal-tracker/internal/handlers/profile"
+	reportshandler "ypeskov/kkal-tracker/internal/handlers/reports"
 	"ypeskov/kkal-tracker/internal/handlers/static"
+	weighthandler "ypeskov/kkal-tracker/internal/handlers/weight"
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
+	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
@@ -34,6 +37,7 @@ type Server struct {
 	userRepo       repositories.UserRepository
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
+	weightRepo     repositories.WeightHistoryRepository
 }
 
 // setupRepositories configures repositories based on the database type
@@ -43,6 +47,7 @@ func (s *Server) setupRepositories() error {
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		// TODO: Implement PostgreSQL repositories when needed
@@ -93,11 +98,14 @@ func (s *Server) Start() *http.Server {
 	calorieService := calorieservice.New(s.calorieRepo, s.ingredientRepo, s.logger)
 	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
 	profileService := profileservice.New(s.db, s.userRepo, s.logger)
+	weightService := weightservice.New(s.weightRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(ingredientService, s.logger)
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
+	weightHandler := weighthandler.NewHandler(weightService, s.logger)
+	reportsHandler := reportshandler.New(calorieService, weightService, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -113,6 +121,14 @@ func (s *Server) Start() *http.Server {
 	// Profile routes require authentication
 	profileGroup := apiGroup.Group("", authMiddleware.RequireAuth)
 	profileHandler.RegisterRoutes(profileGroup)
+
+	// Weight history routes require authentication
+	weightGroup := apiGroup.Group("/weight", authMiddleware.RequireAuth)
+	weightHandler.RegisterRoutes(weightGroup)
+
+	// Reports routes require authentication
+	reportsGroup := apiGroup.Group("/reports", authMiddleware.RequireAuth)
+	reportsHandler.RegisterRoutes(reportsGroup)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)
