@@ -139,13 +139,13 @@ func getQueries() map[string]string {
 		buildKey(QueryGetWeightHistoryByDateRange, DialectSQLite): `
 		SELECT id, user_id, weight, recorded_at, created_at
 		FROM weight_history
-		WHERE user_id = ? AND recorded_at >= ? AND recorded_at <= ?
+		WHERE user_id = ? AND substr(recorded_at, 1, 10) >= ? AND substr(recorded_at, 1, 10) <= ?
 		ORDER BY recorded_at ASC
 	`,
 		buildKey(QueryGetWeightHistoryByDateRange, DialectPostgres): `
 		SELECT id, user_id, weight, recorded_at, created_at
 		FROM weight_history
-		WHERE user_id = $1 AND recorded_at >= $2 AND recorded_at <= $3
+		WHERE user_id = $1 AND DATE(recorded_at) >= $2 AND DATE(recorded_at) <= $3
 		ORDER BY recorded_at ASC
 	`,
 
