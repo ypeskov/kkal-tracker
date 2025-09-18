@@ -130,6 +130,24 @@ export default function Report() {
     };
   }, [aggregatedData.weightData]);
 
+  // Calculate raw weight statistics (for weight history tab)
+  const rawWeightStats = useMemo(() => {
+    if (!reportData?.weight_history || reportData.weight_history.length === 0) {
+      return { min: 0, max: 0, average: 0 };
+    }
+
+    const weights = reportData.weight_history.map(item => item.weight);
+    const min = Math.min(...weights);
+    const max = Math.max(...weights);
+    const average = weights.reduce((sum, w) => sum + w, 0) / weights.length;
+
+    return {
+      min: Number(min.toFixed(2)),
+      max: Number(max.toFixed(2)),
+      average: Number(average.toFixed(2)),
+    };
+  }, [reportData?.weight_history]);
+
   // Calculate average calories per day
   const avgCaloriesPerDay = useMemo(() => {
     if (!reportData || !reportData.calorie_history || reportData.calorie_history.length === 0) {
@@ -220,7 +238,7 @@ export default function Report() {
                 <select
                   value={period}
                   onChange={(e) => setPeriod(e.target.value as Period)}
-                  className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 py-3 rounded-lg shadow-sm"
+                  className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 pt-4 pb-3 rounded-lg shadow-sm"
                 >
                   <option value="daily">{t('report.daily')}</option>
                   <option value="weekly">{t('report.weekly')}</option>
@@ -251,6 +269,26 @@ export default function Report() {
                 </div>
               </div>
             </>
+          )}
+
+          {/* Weight stats for weight history tab */}
+          {activeTab === 'weight' && rawWeightStats && rawWeightStats.min > 0 && (
+            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:ml-auto w-full lg:w-auto">
+              <div className="flex flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-600">{t('report.min_weight')}</span>
+                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.min} kg</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-600">{t('report.max_weight')}</span>
+                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.max} kg</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-600">{t('report.avg_weight')}</span>
+                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.average} kg</span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
