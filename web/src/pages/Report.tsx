@@ -8,6 +8,7 @@ import { reportsService } from '../api/reports';
 import { BarChart3, Weight } from 'lucide-react';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type StepInterval = '1' | '5' | '10' | '15';
 
 export default function Report() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function Report() {
   const [showWeight, setShowWeight] = useState(true);
   const [showCalories, setShowCalories] = useState(true);
   const [period, setPeriod] = useState<Period>('daily');
+  const [stepInterval, setStepInterval] = useState<StepInterval>('1');
 
   // Default date range: last 30 days
   const [dateFrom, setDateFrom] = useState(
@@ -37,9 +39,56 @@ export default function Report() {
     const { weight_history, calorie_history } = reportData;
 
     if (period === 'daily') {
+      // Apply step interval for daily period
+      const step = parseInt(stepInterval);
+      if (step === 1) {
+        return {
+          weightData: weight_history,
+          calorieData: calorie_history,
+        };
+      }
+
+      // Filter data by step interval
+      const filteredWeightData: typeof weight_history = [];
+      const filteredCalorieData: typeof calorie_history = [];
+
+      // Sort data by date first
+      const sortedWeightHistory = [...weight_history].sort((a, b) => a.date.localeCompare(b.date));
+      const sortedCalorieHistory = [...calorie_history].sort((a, b) => a.date.localeCompare(b.date));
+
+      // Get all unique dates from both datasets
+      const allDates = new Set<string>();
+      sortedWeightHistory.forEach(d => allDates.add(d.date));
+      sortedCalorieHistory.forEach(d => allDates.add(d.date));
+      const sortedDates = Array.from(allDates).sort();
+
+      // Pick dates at step intervals
+      for (let i = 0; i < sortedDates.length; i += step) {
+        const date = sortedDates[i];
+        const weightItem = sortedWeightHistory.find(w => w.date === date);
+        const calorieItem = sortedCalorieHistory.find(c => c.date === date);
+
+        if (weightItem) filteredWeightData.push(weightItem);
+        if (calorieItem) filteredCalorieData.push(calorieItem);
+      }
+
+      // Always include the last date if it wasn't already included
+      const lastDate = sortedDates[sortedDates.length - 1];
+      const lastIndex = sortedDates.length - 1;
+      if (lastIndex % step !== 0 && lastDate) {
+        const lastWeightItem = sortedWeightHistory.find(w => w.date === lastDate);
+        const lastCalorieItem = sortedCalorieHistory.find(c => c.date === lastDate);
+        if (lastWeightItem && !filteredWeightData.some(w => w.date === lastDate)) {
+          filteredWeightData.push(lastWeightItem);
+        }
+        if (lastCalorieItem && !filteredCalorieData.some(c => c.date === lastDate)) {
+          filteredCalorieData.push(lastCalorieItem);
+        }
+      }
+
       return {
-        weightData: weight_history,
-        calorieData: calorie_history,
+        weightData: filteredWeightData,
+        calorieData: filteredCalorieData,
       };
     }
 
@@ -110,28 +159,10 @@ export default function Report() {
       weightData: weightData.sort((a, b) => a.date.localeCompare(b.date)),
       calorieData: calorieData.sort((a, b) => a.date.localeCompare(b.date)),
     };
-  }, [reportData, period]);
+  }, [reportData, period, stepInterval]);
 
-  // Calculate weight statistics for the aggregated data
+  // Calculate weight statistics from raw data (single source of truth for both tabs)
   const weightStats = useMemo(() => {
-    if (!aggregatedData.weightData || aggregatedData.weightData.length === 0) {
-      return { min: 0, max: 0, average: 0 };
-    }
-
-    const weights = aggregatedData.weightData.map(item => item.weight);
-    const min = Math.min(...weights);
-    const max = Math.max(...weights);
-    const average = weights.reduce((sum, w) => sum + w, 0) / weights.length;
-
-    return {
-      min: Number(min.toFixed(2)),
-      max: Number(max.toFixed(2)),
-      average: Number(average.toFixed(2)),
-    };
-  }, [aggregatedData.weightData]);
-
-  // Calculate raw weight statistics (for weight history tab)
-  const rawWeightStats = useMemo(() => {
     if (!reportData?.weight_history || reportData.weight_history.length === 0) {
       return { min: 0, max: 0, average: 0 };
     }
@@ -247,6 +278,25 @@ export default function Report() {
                 </select>
               </div>
 
+              {/* Step Interval dropdown - only visible for daily period */}
+              {period === 'daily' && (
+                <div className="flex-shrink-0">
+                  <label className="block text-sm font-medium mb-1">
+                    {t('report.step_interval')}
+                  </label>
+                  <select
+                    value={stepInterval}
+                    onChange={(e) => setStepInterval(e.target.value as StepInterval)}
+                    className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 pt-4 pb-3 rounded-lg shadow-sm"
+                  >
+                    <option value="1">{t('report.step_1_day')}</option>
+                    <option value="5">{t('report.step_5_days')}</option>
+                    <option value="10">{t('report.step_10_days')}</option>
+                    <option value="15">{t('report.step_15_days')}</option>
+                  </select>
+                </div>
+              )}
+
               {/* Checkboxes */}
               <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-center lg:h-[58px]">
                 <div className="flex items-center gap-2">
@@ -272,20 +322,20 @@ export default function Report() {
           )}
 
           {/* Weight stats for weight history tab */}
-          {activeTab === 'weight' && rawWeightStats && rawWeightStats.min > 0 && (
+          {activeTab === 'weight' && weightStats && weightStats.min > 0 && (
             <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:ml-auto w-full lg:w-auto">
               <div className="flex flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-gray-600">{t('report.min_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.min} kg</span>
+                  <span className="text-lg font-bold text-blue-600">{weightStats.min} kg</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-gray-600">{t('report.max_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.max} kg</span>
+                  <span className="text-lg font-bold text-blue-600">{weightStats.max} kg</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-gray-600">{t('report.avg_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{rawWeightStats.average} kg</span>
+                  <span className="text-lg font-bold text-blue-600">{weightStats.average} kg</span>
                 </div>
               </div>
             </div>
@@ -297,10 +347,10 @@ export default function Report() {
       {activeTab === 'chart' ? (
         <div className="space-y-4">
           {/* Weight and Calories Statistics */}
-          {(showWeight && aggregatedData.weightData.length > 0) || avgCaloriesPerDay > 0 ? (
+          {(showWeight && reportData?.weight_history && reportData.weight_history.length > 0) || avgCaloriesPerDay > 0 ? (
             <div className="card p-4">
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center text-center">
-                {showWeight && aggregatedData.weightData.length > 0 && (
+                {showWeight && reportData?.weight_history && reportData.weight_history.length > 0 && (
                   <>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-600">{t('report.min_weight')}</span>

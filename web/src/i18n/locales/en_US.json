@@ -91,7 +91,12 @@
     "min_weight": "Min Weight",
     "max_weight": "Max Weight",
     "avg_weight": "Avg Weight",
-    "avg_calories_per_day": "Avg Calories/Day"
+    "avg_calories_per_day": "Avg Calories/Day",
+    "step_interval": "Step Interval",
+    "step_1_day": "1 day",
+    "step_5_days": "5 days",
+    "step_10_days": "10 days",
+    "step_15_days": "15 days"
   },
   "profile": {
     "title": "Profile",

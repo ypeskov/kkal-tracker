@@ -91,7 +91,12 @@
     "min_weight": "Мин. вес",
     "max_weight": "Макс. вес",
     "avg_weight": "Ср. вес",
-    "avg_calories_per_day": "Ср. калории/день"
+    "avg_calories_per_day": "Ср. калории/день",
+    "step_interval": "Шаг интервала",
+    "step_1_day": "1 день",
+    "step_5_days": "5 дней",
+    "step_10_days": "10 дней",
+    "step_15_days": "15 дней"
   },
   "profile": {
     "title": "Профиль",

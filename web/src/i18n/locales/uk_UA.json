@@ -91,7 +91,12 @@
     "min_weight": "Мін. вага",
     "max_weight": "Макс. вага",
     "avg_weight": "Сер. вага",
-    "avg_calories_per_day": "Сер. калорії/день"
+    "avg_calories_per_day": "Сер. калорії/день",
+    "step_interval": "Крок інтервалу",
+    "step_1_day": "1 день",
+    "step_5_days": "5 днів",
+    "step_10_days": "10 днів",
+    "step_15_days": "15 днів"
   },
   "profile": {
     "title": "Профіль",
