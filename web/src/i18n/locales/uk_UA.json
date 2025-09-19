@@ -116,7 +116,9 @@
     "unsavedChanges": "Незбережені зміни",
     "unsavedChangesMessage": "У вас є незбережені зміни. Бажаєте їх зберегти?",
     "discardChanges": "Відхилити",
-    "saveChanges": "Зберегти зміни"
+    "saveChanges": "Зберегти зміни",
+    "weightTooltip": "Введіть вагу в Звіти > Історія ваги",
+    "noWeightData": "Дані про вагу відсутні"
   },
   "nav": {
     "dashboard": "Дашборд",

@@ -116,7 +116,9 @@
     "unsavedChanges": "Незапазени промени",
     "unsavedChangesMessage": "Имате незапазени промени. Искате ли да ги запазите?",
     "discardChanges": "Отхвърли",
-    "saveChanges": "Запази промените"
+    "saveChanges": "Запази промените",
+    "weightTooltip": "Въведете тегло в Отчети > История на теглото",
+    "noWeightData": "Няма данни за тегло"
   },
   "nav": {
     "dashboard": "Табло",

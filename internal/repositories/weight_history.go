@@ -79,6 +79,26 @@ func (r *WeightHistoryRepositoryImpl) GetByUserIDAndDateRange(userID int, dateFr
 	return history, rows.Err()
 }
 
+func (r *WeightHistoryRepositoryImpl) GetLatestByUserID(userID int) (*models.WeightHistory, error) {
+	r.logger.Debug("Getting latest weight history", slog.Int("user_id", userID))
+
+	query, err := r.sqlLoader.Load(QueryGetLatestWeightHistory)
+	if err != nil {
+		return nil, err
+	}
+
+	var entry models.WeightHistory
+	err = r.db.QueryRow(query, userID).Scan(&entry.ID, &entry.UserID, &entry.Weight, &entry.RecordedAt, &entry.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // No weight history yet
+		}
+		return nil, err
+	}
+
+	return &entry, nil
+}
+
 func (r *WeightHistoryRepositoryImpl) Create(userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error) {
 	r.logger.Debug("Creating weight history entry",
 		slog.Int("user_id", userID),

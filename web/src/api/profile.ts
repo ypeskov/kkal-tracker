@@ -17,7 +17,6 @@ export interface ProfileUpdateRequest {
   email: string;
   age?: number;
   height?: number;
-  weight?: number;
   language: string;
 }
 

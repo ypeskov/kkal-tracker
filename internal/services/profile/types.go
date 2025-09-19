@@ -7,7 +7,6 @@ type ProfileUpdateRequest struct {
 	Email     string   `json:"email" validate:"required,email"`
 	Age       *int     `json:"age" validate:"omitempty,min=1,max=150"`
 	Height    *float64 `json:"height" validate:"omitempty,min=50,max=300"`
-	Weight    *float64 `json:"weight" validate:"omitempty,min=10,max=500"`
 	Language  string   `json:"language" validate:"required,oneof=en_US uk_UA ru_UA bg_BG"`
 }
 

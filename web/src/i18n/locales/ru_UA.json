@@ -116,7 +116,9 @@
     "unsavedChanges": "Несохраненные изменения",
     "unsavedChangesMessage": "У вас есть несохраненные изменения. Хотите их сохранить?",
     "discardChanges": "Отменить",
-    "saveChanges": "Сохранить изменения"
+    "saveChanges": "Сохранить изменения",
+    "weightTooltip": "Введите вес в Отчёты > История веса",
+    "noWeightData": "Данные о весе отсутствуют"
   },
   "nav": {
     "dashboard": "Дашборд",

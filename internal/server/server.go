@@ -98,7 +98,7 @@ func (s *Server) Start() *http.Server {
 	authService := authservice.New(s.userRepo, jwtService, s.logger)
 	calorieService := calorieservice.New(s.calorieRepo, s.ingredientRepo, s.logger)
 	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
-	profileService := profileservice.New(s.db, s.userRepo, s.logger)
+	profileService := profileservice.New(s.db, s.userRepo, s.weightRepo, s.logger)
 	weightService := weightservice.New(s.weightRepo, s.logger)
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
 

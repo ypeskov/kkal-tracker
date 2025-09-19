@@ -22,6 +22,7 @@ const (
 	// Weight History queries
 	QueryGetWeightHistory            = "getWeightHistory"
 	QueryGetWeightHistoryByDateRange = "getWeightHistoryByDateRange"
+	QueryGetLatestWeightHistory      = "getLatestWeightHistory"
 	QueryCreateWeightHistory         = "createWeightHistory"
 	QueryUpdateWeightHistory         = "updateWeightHistory"
 	QueryDeleteWeightHistory         = "deleteWeightHistory"
@@ -64,23 +65,23 @@ func getQueries() map[string]string {
 	`,
 
 		buildKey(QueryGetUserByEmail, DialectSQLite): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`,
 		buildKey(QueryGetUserByEmail, DialectPostgres): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`,
 
 		buildKey(QueryGetUserByID, DialectSQLite): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`,
 		buildKey(QueryGetUserByID, DialectPostgres): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, weight, language, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`,
@@ -102,14 +103,14 @@ func getQueries() map[string]string {
 
 		buildKey(QueryUpdateUserProfile, DialectSQLite): `
 		UPDATE users
-		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, weight = ?, language = ?, updated_at = datetime('now')
+		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, language = ?, updated_at = datetime('now')
 		WHERE id = ?
 	`,
 
 		buildKey(QueryUpdateUserProfile, DialectPostgres): `UPDATE users
-		SET first_name = $1, last_name = $2, email = $3, age = $4, height = $5, weight = $6, 
-		    language = $7, updated_at = NOW()
-		WHERE id = $8
+		SET first_name = $1, last_name = $2, email = $3, age = $4, height = $5,
+		    language = $6, updated_at = NOW()
+		WHERE id = $7
 	`,
 
 		buildKey(QueryAddWeightEntry, DialectSQLite): `
@@ -146,6 +147,21 @@ func getQueries() map[string]string {
 		FROM weight_history
 		WHERE user_id = $1 AND DATE(recorded_at) >= $2 AND DATE(recorded_at) <= $3
 		ORDER BY recorded_at ASC
+	`,
+
+		buildKey(QueryGetLatestWeightHistory, DialectSQLite): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = ?
+		ORDER BY recorded_at DESC
+		LIMIT 1
+	`,
+		buildKey(QueryGetLatestWeightHistory, DialectPostgres): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = $1
+		ORDER BY recorded_at DESC
+		LIMIT 1
 	`,
 
 		buildKey(QueryCreateWeightHistory, DialectSQLite): `

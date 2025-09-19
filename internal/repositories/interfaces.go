@@ -32,6 +32,7 @@ type CalorieEntryRepository interface {
 type WeightHistoryRepository interface {
 	GetByUserID(userID int) ([]*models.WeightHistory, error)
 	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.WeightHistory, error)
+	GetLatestByUserID(userID int) (*models.WeightHistory, error)
 	Create(userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
 	Update(id, userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
 	Delete(id, userID int) error

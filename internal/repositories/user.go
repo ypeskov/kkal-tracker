@@ -97,7 +97,6 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
-		&user.Weight,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -131,7 +130,6 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
-		&user.Weight,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -148,7 +146,7 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 }
 
 // UpdateProfile updates user profile information
-func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height, weight *float64, language string) error {
+func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height *float64, _ *float64, language string) error {
 	r.logger.Debug("Updating user profile", slog.Int("user_id", userID))
 
 	query, err := r.sqlLoader.Load(QueryUpdateUserProfile)
@@ -162,7 +160,6 @@ func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *stri
 		email,
 		age,
 		height,
-		weight,
 		language,
 		userID,
 	)

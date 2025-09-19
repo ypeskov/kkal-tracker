@@ -8,16 +8,18 @@ import (
 )
 
 type Service struct {
-	db       *sql.DB
-	userRepo repositories.UserRepository
-	logger   *slog.Logger
+	db             *sql.DB
+	userRepo       repositories.UserRepository
+	weightHistRepo repositories.WeightHistoryRepository
+	logger         *slog.Logger
 }
 
-func New(db *sql.DB, userRepo repositories.UserRepository, logger *slog.Logger) *Service {
+func New(db *sql.DB, userRepo repositories.UserRepository, weightHistRepo repositories.WeightHistoryRepository, logger *slog.Logger) *Service {
 	return &Service{
-		db:       db,
-		userRepo: userRepo,
-		logger:   logger.With("service", "profile"),
+		db:             db,
+		userRepo:       userRepo,
+		weightHistRepo: weightHistRepo,
+		logger:         logger.With("service", "profile"),
 	}
 }
 
@@ -37,6 +39,16 @@ func (s *Service) GetProfile(userID int) (*ProfileResponse, error) {
 		language = *user.Language
 	}
 
+	// Get latest weight from weight history
+	var weight *float64
+	latestWeight, err := s.weightHistRepo.GetLatestByUserID(userID)
+	if err != nil {
+		s.logger.Warn("Failed to get latest weight", "user_id", userID, "error", err)
+		// Continue without weight data
+	} else if latestWeight != nil {
+		weight = &latestWeight.Weight
+	}
+
 	// Convert domain model to DTO
 	response := &ProfileResponse{
 		FirstName: user.FirstName,
@@ -44,7 +56,7 @@ func (s *Service) GetProfile(userID int) (*ProfileResponse, error) {
 		Email:     user.Email,
 		Age:       user.Age,
 		Height:    user.Height,
-		Weight:    user.Weight,
+		Weight:    weight,
 		Language:  language,
 	}
 
@@ -64,20 +76,13 @@ func (s *Service) UpdateProfile(userID int, req *ProfileUpdateRequest) error {
 	}
 	defer tx.Rollback()
 
-	// Update user profile (including weight in users table)
-	if err := s.userRepo.UpdateProfile(userID, req.FirstName, req.LastName, req.Email, req.Age, req.Height, req.Weight, req.Language); err != nil {
+	// Update user profile (without weight - now managed only in weight history)
+	if err := s.userRepo.UpdateProfile(userID, req.FirstName, req.LastName, req.Email, req.Age, req.Height, nil, req.Language); err != nil {
 		s.logger.Error("Failed to update profile", "user_id", userID, "error", err)
 		return err
 	}
 
-	// If weight is provided, also add it to weight history for tracking
-	if req.Weight != nil {
-		if err := s.userRepo.AddWeightEntry(userID, *req.Weight); err != nil {
-			s.logger.Error("Failed to add weight entry", "user_id", userID, "weight", *req.Weight, "error", err)
-			return err
-		}
-		s.logger.Debug("Added weight to history", "user_id", userID, "weight", *req.Weight)
-	}
+	// Weight is now managed only through weight history, not profile updates
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {

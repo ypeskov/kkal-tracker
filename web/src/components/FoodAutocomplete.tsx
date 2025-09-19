@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, forwardRef } from 'react'
+import { useState, useEffect, useRef, forwardRef, ForwardedRef } from 'react'
 import { Ingredient, ingredientService } from '../api/ingredients'
-// FoodAutocomplete.css imports removed - using Tailwind CSS
 
 interface FoodAutocompleteProps {
   value: string
@@ -11,14 +10,11 @@ interface FoodAutocompleteProps {
   id?: string
 }
 
-const FoodAutocomplete = forwardRef<HTMLInputElement, FoodAutocompleteProps>(({
-  value,
-  onChange,
-  onSelect,
-  placeholder,
-  required,
-  id
-}, ref) => {
+const FoodAutocomplete = forwardRef<HTMLInputElement, FoodAutocompleteProps>(
+  function FoodAutocomplete(
+    { value, onChange, onSelect, placeholder, required, id },
+    ref: ForwardedRef<HTMLInputElement>
+  ) {
   const [suggestions, setSuggestions] = useState<Ingredient[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -146,8 +142,7 @@ const FoodAutocomplete = forwardRef<HTMLInputElement, FoodAutocompleteProps>(({
       )}
     </div>
   )
-})
-
-FoodAutocomplete.displayName = 'FoodAutocomplete'
+  }
+)
 
 export default FoodAutocomplete
