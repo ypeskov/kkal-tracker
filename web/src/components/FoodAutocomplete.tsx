@@ -24,8 +24,15 @@ export default function FoodAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const lastSelectedValueRef = useRef<string>('')
 
   useEffect(() => {
+    // Skip searching if this value was just selected from dropdown
+    if (value && value === lastSelectedValueRef.current) {
+      lastSelectedValueRef.current = '' // Reset for next time
+      return
+    }
+
     const searchIngredients = async () => {
       if (value.length < 2) {
         setSuggestions([])
@@ -54,9 +61,11 @@ export default function FoodAutocomplete({
   }
 
   const handleSuggestionClick = (ingredient: Ingredient) => {
+    lastSelectedValueRef.current = ingredient.name // Remember what we selected
     onChange(ingredient.name)
     onSelect(ingredient)
     setShowSuggestions(false)
+    setSuggestions([]) // Clear suggestions to prevent them from reappearing
     setSelectedIndex(-1)
   }
 
@@ -98,12 +107,6 @@ export default function FoodAutocomplete({
     }, 150)
   }
 
-  const handleFocus = () => {
-    if (value.length >= 2 && suggestions.length > 0) {
-      setShowSuggestions(true)
-    }
-  }
-
   return (
     <div className="relative w-full">
       <input
@@ -114,7 +117,6 @@ export default function FoodAutocomplete({
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
-        onFocus={handleFocus}
         placeholder={placeholder}
         required={required}
         autoComplete="off"
