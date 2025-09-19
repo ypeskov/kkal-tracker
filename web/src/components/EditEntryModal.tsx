@@ -21,6 +21,15 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('');
 
+  const handleNumericInput = (value: string, setter: (value: string) => void) => {
+    // Replace all commas with dots
+    const normalizedValue = value.replace(/,/g, '.');
+    // Only allow valid number format
+    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
+      setter(normalizedValue);
+    }
+  };
+
   useEffect(() => {
     if (entry) {
       setEditFoodName(entry.food);
@@ -118,28 +127,26 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             <div className="flex flex-col flex-1">
               <label htmlFor="editWeight" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.weight')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="editWeight"
                 value={editWeight}
-                onChange={(e) => setEditWeight(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setEditWeight)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
-                min="0"
-                step="0.1"
               />
             </div>
 
             <div className="flex flex-col flex-1">
               <label htmlFor="editKcalPer100g" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.kcalPer100g')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="editKcalPer100g"
                 value={editKcalPer100g}
-                onChange={(e) => setEditKcalPer100g(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setEditKcalPer100g)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
-                min="0"
-                step="0.01"
               />
             </div>
           </div>
@@ -149,26 +156,24 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             <div className="flex flex-col">
               <label htmlFor="editFats" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fats')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="editFats"
                 value={editFats}
-                onChange={(e) => setEditFats(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setEditFats)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
-                min="0"
-                step="0.1"
               />
             </div>
 
             <div className="flex flex-col">
               <label htmlFor="editCarbs" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.carbs')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="editCarbs"
                 value={editCarbs}
-                onChange={(e) => setEditCarbs(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setEditCarbs)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
-                min="0"
-                step="0.1"
               />
             </div>
 
@@ -176,13 +181,12 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             <div className="flex flex-col col-span-1 md:col-span-1">
               <label htmlFor="editProteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.proteins')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="editProteins"
                 value={editProteins}
-                onChange={(e) => setEditProteins(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setEditProteins)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
-                min="0"
-                step="0.1"
               />
             </div>
           </div>

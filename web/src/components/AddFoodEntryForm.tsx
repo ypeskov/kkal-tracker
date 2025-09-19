@@ -18,6 +18,15 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   const [proteins, setProteins] = useState('');
   const foodInputRef = useRef<HTMLInputElement>(null);
 
+  const handleNumericInput = (value: string, setter: (value: string) => void) => {
+    // Replace all commas with dots
+    const normalizedValue = value.replace(/,/g, '.');
+    // Only allow valid number format
+    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
+      setter(normalizedValue);
+    }
+  };
+
   useEffect(() => {
     foodInputRef.current?.focus();
   }, []);
@@ -96,24 +105,22 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               </div>
               <div className="flex justify-between">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="weight"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={(e) => handleNumericInput(e.target.value, setWeight)}
                   className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
                 />
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="kcalPer100g"
                   value={kcalPer100g}
-                  onChange={(e) => setKcalPer100g(e.target.value)}
+                  onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
                   className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
                 />
               </div>
             </div>
@@ -122,14 +129,13 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             <div className="hidden lg:flex lg:flex-col">
               <label htmlFor="weight-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="weight-desktop"
                 value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                onChange={(e) => handleNumericInput(e.target.value, setWeight)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
-                min="0"
-                step="0.1"
               />
             </div>
           </div>
@@ -138,14 +144,13 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           <div className="hidden lg:flex lg:flex-col">
             <label htmlFor="kcalPer100g-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="kcalPer100g-desktop"
               value={kcalPer100g}
-              onChange={(e) => setKcalPer100g(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
-              min="0"
-              step="0.01"
             />
           </div>
         </div>
@@ -158,22 +163,20 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
           <div className="flex justify-between">
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="fats"
               value={fats}
-              onChange={(e) => setFats(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setFats)}
               className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="carbs"
               value={carbs}
-              onChange={(e) => setCarbs(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
               className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
           </div>
         </div>
@@ -186,13 +189,12 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
           <div className="flex justify-between">
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="proteins"
               value={proteins}
-              onChange={(e) => setProteins(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setProteins)}
               className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
             <div className="w-[45%]"></div>
           </div>
@@ -203,26 +205,24 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           <div className="flex flex-col">
             <label htmlFor="fats-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="fats-desktop"
               value={fats}
-              onChange={(e) => setFats(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setFats)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
           </div>
 
           <div className="flex flex-col">
             <label htmlFor="carbs-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.carbs')}:</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="carbs-desktop"
               value={carbs}
-              onChange={(e) => setCarbs(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
           </div>
 
@@ -230,13 +230,12 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           <div className="flex flex-col col-span-1 md:col-span-1">
             <label htmlFor="proteins-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="proteins-desktop"
               value={proteins}
-              onChange={(e) => setProteins(e.target.value)}
+              onChange={(e) => handleNumericInput(e.target.value, setProteins)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              step="0.1"
             />
           </div>
         </div>

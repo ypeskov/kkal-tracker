@@ -27,6 +27,15 @@ export default function EditIngredientModal({
   const [carbs, setCarbs] = useState('');
   const [fats, setFats] = useState('');
 
+  const handleNumericInput = (value: string, setter: (value: string) => void) => {
+    // Replace all commas with dots
+    const normalizedValue = value.replace(/,/g, '.');
+    // Only allow valid number format
+    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
+      setter(normalizedValue);
+    }
+  };
+
   useEffect(() => {
     if (ingredient) {
       setName(ingredient.name);
@@ -85,12 +94,11 @@ export default function EditIngredientModal({
             <label htmlFor="kcalPer100g" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.caloriesPer100g')}</label>
             <input
               id="kcalPer100g"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={kcalPer100g}
-              onChange={(e) => setKcalPer100g(e.target.value)}
-              required
+              onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
+                            required
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
             />
           </div>
@@ -101,12 +109,11 @@ export default function EditIngredientModal({
               <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
               <input
                 id="proteins"
-                type="number"
-                step="0.1"
-                min="0"
-                value={proteins}
-                onChange={(e) => setProteins(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                type="text"
+              inputMode="decimal"
+                    value={proteins}
+                onChange={(e) => handleNumericInput(e.target.value, setProteins)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
 
@@ -114,12 +121,11 @@ export default function EditIngredientModal({
               <label htmlFor="carbs" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.carbs')}</label>
               <input
                 id="carbs"
-                type="number"
-                step="0.1"
-                min="0"
-                value={carbs}
-                onChange={(e) => setCarbs(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                type="text"
+              inputMode="decimal"
+                    value={carbs}
+                onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
 
@@ -128,12 +134,11 @@ export default function EditIngredientModal({
               <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
               <input
                 id="fats"
-                type="number"
-                step="0.1"
-                min="0"
-                value={fats}
-                onChange={(e) => setFats(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                type="text"
+              inputMode="decimal"
+                    value={fats}
+                onChange={(e) => handleNumericInput(e.target.value, setFats)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
           </div>
