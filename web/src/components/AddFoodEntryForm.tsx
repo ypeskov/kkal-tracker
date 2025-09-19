@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ingredient } from '../api/ingredients';
 import FoodAutocomplete from './FoodAutocomplete';
@@ -16,6 +16,11 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   const [fats, setFats] = useState('');
   const [carbs, setCarbs] = useState('');
   const [proteins, setProteins] = useState('');
+  const foodInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    foodInputRef.current?.focus();
+  }, []);
 
   const totalCalories = useMemo(() => {
     const weightNum = parseFloat(weight) || 0;
@@ -54,6 +59,8 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
     setFats('');
     setCarbs('');
     setProteins('');
+
+    foodInputRef.current?.focus();
   };
 
   const isButtonDisabled = isSubmitting || !foodName || !weight || !kcalPer100g;
@@ -69,6 +76,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             <label htmlFor="foodName" className="font-medium text-gray-800 text-sm w-1/5">{t('dashboard.foodName')}:</label>
             <div className="w-4/5">
               <FoodAutocomplete
+                ref={foodInputRef}
                 id="foodName"
                 value={foodName}
                 onChange={setFoodName}
