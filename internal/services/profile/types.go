@@ -1,4 +1,4 @@
-package dto
+package profile
 
 // ProfileUpdateRequest represents the request to update user profile
 type ProfileUpdateRequest struct {

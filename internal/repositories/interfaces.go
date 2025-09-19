@@ -3,7 +3,6 @@ package repositories
 import (
 	"time"
 
-	"ypeskov/kkal-tracker/internal/dto"
 	"ypeskov/kkal-tracker/internal/models"
 )
 
@@ -13,7 +12,7 @@ type UserRepository interface {
 	CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error)
 	GetByID(id int) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
-	UpdateProfile(userID int, profile *dto.ProfileUpdateRequest) error
+	UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height, weight *float64, language string) error
 	AddWeightEntry(userID int, weight float64) error
 }
 

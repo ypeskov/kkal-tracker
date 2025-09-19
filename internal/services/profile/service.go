@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"ypeskov/kkal-tracker/internal/dto"
 	"ypeskov/kkal-tracker/internal/repositories"
 )
 
@@ -23,7 +22,7 @@ func New(db *sql.DB, userRepo repositories.UserRepository, logger *slog.Logger) 
 }
 
 // GetProfile retrieves the user profile and returns a DTO
-func (s *Service) GetProfile(userID int) (*dto.ProfileResponse, error) {
+func (s *Service) GetProfile(userID int) (*ProfileResponse, error) {
 	s.logger.Debug("GetProfile called", "user_id", userID)
 
 	user, err := s.userRepo.GetByID(userID)
@@ -39,7 +38,7 @@ func (s *Service) GetProfile(userID int) (*dto.ProfileResponse, error) {
 	}
 
 	// Convert domain model to DTO
-	response := &dto.ProfileResponse{
+	response := &ProfileResponse{
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
@@ -54,7 +53,7 @@ func (s *Service) GetProfile(userID int) (*dto.ProfileResponse, error) {
 }
 
 // UpdateProfile updates the user profile, passing DTO directly to repository
-func (s *Service) UpdateProfile(userID int, req *dto.ProfileUpdateRequest) error {
+func (s *Service) UpdateProfile(userID int, req *ProfileUpdateRequest) error {
 	s.logger.Debug("UpdateProfile called", "user_id", userID, "email", req.Email, "first_name", req.FirstName, "last_name", req.LastName)
 
 	// Start transaction for atomic updates
@@ -66,7 +65,7 @@ func (s *Service) UpdateProfile(userID int, req *dto.ProfileUpdateRequest) error
 	defer tx.Rollback()
 
 	// Update user profile (including weight in users table)
-	if err := s.userRepo.UpdateProfile(userID, req); err != nil {
+	if err := s.userRepo.UpdateProfile(userID, req.FirstName, req.LastName, req.Email, req.Age, req.Height, req.Weight, req.Language); err != nil {
 		s.logger.Error("Failed to update profile", "user_id", userID, "error", err)
 		return err
 	}

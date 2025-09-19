@@ -22,6 +22,7 @@ import (
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
+	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
 	"github.com/labstack/echo/v4"
@@ -99,13 +100,14 @@ func (s *Server) Start() *http.Server {
 	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
 	profileService := profileservice.New(s.db, s.userRepo, s.logger)
 	weightService := weightservice.New(s.weightRepo, s.logger)
+	reportsService := reportsservice.New(calorieService, weightService, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
 	ingredientHandler := ingredients.NewHandler(ingredientService, s.logger)
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
 	weightHandler := weighthandler.NewHandler(weightService, s.logger)
-	reportsHandler := reportshandler.New(calorieService, weightService, s.logger)
+	reportsHandler := reportshandler.New(reportsService, s.logger)
 
 	apiGroup := e.Group("/api")
 

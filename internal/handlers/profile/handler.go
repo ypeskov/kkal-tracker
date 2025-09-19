@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"ypeskov/kkal-tracker/internal/dto"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 
 	"github.com/labstack/echo/v4"
@@ -44,7 +43,7 @@ func (h *Handler) UpdateProfile(c echo.Context) error {
 	h.logger.Debug("UpdateProfile called", "user_id", userID)
 
 	// Bind to DTO which has validation tags
-	var req dto.ProfileUpdateRequest
+	var req profileservice.ProfileUpdateRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Debug("UpdateProfile failed - invalid request body", "user_id", userID, "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request")
