@@ -24,46 +24,6 @@ func NewIngredientRepository(db *sql.DB, logger *slog.Logger, dialect Dialect) *
 	}
 }
 
-// Search user ingredients for autocomplete
-func (r *IngredientRepositoryImpl) SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error) {
-	r.logger.Debug("searching user ingredients", slog.Int("user_id", userID), slog.String("query", query), slog.Int("limit", limit))
-
-	sqlQuery, err := r.sqlLoader.Load(QuerySearchUserIngredients)
-	if err != nil {
-		r.logger.Error("failed to load SQL query", "error", err)
-		return nil, err
-	}
-
-	rows, err := r.db.Query(sqlQuery, userID, "%"+query+"%", limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ingredients []*models.UserIngredient
-	for rows.Next() {
-		ingredient := &models.UserIngredient{}
-		err := rows.Scan(
-			&ingredient.ID,
-			&ingredient.UserID,
-			&ingredient.Name,
-			&ingredient.KcalPer100g,
-			&ingredient.Fats,
-			&ingredient.Carbs,
-			&ingredient.Proteins,
-			&ingredient.GlobalIngredientID,
-			&ingredient.CreatedAt,
-			&ingredient.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		ingredients = append(ingredients, ingredient)
-	}
-
-	return ingredients, nil
-}
-
 // Get all user ingredients for session storage
 func (r *IngredientRepositoryImpl) GetAllUserIngredients(userID int) ([]*models.UserIngredient, error) {
 	r.logger.Debug("getting all user ingredients", slog.Int("user_id", userID))

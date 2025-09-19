@@ -1,11 +1,5 @@
 package ingredient
 
-type SearchIngredientsRequest struct {
-	UserID int
-	Query  string
-	Limit  int
-}
-
 type CreateIngredientRequest struct {
 	UserID      int
 	Name        string

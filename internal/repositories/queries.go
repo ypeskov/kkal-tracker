@@ -27,7 +27,6 @@ const (
 	QueryDeleteWeightHistory         = "deleteWeightHistory"
 
 	// Ingredient queries
-	QuerySearchUserIngredients       = "searchUserIngredients"
 	QueryGetAllUserIngredients       = "getAllUserIngredients"
 	QueryGetUserIngredientByName     = "getUserIngredientByName"
 	QueryGetUserIngredientByID       = "getUserIngredientByID"
@@ -249,21 +248,6 @@ func getQueries() map[string]string {
 	`,
 
 		// Ingredient queries
-		buildKey(QuerySearchUserIngredients, DialectSQLite): `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = ? AND name LIKE ?
-		ORDER BY name
-		LIMIT ?
-	`,
-		buildKey(QuerySearchUserIngredients, DialectPostgres): `
-		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
-		FROM user_ingredients
-		WHERE user_id = $1 AND name ILIKE $2
-		ORDER BY name
-		LIMIT $3
-	`,
-
 		buildKey(QueryGetAllUserIngredients, DialectSQLite): `
 		SELECT id, user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id, created_at, updated_at
 		FROM user_ingredients

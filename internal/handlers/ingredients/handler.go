@@ -54,40 +54,6 @@ func (h *Handler) GetAllIngredients(c echo.Context) error {
 	return c.JSON(http.StatusOK, ingredients)
 }
 
-// SearchIngredients Search user ingredients for autocomplete (fallback if session storage fails)
-func (h *Handler) SearchIngredients(c echo.Context) error {
-	userID := c.Get("user_id").(int)
-	query := c.QueryParam("q")
-	limitParam := c.QueryParam("limit")
-	h.logger.Debug("SearchIngredients called", "user_id", userID, "query", query, "limit_param", limitParam)
-
-	// Default limit to 10
-	limit := 10
-	if limitParam != "" {
-		if parsedLimit, err := strconv.Atoi(limitParam); err == nil {
-			limit = parsedLimit
-		}
-	}
-
-	serviceReq := &ingredientservice.SearchIngredientsRequest{
-		UserID: userID,
-		Query:  query,
-		Limit:  limit,
-	}
-
-	ingredients, err := h.ingredientService.SearchIngredients(serviceReq)
-	if err != nil {
-		if err == ingredientservice.ErrEmptyQuery {
-			return echo.NewHTTPError(http.StatusBadRequest, "Query parameter 'q' is required")
-		}
-		h.logger.Error("Failed to search user ingredients", "error", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
-	}
-
-	h.logger.Debug("SearchIngredients returning results", "user_id", userID, "query", query, "count", len(ingredients))
-	return c.JSON(http.StatusOK, ingredients)
-}
-
 // GetIngredientByID Get a single user ingredient by ID
 func (h *Handler) GetIngredientByID(c echo.Context) error {
 	userID := c.Get("user_id").(int)
@@ -215,7 +181,6 @@ func (h *Handler) DeleteIngredient(c echo.Context) error {
 
 func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.GetAllIngredients)
-	g.GET("/search", h.SearchIngredients)
 	g.GET("/:id", h.GetIngredientByID)
 	g.POST("", h.CreateIngredient)
 	g.PUT("/:id", h.UpdateIngredient)

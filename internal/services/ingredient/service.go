@@ -32,28 +32,6 @@ func (s *Service) GetAllIngredients(userID int) ([]*models.UserIngredient, error
 	return ingredients, nil
 }
 
-func (s *Service) SearchIngredients(req *SearchIngredientsRequest) ([]*models.UserIngredient, error) {
-	s.logger.Debug("SearchIngredients called", "user_id", req.UserID, "query", req.Query, "limit", req.Limit)
-
-	if req.Query == "" {
-		s.logger.Debug("SearchIngredients failed - empty query", "user_id", req.UserID)
-		return nil, ErrEmptyQuery
-	}
-
-	if req.Limit <= 0 {
-		req.Limit = 10
-	}
-
-	ingredients, err := s.ingredientRepo.SearchUserIngredients(req.UserID, req.Query, req.Limit)
-	if err != nil {
-		s.logger.Error("Failed to search user ingredients", "error", err, "user_id", req.UserID, "query", req.Query)
-		return nil, err
-	}
-
-	s.logger.Debug("SearchIngredients completed successfully", "user_id", req.UserID, "query", req.Query, "limit", req.Limit, "results", len(ingredients))
-	return ingredients, nil
-}
-
 func (s *Service) GetIngredientByID(userID, ingredientID int) (*models.UserIngredient, error) {
 	s.logger.Debug("GetIngredientByID called", "user_id", userID, "ingredient_id", ingredientID)
 

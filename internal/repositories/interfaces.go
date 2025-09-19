@@ -39,8 +39,7 @@ type WeightHistoryRepository interface {
 
 // IngredientRepository defines the contract for ingredient data access
 type IngredientRepository interface {
-	// SearchUserIngredients User ingredients
-	SearchUserIngredients(userID int, query string, limit int) ([]*models.UserIngredient, error)
+	// User ingredients
 	GetAllUserIngredients(userID int) ([]*models.UserIngredient, error)
 	GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error)
 	GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error)

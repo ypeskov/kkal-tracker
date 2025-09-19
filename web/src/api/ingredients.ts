@@ -86,52 +86,27 @@ class IngredientService {
       .sort((a, b) => a.name.localeCompare(b.name))
   }
 
-  // Fallback: search ingredients via API if cache is empty
-  searchIngredientsAPI = async (query: string, limit: number = 10): Promise<Ingredient[]> => {
-    if (query.length < 2) return []
-    
-    try {
-      const response = await fetch(`/api/ingredients/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
-        headers: this.getAuthHeaders(),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to search ingredients')
-      }
-
-      const result = await response.json()
-      
-      // Ensure we return a valid array
-      if (!result || !Array.isArray(result)) {
-        console.warn('API returned invalid data:', result)
-        return []
-      }
-      
-      return result
-    } catch (error) {
-      console.error('Failed to search ingredients:', error)
-      return []
+  // Load ingredients if cache is empty
+  private ensureIngredientsLoaded = async (): Promise<void> => {
+    if (!this.hasCachedIngredients()) {
+      await this.loadAndCacheIngredients()
     }
   }
 
-  // Smart search: use cache first, fallback to API
+  // Search ingredients from cache (load if needed)
   searchIngredients = async (query: string, limit: number = 10): Promise<Ingredient[]> => {
     try {
       if (!query || query.length < 2) {
         return []
       }
-      
-      // First try cached search
+
+      // Ensure ingredients are loaded
+      await this.ensureIngredientsLoaded()
+
+      // Search from cache
       const cachedResults = this.searchCachedIngredients(query, limit)
-      
-      if (cachedResults && Array.isArray(cachedResults) && cachedResults.length > 0) {
-        return cachedResults
-      }
-      
-      // If cache is empty or no results, try API
-      const apiResults = await this.searchIngredientsAPI(query, limit)
-      return Array.isArray(apiResults) ? apiResults : []
-      
+      return Array.isArray(cachedResults) ? cachedResults : []
+
     } catch (error) {
       console.error('Failed to search ingredients:', error)
       return []
