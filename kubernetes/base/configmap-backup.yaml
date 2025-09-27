@@ -61,7 +61,7 @@ data:
         echo "${GOOGLE_CREDENTIALS_JSON}" > /tmp/credentials.json
 
         # Create Python script for upload
-        cat > /tmp/upload_to_drive.py << 'EOF'
+        cat > /tmp/upload_to_drive.py << 'PYTHON_EOF'
 import os
 import sys
 import json
@@ -143,7 +143,7 @@ except HttpError as e:
 except Exception as e:
     print(f"Unexpected error: {e}")
     sys.exit(1)
-EOF
+PYTHON_EOF
 
         # Run upload script
         python3 /tmp/upload_to_drive.py "${BACKUP_DIR}/${COMPRESSED_FILE}"
