@@ -5,7 +5,7 @@ metadata:
 spec:
   # Schedule in local timezone
   # Now you can set time directly without UTC conversion
-  schedule: "55 15 * * *"  # 2:00 AM Sofia time
+  schedule: "0 2 * * *"  # 2:00 AM Sofia time
   timeZone: "Europe/Sofia"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
