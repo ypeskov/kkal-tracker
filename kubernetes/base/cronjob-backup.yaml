@@ -26,8 +26,8 @@ spec:
                 defaultMode: 0755
           containers:
             - name: backup
-              image: python:3.11-slim
-              command: ["/bin/bash", "/scripts/backup.sh"]
+              image: rclone/rclone:latest
+              command: ["/bin/sh", "/scripts/backup.sh"]
               volumeMounts:
                 - name: data
                   mountPath: /data

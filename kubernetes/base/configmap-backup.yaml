@@ -4,14 +4,14 @@ metadata:
   name: backup-script
 data:
   backup.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -e
 
     # Configuration
     DB_PATH="${DATABASE_PATH:-/data/app.db}"
     BACKUP_DIR="${BACKUP_PATH:-/data/backups}"
     RETENTION_DAYS="${RETENTION_DAYS:-7}"
-    GDRIVE_FOLDER_ID="${GDRIVE_FOLDER_ID}"
+    GDRIVE_FOLDER_PATH="${GDRIVE_FOLDER_PATH:-services/kkal-tracker/backups}"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="kkal_tracker_backup_${TIMESTAMP}.db"
 
@@ -27,12 +27,10 @@ data:
     echo "Starting backup of database: ${DB_PATH}"
     echo "Backup timestamp: ${TIMESTAMP}"
 
-    # Install required packages
-    echo "Installing required packages..."
-    apt-get update -qq && apt-get install -qq -y sqlite3 > /dev/null
-    pip3 install --quiet google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+    # Install sqlite3
+    apk add --no-cache sqlite
 
-    # Create backup using SQLite's backup command (ensures consistency)
+    # Create backup using SQLite's backup command
     echo "Creating SQLite backup..."
     sqlite3 "${DB_PATH}" ".backup '${BACKUP_DIR}/${BACKUP_FILE}'"
 
@@ -53,125 +51,50 @@ data:
     COMPRESSED_SIZE=$(du -h "${BACKUP_DIR}/${COMPRESSED_FILE}" | cut -f1)
     echo "Compressed backup: ${COMPRESSED_FILE} (${COMPRESSED_SIZE})"
 
-    # Upload to Google Drive if credentials are provided
-    if [ -n "${GOOGLE_CREDENTIALS_JSON}" ] && [ -n "${GDRIVE_FOLDER_ID}" ]; then
-        echo "Uploading to Google Drive..."
-        echo "Folder ID: ${GDRIVE_FOLDER_ID}"
+    # Upload to Google Drive using OAuth if token is provided
+    if [ -n "${GDRIVE_OAUTH_TOKEN}" ]; then
+        echo "Configuring rclone with OAuth token..."
 
-        # Save credentials to file
-        echo "${GOOGLE_CREDENTIALS_JSON}" > /tmp/credentials.json
+        # Configure rclone with OAuth token
+        mkdir -p ~/.config/rclone
+        cat > ~/.config/rclone/rclone.conf << EOF
+    [gdrive]
+    type = drive
+    scope = drive
+    token = ${GDRIVE_OAUTH_TOKEN}
+    EOF
 
-        # Use Python directly with inline script
-        export BACKUP_FILE_PATH="${BACKUP_DIR}/${COMPRESSED_FILE}"
-        python3 << 'PYTHONSCRIPT'
-    import os
-    import sys
-    from google.oauth2 import service_account
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-    from googleapiclient.errors import HttpError
+        echo "Uploading to Google Drive (personal account)..."
 
-    CREDENTIALS_FILE = '/tmp/credentials.json'
-    BACKUP_FILE = os.environ.get('BACKUP_FILE_PATH')
-    FOLDER_ID = os.environ.get('GDRIVE_FOLDER_ID')
+        # Create folder if needed
+        rclone mkdir "gdrive:${GDRIVE_FOLDER_PATH}" 2>/dev/null || true
 
-    try:
-        print(f"Authenticating with service account...")
+        # Upload the backup file
+        rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "gdrive:${GDRIVE_FOLDER_PATH}/" -v
 
-        USER_EMAIL = os.environ.get('GDRIVE_USER_EMAIL')
+        # Verify upload
+        if rclone ls "gdrive:${GDRIVE_FOLDER_PATH}/${COMPRESSED_FILE}" > /dev/null 2>&1; then
+            echo "Successfully uploaded ${COMPRESSED_FILE} to Google Drive"
 
-        credentials = service_account.Credentials.from_service_account_file(
-            CREDENTIALS_FILE,
-            scopes=['https://www.googleapis.com/auth/drive']
-        )
+            # Optional: clean up old backups on Drive
+            if [ "${GDRIVE_CLEANUP}" = "true" ]; then
+                echo "Cleaning up old backups on Google Drive..."
+                rclone delete "gdrive:${GDRIVE_FOLDER_PATH}" \
+                    --min-age "${RETENTION_DAYS}d" \
+                    --include "kkal_tracker_backup_*.db.gz" 2>/dev/null || true
+            fi
+        else
+            echo "Error: Upload to Google Drive failed"
+            exit 1
+        fi
 
-        service = build('drive', 'v3', credentials=credentials)
+        # Clean up credentials
+        rm -rf ~/.config/rclone
 
-        print(f"Using folder ID: {FOLDER_ID}")
-
-        # Test access to the folder
-        try:
-            folder = service.files().get(fileId=FOLDER_ID, fields='id,name').execute()
-            print(f"Folder found: {folder.get('name', 'Unknown')}")
-        except HttpError as e:
-            if e.resp.status == 404:
-                print(f"ERROR: Folder {FOLDER_ID} not found")
-                print("Share the folder with: kkal-tracker-backup@budgeter-448210.iam.gserviceaccount.com")
-            else:
-                print(f"ERROR: {e}")
-            sys.exit(1)
-
-        # Upload file
-        file_metadata = {
-            'name': os.path.basename(BACKUP_FILE),
-            'parents': [FOLDER_ID]
-        }
-
-        print(f"Uploading {os.path.basename(BACKUP_FILE)}...")
-        media = MediaFileUpload(BACKUP_FILE, resumable=True)
-
-        # Alternative approach: Create file in Service Account's Drive and share
-        print("Creating file in Service Account's Drive...")
-
-        # Create file without specifying parent (will go to SA's root)
-        file_metadata_simple = {
-            'name': os.path.basename(BACKUP_FILE)
-        }
-
-        try:
-            file = service.files().create(
-                body=file_metadata_simple,
-                media_body=media,
-                fields='id,name,webViewLink'
-            ).execute()
-
-            file_id = file.get('id')
-            print(f"File created! ID: {file_id}")
-
-            # Share the file with user if email provided
-            if USER_EMAIL:
-                print(f"Sharing with {USER_EMAIL}...")
-                permission = {
-                    'type': 'user',
-                    'role': 'owner',  # Transfer ownership
-                    'emailAddress': USER_EMAIL
-                }
-
-                try:
-                    service.permissions().create(
-                        fileId=file_id,
-                        body=permission,
-                        transferOwnership=True
-                    ).execute()
-                    print(f"Ownership transferred to {USER_EMAIL}")
-                except HttpError as perm_error:
-                    # If can't transfer ownership, just share as editor
-                    print(f"Can't transfer ownership: {perm_error}")
-                    permission['role'] = 'writer'
-                    service.permissions().create(
-                        fileId=file_id,
-                        body=permission
-                    ).execute()
-                    print(f"Shared with {USER_EMAIL} as editor")
-
-            print(f"Success! File available at: {file.get('webViewLink')}")
-
-        except HttpError as e:
-            print(f"Failed to create file: {e}")
-            print("This might mean the Service Account doesn't have permission.")
-            print("Try creating a Google Cloud Storage bucket instead.")
-            raise
-
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-    PYTHONSCRIPT
-
-        # Clean up
-        rm -f /tmp/credentials.json
-        echo "Upload completed"
+        echo "Upload completed to your personal Google Drive"
     else
-        echo "Google Drive credentials or folder ID not found, skipping upload"
+        echo "Google Drive OAuth token not found, skipping upload"
+        echo "To set up: run 'rclone config' locally, then add token to .env"
     fi
 
     # Clean up old local backups
