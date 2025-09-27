@@ -54,109 +54,80 @@ data:
     echo "Compressed backup: ${COMPRESSED_FILE} (${COMPRESSED_SIZE})"
 
     # Upload to Google Drive if credentials are provided
-    if [ -n "${GOOGLE_CREDENTIALS_JSON}" ]; then
+    if [ -n "${GOOGLE_CREDENTIALS_JSON}" ] && [ -n "${GDRIVE_FOLDER_ID}" ]; then
         echo "Uploading to Google Drive..."
+        echo "Folder ID: ${GDRIVE_FOLDER_ID}"
 
         # Save credentials to file
         echo "${GOOGLE_CREDENTIALS_JSON}" > /tmp/credentials.json
 
-        # Create Python script for upload
-        cat > /tmp/upload_to_drive.py << 'PYTHON_EOF'
-import os
-import sys
-import json
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from googleapiclient.errors import HttpError
+        # Use Python directly with inline script
+        export BACKUP_FILE_PATH="${BACKUP_DIR}/${COMPRESSED_FILE}"
+        python3 << 'PYTHONSCRIPT'
+    import os
+    import sys
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    from googleapiclient.errors import HttpError
 
-# Configuration
-CREDENTIALS_FILE = '/tmp/credentials.json'
-BACKUP_FILE = sys.argv[1]
-FOLDER_ID = os.environ.get('GDRIVE_FOLDER_ID')
+    CREDENTIALS_FILE = '/tmp/credentials.json'
+    BACKUP_FILE = os.environ.get('BACKUP_FILE_PATH')
+    FOLDER_ID = os.environ.get('GDRIVE_FOLDER_ID')
 
-try:
-    # Authenticate with more verbose error handling
-    print(f"Authenticating with service account...")
-    credentials = service_account.Credentials.from_service_account_file(
-        CREDENTIALS_FILE,
-        scopes=['https://www.googleapis.com/auth/drive']
-    )
+    try:
+        print(f"Authenticating with service account...")
+        credentials = service_account.Credentials.from_service_account_file(
+            CREDENTIALS_FILE,
+            scopes=['https://www.googleapis.com/auth/drive']
+        )
 
-    service = build('drive', 'v3', credentials=credentials)
+        service = build('drive', 'v3', credentials=credentials)
 
-    # If folder ID is provided, upload directly there
-    if FOLDER_ID:
         print(f"Using folder ID: {FOLDER_ID}")
 
         # Test access to the folder
         try:
-            folder = service.files().get(fileId=FOLDER_ID, fields='id,name,permissions').execute()
+            folder = service.files().get(fileId=FOLDER_ID, fields='id,name').execute()
             print(f"Folder found: {folder.get('name', 'Unknown')}")
-
-            # Check permissions
-            permissions = folder.get('permissions', [])
-            print(f"Number of permissions: {len(permissions)}")
-
         except HttpError as e:
             if e.resp.status == 404:
-                print(f"ERROR: Folder with ID {FOLDER_ID} not found or not accessible")
-                print("Make sure the folder is shared with: kkal-tracker-backup@budgeter-448210.iam.gserviceaccount.com")
+                print(f"ERROR: Folder {FOLDER_ID} not found")
+                print("Share the folder with: kkal-tracker-backup@budgeter-448210.iam.gserviceaccount.com")
             else:
-                print(f"ERROR accessing folder: {e}")
+                print(f"ERROR: {e}")
             sys.exit(1)
 
-        # Upload file to the specific folder
+        # Upload file
         file_metadata = {
             'name': os.path.basename(BACKUP_FILE),
             'parents': [FOLDER_ID]
         }
-    else:
-        # Create folder structure in root
-        print("No folder ID provided, uploading to root")
-        file_metadata = {
-            'name': os.path.basename(BACKUP_FILE)
-        }
 
-    # Upload the file
-    print(f"Uploading {os.path.basename(BACKUP_FILE)}...")
-    media = MediaFileUpload(BACKUP_FILE, resumable=True)
+        print(f"Uploading {os.path.basename(BACKUP_FILE)}...")
+        media = MediaFileUpload(BACKUP_FILE, resumable=True)
 
-    file = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields='id,name,size'
-    ).execute()
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id,name,size'
+        ).execute()
 
-    print(f"Successfully uploaded!")
-    print(f"  File: {file.get('name')}")
-    print(f"  ID: {file.get('id')}")
-    print(f"  Size: {file.get('size', 'Unknown')} bytes")
+        print(f"Success! File ID: {file.get('id')}")
 
-except HttpError as e:
-    print(f"HTTP Error: {e}")
-    if e.resp.status == 403:
-        print("Permission denied. Make sure:")
-        print("1. The service account has access to the folder")
-        print("2. The folder is shared with: kkal-tracker-backup@budgeter-448210.iam.gserviceaccount.com")
-    sys.exit(1)
-except Exception as e:
-    print(f"Unexpected error: {e}")
-    sys.exit(1)
-PYTHON_EOF
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    PYTHONSCRIPT
 
-        # Run upload script
-        python3 /tmp/upload_to_drive.py "${BACKUP_DIR}/${COMPRESSED_FILE}"
-
-        # Clean up credentials
-        rm -f /tmp/credentials.json /tmp/upload_to_drive.py
-
-        echo "Upload to Google Drive completed"
+        # Clean up
+        rm -f /tmp/credentials.json
+        echo "Upload completed"
     else
-        echo "Google Drive credentials not found, skipping upload"
+        echo "Google Drive credentials or folder ID not found, skipping upload"
     fi
 
-    # Clean up old local backups (keep only last N days)
+    # Clean up old local backups
     echo "Cleaning up old local backups (keeping last ${RETENTION_DAYS} days)..."
     find "${BACKUP_DIR}" -name "kkal_tracker_backup_*.db.gz" -type f -mtime +${RETENTION_DAYS} -delete
 
