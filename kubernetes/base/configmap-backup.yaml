@@ -60,21 +60,32 @@ data:
 
         # Configure rclone
         mkdir -p ~/.config/rclone
-        cat > ~/.config/rclone/rclone.conf << EOF
+
+        # If GDRIVE_FOLDER_ID is set, use it as root folder
+        if [ -n "${GDRIVE_FOLDER_ID}" ]; then
+            cat > ~/.config/rclone/rclone.conf << EOF
     [gdrive]
     type = drive
     scope = drive
     service_account_file = /tmp/service-account.json
-    impersonate = ${GDRIVE_USER_EMAIL:-}
+    root_folder_id = ${GDRIVE_FOLDER_ID}
     EOF
+            echo "Using Google Drive folder ID: ${GDRIVE_FOLDER_ID}"
+            UPLOAD_PATH="gdrive:"
+        else
+            cat > ~/.config/rclone/rclone.conf << EOF
+    [gdrive]
+    type = drive
+    scope = drive
+    service_account_file = /tmp/service-account.json
+    EOF
+            UPLOAD_PATH="gdrive:${GDRIVE_FOLDER_PATH}"
+        fi
 
         echo "Uploading to Google Drive..."
 
-        # Create folder structure if needed
-        rclone mkdir "gdrive:${GDRIVE_FOLDER_PATH}" 2>/dev/null || true
-
-        # Upload the backup file
-        rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "gdrive:${GDRIVE_FOLDER_PATH}/" -v
+        # Upload the backup file directly to the shared folder
+        rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "${UPLOAD_PATH}" -v
 
         # Verify upload
         if rclone ls "gdrive:${GDRIVE_FOLDER_PATH}/${COMPRESSED_FILE}" > /dev/null 2>&1; then
