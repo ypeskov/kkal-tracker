@@ -5,7 +5,7 @@ metadata:
 spec:
   # Schedule in local timezone (Europe/Kyiv)
   # Now you can set time directly without UTC conversion
-  schedule: "0 2 * * *"  # 2:00 AM Kyiv time
+  schedule: "25 15 * * *"  # 2:00 AM Kyiv time
   timeZone: "Sofia/Europe"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
