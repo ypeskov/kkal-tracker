@@ -63,8 +63,9 @@ data:
         cat > ~/.config/rclone/rclone.conf << EOF
     [gdrive]
     type = drive
-    scope = drive.file
+    scope = drive
     service_account_file = /tmp/service-account.json
+    impersonate = ${GDRIVE_USER_EMAIL:-}
     EOF
 
         echo "Uploading to Google Drive..."
