@@ -11,6 +11,7 @@ data:
     DB_PATH="${DATABASE_PATH:-/data/app.db}"
     BACKUP_DIR="${BACKUP_PATH:-/data/backups}"
     RETENTION_DAYS="${RETENTION_DAYS:-7}"
+    GDRIVE_FOLDER_PATH="${GDRIVE_FOLDER_PATH:-services/kkal-tracker/backups}"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="kkal_tracker_backup_${TIMESTAMP}.db"
 
@@ -26,7 +27,7 @@ data:
     echo "Starting backup of database: ${DB_PATH}"
     echo "Backup timestamp: ${TIMESTAMP}"
 
-    # Install sqlite3 if not present
+    # Install sqlite3
     apk add --no-cache sqlite
 
     # Create backup using SQLite's backup command (ensures consistency)
@@ -50,16 +51,54 @@ data:
     COMPRESSED_SIZE=$(du -h "${BACKUP_DIR}/${COMPRESSED_FILE}" | cut -f1)
     echo "Compressed backup: ${COMPRESSED_FILE} (${COMPRESSED_SIZE})"
 
-    # Clean up old backups (keep only last N days)
-    echo "Cleaning up old backups (keeping last ${RETENTION_DAYS} days)..."
+    # Upload to Google Drive if credentials are provided
+    if [ -n "${GOOGLE_CREDENTIALS_JSON}" ]; then
+        echo "Configuring rclone for Google Drive..."
+
+        # Save credentials to file
+        echo "${GOOGLE_CREDENTIALS_JSON}" > /tmp/service-account.json
+
+        # Configure rclone
+        mkdir -p ~/.config/rclone
+        cat > ~/.config/rclone/rclone.conf << EOF
+    [gdrive]
+    type = drive
+    scope = drive.file
+    service_account_file = /tmp/service-account.json
+    EOF
+
+        echo "Uploading to Google Drive..."
+
+        # Create folder structure if needed
+        rclone mkdir "gdrive:${GDRIVE_FOLDER_PATH}" 2>/dev/null || true
+
+        # Upload the backup file
+        rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "gdrive:${GDRIVE_FOLDER_PATH}/" -v
+
+        # Verify upload
+        if rclone ls "gdrive:${GDRIVE_FOLDER_PATH}/${COMPRESSED_FILE}" > /dev/null 2>&1; then
+            echo "Successfully uploaded ${COMPRESSED_FILE} to Google Drive"
+            # Note: Google Drive keeps all backups (no cleanup)
+        else
+            echo "Error: Upload to Google Drive failed"
+            exit 1
+        fi
+
+        # Clean up credentials
+        rm -f /tmp/service-account.json
+        rm -rf ~/.config/rclone
+
+        echo "Upload to Google Drive completed"
+    else
+        echo "Google Drive credentials not found, skipping upload"
+    fi
+
+    # Clean up old local backups (keep only last N days)
+    echo "Cleaning up old local backups (keeping last ${RETENTION_DAYS} days)..."
     find "${BACKUP_DIR}" -name "kkal_tracker_backup_*.db.gz" -type f -mtime +${RETENTION_DAYS} -delete
 
-    # List current backups
-    echo "Current backups in ${BACKUP_DIR}:"
+    # List current local backups
+    echo "Current local backups in ${BACKUP_DIR}:"
     ls -lh "${BACKUP_DIR}"/kkal_tracker_backup_*.db.gz 2>/dev/null || echo "No backups found"
-
-    # TODO: Upload to Google Drive
-    # This will be implemented in the next phase
-    echo "Google Drive upload will be implemented in the next phase"
 
     echo "Backup process completed successfully"

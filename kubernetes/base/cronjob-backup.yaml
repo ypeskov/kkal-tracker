@@ -5,7 +5,7 @@ metadata:
 spec:
   # Schedule in local timezone
   # Now you can set time directly without UTC conversion
-  schedule: "25 15 * * *"  # 2:00 AM Sofia time
+  schedule: "55 15 * * *"  # 2:00 AM Sofia time
   timeZone: "Europe/Sofia"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
@@ -26,8 +26,8 @@ spec:
                 defaultMode: 0755
           containers:
             - name: backup
-              image: alpine:3.19
-              command: ["/scripts/backup.sh"]
+              image: rclone/rclone:latest
+              command: ["/bin/sh", "/scripts/backup.sh"]
               volumeMounts:
                 - name: data
                   mountPath: /data
