@@ -61,17 +61,21 @@ data:
         # Configure rclone
         mkdir -p ~/.config/rclone
 
-        # If GDRIVE_FOLDER_ID is set, use it as root folder
+        # Configure for shared folder access
         if [ -n "${GDRIVE_FOLDER_ID}" ]; then
             cat > ~/.config/rclone/rclone.conf << EOF
     [gdrive]
     type = drive
     scope = drive
     service_account_file = /tmp/service-account.json
-    root_folder_id = ${GDRIVE_FOLDER_ID}
     EOF
-            echo "Using Google Drive folder ID: ${GDRIVE_FOLDER_ID}"
-            UPLOAD_PATH="gdrive:"
+            echo "Using shared Google Drive folder ID: ${GDRIVE_FOLDER_ID}"
+            # First, list shared folders to verify access
+            echo "Verifying access to shared folders..."
+            rclone lsd gdrive: --drive-shared-with-me | grep -q "${GDRIVE_FOLDER_ID}" && echo "Folder found!" || echo "Warning: Folder not in shared list"
+
+            # Upload using --drive-shared-with-me flag
+            UPLOAD_CMD="rclone copy \"${BACKUP_DIR}/${COMPRESSED_FILE}\" \"gdrive:\" --drive-shared-with-me --drive-root-folder-id \"${GDRIVE_FOLDER_ID}\" -v"
         else
             cat > ~/.config/rclone/rclone.conf << EOF
     [gdrive]
