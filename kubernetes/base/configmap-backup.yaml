@@ -70,12 +70,16 @@ data:
     service_account_file = /tmp/service-account.json
     EOF
             echo "Using shared Google Drive folder ID: ${GDRIVE_FOLDER_ID}"
+
             # First, list shared folders to verify access
             echo "Verifying access to shared folders..."
-            rclone lsd gdrive: --drive-shared-with-me | grep -q "${GDRIVE_FOLDER_ID}" && echo "Folder found!" || echo "Warning: Folder not in shared list"
+            rclone lsd gdrive: --drive-shared-with-me 2>/dev/null | grep -q "${GDRIVE_FOLDER_ID}" && echo "Folder found!" || echo "Warning: Folder not in shared list"
 
-            # Upload using --drive-shared-with-me flag
-            UPLOAD_CMD="rclone copy \"${BACKUP_DIR}/${COMPRESSED_FILE}\" \"gdrive:\" --drive-shared-with-me --drive-root-folder-id \"${GDRIVE_FOLDER_ID}\" -v"
+            echo "Uploading to Google Drive..."
+
+            # Upload directly to the shared folder
+            rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "gdrive:" --drive-shared-with-me --drive-root-folder-id "${GDRIVE_FOLDER_ID}" -v
+
         else
             cat > ~/.config/rclone/rclone.conf << EOF
     [gdrive]
@@ -84,20 +88,29 @@ data:
     service_account_file = /tmp/service-account.json
     EOF
             UPLOAD_PATH="gdrive:${GDRIVE_FOLDER_PATH}"
+
+            echo "Uploading to Google Drive..."
+
+            # Standard upload
+            rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "${UPLOAD_PATH}" -v
         fi
 
-        echo "Uploading to Google Drive..."
-
-        # Upload the backup file directly to the shared folder
-        rclone copy "${BACKUP_DIR}/${COMPRESSED_FILE}" "${UPLOAD_PATH}" -v
-
         # Verify upload
-        if rclone ls "gdrive:${GDRIVE_FOLDER_PATH}/${COMPRESSED_FILE}" > /dev/null 2>&1; then
-            echo "Successfully uploaded ${COMPRESSED_FILE} to Google Drive"
-            # Note: Google Drive keeps all backups (no cleanup)
+        if [ -n "${GDRIVE_FOLDER_ID}" ]; then
+            # Check with shared folder flags
+            if rclone ls "gdrive:" --drive-shared-with-me --drive-root-folder-id "${GDRIVE_FOLDER_ID}" | grep -q "${COMPRESSED_FILE}"; then
+                echo "Successfully uploaded ${COMPRESSED_FILE} to Google Drive"
+            else
+                echo "Error: Upload to Google Drive failed"
+                exit 1
+            fi
         else
-            echo "Error: Upload to Google Drive failed"
-            exit 1
+            if rclone ls "${UPLOAD_PATH}/${COMPRESSED_FILE}" > /dev/null 2>&1; then
+                echo "Successfully uploaded ${COMPRESSED_FILE} to Google Drive"
+            else
+                echo "Error: Upload to Google Drive failed"
+                exit 1
+            fi
         fi
 
         # Clean up credentials
