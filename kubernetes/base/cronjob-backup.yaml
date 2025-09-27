@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kkal-tracker-backup
+spec:
+  schedule: "0 2 * * *"  # Default: Daily at 2 AM (can be overridden in overlays)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid  # Prevent concurrent runs
+  jobTemplate:
+    spec:
+      backoffLimit: 3  # Retry up to 3 times on failure
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: kkal-tracker-pvc
+            - name: backup-script
+              configMap:
+                name: backup-script
+                defaultMode: 0755
+          containers:
+            - name: backup
+              image: alpine:3.19
+              command: ["/scripts/backup.sh"]
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: backup-script
+                  mountPath: /scripts
+              envFrom:
+                - configMapRef:
+                    name: kkal-tracker-env
+              env:
+                - name: DATABASE_PATH
+                  value: "/data/app.db"
+                - name: BACKUP_PATH
+                  value: "/data/backups"
+                - name: RETENTION_DAYS
+                  value: "7"  # Keep backups for 7 days locally
+              resources:
+                limits:
+                  memory: "256Mi"
+                  cpu: "200m"
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"

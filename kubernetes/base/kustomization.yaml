@@ -4,3 +4,5 @@ resources:
   - ingress.yaml
   - pv.yaml
   - pvc.yaml
+  - cronjob-backup.yaml
+  - configmap-backup.yaml

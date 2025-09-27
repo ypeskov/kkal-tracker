@@ -94,4 +94,5 @@ seed-clean:
 	@sqlite3 ./data/app.db "DELETE FROM global_ingredients; DELETE FROM global_ingredient_names;"
 	@go run cmd/seed/main.go
 
+
 .DEFAULT_GOAL := build

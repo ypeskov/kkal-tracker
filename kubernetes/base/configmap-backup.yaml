@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-script
+data:
+  backup.sh: |
+    #!/bin/sh
+    set -e
+
+    # Configuration
+    DB_PATH="${DATABASE_PATH:-/data/app.db}"
+    BACKUP_DIR="${BACKUP_PATH:-/data/backups}"
+    RETENTION_DAYS="${RETENTION_DAYS:-7}"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILE="kkal_tracker_backup_${TIMESTAMP}.db"
+
+    # Create backup directory if it doesn't exist
+    mkdir -p "${BACKUP_DIR}"
+
+    # Check if database exists
+    if [ ! -f "${DB_PATH}" ]; then
+        echo "Error: Database file not found at ${DB_PATH}"
+        exit 1
+    fi
+
+    echo "Starting backup of database: ${DB_PATH}"
+    echo "Backup timestamp: ${TIMESTAMP}"
+
+    # Install sqlite3 if not present
+    apk add --no-cache sqlite
+
+    # Create backup using SQLite's backup command (ensures consistency)
+    echo "Creating SQLite backup..."
+    sqlite3 "${DB_PATH}" ".backup '${BACKUP_DIR}/${BACKUP_FILE}'"
+
+    # Verify backup was created
+    if [ ! -f "${BACKUP_DIR}/${BACKUP_FILE}" ]; then
+        echo "Error: Backup file was not created"
+        exit 1
+    fi
+
+    # Get backup size
+    BACKUP_SIZE=$(du -h "${BACKUP_DIR}/${BACKUP_FILE}" | cut -f1)
+    echo "Backup created successfully: ${BACKUP_FILE} (${BACKUP_SIZE})"
+
+    # Compress backup
+    echo "Compressing backup..."
+    gzip "${BACKUP_DIR}/${BACKUP_FILE}"
+    COMPRESSED_FILE="${BACKUP_FILE}.gz"
+    COMPRESSED_SIZE=$(du -h "${BACKUP_DIR}/${COMPRESSED_FILE}" | cut -f1)
+    echo "Compressed backup: ${COMPRESSED_FILE} (${COMPRESSED_SIZE})"
+
+    # Clean up old backups (keep only last N days)
+    echo "Cleaning up old backups (keeping last ${RETENTION_DAYS} days)..."
+    find "${BACKUP_DIR}" -name "kkal_tracker_backup_*.db.gz" -type f -mtime +${RETENTION_DAYS} -delete
+
+    # List current backups
+    echo "Current backups in ${BACKUP_DIR}:"
+    ls -lh "${BACKUP_DIR}"/kkal_tracker_backup_*.db.gz 2>/dev/null || echo "No backups found"
+
+    # TODO: Upload to Google Drive
+    # This will be implemented in the next phase
+    echo "Google Drive upload will be implemented in the next phase"
+
+    echo "Backup process completed successfully"
