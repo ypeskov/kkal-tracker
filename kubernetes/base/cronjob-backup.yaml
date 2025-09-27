@@ -3,10 +3,10 @@ kind: CronJob
 metadata:
   name: kkal-tracker-backup
 spec:
-  # Schedule in local timezone (Europe/Kyiv)
+  # Schedule in local timezone
   # Now you can set time directly without UTC conversion
-  schedule: "25 15 * * *"  # 2:00 AM Kyiv time
-  timeZone: "Sofia/Europe"
+  schedule: "25 15 * * *"  # 2:00 AM Sofia time
+  timeZone: "Europe/Sofia"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
   concurrencyPolicy: Forbid  # Prevent concurrent runs
