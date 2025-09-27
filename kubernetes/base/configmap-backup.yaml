@@ -77,10 +77,21 @@ data:
 
     try:
         print(f"Authenticating with service account...")
+
+        # Check if we should use impersonation
+        USER_EMAIL = os.environ.get('GDRIVE_USER_EMAIL')
+
         credentials = service_account.Credentials.from_service_account_file(
             CREDENTIALS_FILE,
             scopes=['https://www.googleapis.com/auth/drive']
         )
+
+        # If user email provided, use domain-wide delegation
+        if USER_EMAIL:
+            print(f"Using impersonation for user: {USER_EMAIL}")
+            credentials = credentials.with_subject(USER_EMAIL)
+        else:
+            print("Warning: No GDRIVE_USER_EMAIL set, using Service Account directly")
 
         service = build('drive', 'v3', credentials=credentials)
 
@@ -107,13 +118,49 @@ data:
         print(f"Uploading {os.path.basename(BACKUP_FILE)}...")
         media = MediaFileUpload(BACKUP_FILE, resumable=True)
 
-        file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id,name,size'
-        ).execute()
+        # Try different upload approaches
+        try:
+            # First try: Upload with supportsAllDrives flag
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id,name,size',
+                supportsAllDrives=True
+            ).execute()
+            print(f"Success! File ID: {file.get('id')}")
 
-        print(f"Success! File ID: {file.get('id')}")
+        except HttpError as upload_error:
+            print(f"Direct upload failed: {upload_error}")
+
+            # Second try: Upload to root and move
+            print("Trying alternative: upload to root then move...")
+            file_metadata_root = {
+                'name': os.path.basename(BACKUP_FILE)
+            }
+
+            try:
+                file = service.files().create(
+                    body=file_metadata_root,
+                    media_body=media,
+                    fields='id,name'
+                ).execute()
+
+                file_id = file.get('id')
+                print(f"File uploaded to root: {file_id}")
+
+                # Now move it to the folder
+                file = service.files().update(
+                    fileId=file_id,
+                    addParents=FOLDER_ID,
+                    removeParents='root',
+                    fields='id,parents'
+                ).execute()
+
+                print(f"Moved to folder successfully!")
+
+            except HttpError as e:
+                print(f"Alternative approach also failed: {e}")
+                raise
 
     except Exception as e:
         print(f"Error: {e}")
