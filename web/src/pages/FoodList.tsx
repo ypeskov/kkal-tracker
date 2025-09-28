@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ingredientService, Ingredient, CreateIngredientData, UpdateIngredientData } from '../api/ingredients';
-import EditIngredientModal from '../components/EditIngredientModal';
-import AddIngredientModal from '../components/AddIngredientModal';
-import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
+import { ingredientService, Ingredient, CreateIngredientData, UpdateIngredientData } from '@/api/ingredients';
+import EditIngredientModal from '@/components/EditIngredientModal';
+import AddIngredientModal from '@/components/AddIngredientModal';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 // FoodList.css imports removed - using Tailwind CSS
 
 export default function FoodList() {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { authService } from '../api/auth'
+import { authService } from '@/api/auth'
 import LanguageSwitcher from './LanguageSwitcher'
 
 interface LoginProps {

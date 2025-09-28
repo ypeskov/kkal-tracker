@@ -1,7 +1,8 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ingredient } from '../api/ingredients';
+import { Ingredient } from '@/api/ingredients';
 import FoodAutocomplete from './FoodAutocomplete';
+import { handleNumericInput } from '@/utils/numericInput';
 
 interface AddFoodEntryFormProps {
   onSubmit: (entry: any) => void;
@@ -17,15 +18,6 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   const [carbs, setCarbs] = useState('');
   const [proteins, setProteins] = useState('');
   const foodInputRef = useRef<HTMLInputElement>(null);
-
-  const handleNumericInput = (value: string, setter: (value: string) => void) => {
-    // Replace all commas with dots
-    const normalizedValue = value.replace(/,/g, '.');
-    // Only allow valid number format
-    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
-      setter(normalizedValue);
-    }
-  };
 
   useEffect(() => {
     foodInputRef.current?.focus();

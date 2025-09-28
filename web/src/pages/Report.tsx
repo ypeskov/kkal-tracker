@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
-import WeightCaloriesChart from '../components/reports/WeightCaloriesChart';
-import WeightHistory from '../components/reports/WeightHistory';
-import { reportsService } from '../api/reports';
+import WeightCaloriesChart from '@/components/reports/WeightCaloriesChart';
+import WeightHistory from '@/components/reports/WeightHistory';
+import { reportsService } from '@/api/reports';
 import { BarChart3, Weight } from 'lucide-react';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
