@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ingredient, UpdateIngredientData } from '../api/ingredients';
+import { handleNumericInput } from '../utils/numericInput';
 // Modal.css imports removed - using Tailwind CSS
 
 interface EditIngredientModalProps {
@@ -26,15 +27,6 @@ export default function EditIngredientModal({
   const [proteins, setProteins] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fats, setFats] = useState('');
-
-  const handleNumericInput = (value: string, setter: (value: string) => void) => {
-    // Replace all commas with dots
-    const normalizedValue = value.replace(/,/g, '.');
-    // Only allow valid number format
-    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
-      setter(normalizedValue);
-    }
-  };
 
   useEffect(() => {
     if (ingredient) {

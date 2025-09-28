@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { handleNumericInput } from '../utils/numericInput';
 
 interface EditEntryModalProps {
   entry: any;
@@ -20,15 +21,6 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   const [editProteins, setEditProteins] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('');
-
-  const handleNumericInput = (value: string, setter: (value: string) => void) => {
-    // Replace all commas with dots
-    const normalizedValue = value.replace(/,/g, '.');
-    // Only allow valid number format
-    if (/^\d*\.?\d*$/.test(normalizedValue) || normalizedValue === '') {
-      setter(normalizedValue);
-    }
-  };
 
   useEffect(() => {
     if (entry) {

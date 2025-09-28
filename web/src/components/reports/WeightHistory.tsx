@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { weightService, WeightEntry } from '../../api/weight';
 import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import { handleNumericInput } from '../../utils/numericInput';
 
 interface WeightHistoryProps {
   dateFrom?: string;
@@ -150,12 +151,10 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                 </label>
                 <input
                   ref={weightInputRef}
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  max="500"
+                  type="text"
+                  inputMode="decimal"
                   value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  onChange={(e) => handleNumericInput(e.target.value, (value) => setFormData({ ...formData, weight: value }))}
                   className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 py-3 rounded-lg shadow-sm"
                   placeholder="Enter weight"
                   required
