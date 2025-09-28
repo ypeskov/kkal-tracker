@@ -51,11 +51,11 @@ func (s *Server) setupRepositories() error {
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
-		// TODO: Implement PostgreSQL repositories when needed
-		// s.userRepo = postgres.NewUserRepository(s.db, s.logger)
-		// s.calorieRepo = postgres.NewCalorieEntryRepository(s.db, s.logger)
-		// s.ingredientRepo = postgres.NewIngredientRepository(s.db, s.logger)
-		return fmt.Errorf("postgres repositories not yet implemented")
+		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.logger.Debug("Configured PostgreSQL repositories")
 	default:
 		return fmt.Errorf("unsupported database type: %s", s.config.DatabaseType)
 	}
