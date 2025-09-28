@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ingredient, UpdateIngredientData } from '../api/ingredients';
-import { handleNumericInput } from '../utils/numericInput';
+import { Ingredient, UpdateIngredientData } from '@/api/ingredients';
+import { handleNumericInput } from '@/utils/numericInput';
 // Modal.css imports removed - using Tailwind CSS
 
 interface EditIngredientModalProps {

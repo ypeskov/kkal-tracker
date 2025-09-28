@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouteContext } from '@tanstack/react-router';
-import { RouterContext } from '../router';
+import { RouterContext } from '@/router';
 import HamburgerMenu from './HamburgerMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 // Root.css imports removed - using Tailwind CSS

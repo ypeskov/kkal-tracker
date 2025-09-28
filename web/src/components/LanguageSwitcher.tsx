@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { profileAPI } from '../api/profile'
+import { profileAPI } from '@/api/profile'
 
 // Helper function to convert i18n language codes to backend format
 const convertToBackendLanguageCode = (i18nCode: string): string => {

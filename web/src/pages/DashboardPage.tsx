@@ -1,16 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useEffect } from 'react';
-import { calorieService } from '../api/calories';
-import { ingredientService } from '../api/ingredients';
-import DashboardHeader from '../components/DashboardHeader';
-import AddFoodEntryForm from '../components/AddFoodEntryForm';
-import FilterSection from '../components/FilterSection';
-import CalorieEntriesList from '../components/CalorieEntriesList';
-import EditEntryModal from '../components/EditEntryModal';
-import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
+import { calorieService } from '@/api/calories';
+import { ingredientService } from '@/api/ingredients';
+import DashboardHeader from '@/components/DashboardHeader';
+import AddFoodEntryForm from '@/components/AddFoodEntryForm';
+import FilterSection from '@/components/FilterSection';
+import CalorieEntriesList from '@/components/CalorieEntriesList';
+import EditEntryModal from '@/components/EditEntryModal';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 // Dashboard.css imports removed - using Tailwind CSS
 import { useRouteContext } from '@tanstack/react-router';
-import { RouterContext } from '../router';
+import { RouterContext } from '@/router';
 
 type FilterType = 'today' | 'yesterday' | 'lastWeek' | 'lastMonth' | 'customRange';
 

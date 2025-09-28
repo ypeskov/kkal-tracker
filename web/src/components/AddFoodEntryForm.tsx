@@ -1,8 +1,8 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ingredient } from '../api/ingredients';
+import { Ingredient } from '@/api/ingredients';
 import FoodAutocomplete from './FoodAutocomplete';
-import { handleNumericInput } from '../utils/numericInput';
+import { handleNumericInput } from '@/utils/numericInput';
 
 interface AddFoodEntryFormProps {
   onSubmit: (entry: any) => void;

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { handleNumericInput } from '../utils/numericInput';
+import { handleNumericInput } from '@/utils/numericInput';
 
 interface EditEntryModalProps {
   entry: any;

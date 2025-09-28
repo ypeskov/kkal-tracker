@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { profileAPI, ProfileUpdateRequest } from '../api/profile';
-import { weightService } from '../api/weight';
-import LanguageSelector from '../components/LanguageSelector';
-import i18n from '../i18n';
+import { profileAPI, ProfileUpdateRequest } from '@/api/profile';
+import { weightService } from '@/api/weight';
+import LanguageSelector from '@/components/LanguageSelector';
+import i18n from '@/i18n';
 import { Info } from 'lucide-react';
 
 // Helper function to convert backend language codes to i18n format

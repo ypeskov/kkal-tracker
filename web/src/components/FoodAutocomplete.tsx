@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, forwardRef, ForwardedRef } from 'react'
-import { Ingredient, ingredientService } from '../api/ingredients'
+import { Ingredient, ingredientService } from '@/api/ingredients'
 
 interface FoodAutocompleteProps {
   value: string

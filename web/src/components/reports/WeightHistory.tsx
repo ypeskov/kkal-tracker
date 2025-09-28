@@ -2,9 +2,9 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { weightService, WeightEntry } from '../../api/weight';
+import { weightService, WeightEntry } from '@/api/weight';
 import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react';
-import { handleNumericInput } from '../../utils/numericInput';
+import { handleNumericInput } from '@/utils/numericInput';
 
 interface WeightHistoryProps {
   dateFrom?: string;
