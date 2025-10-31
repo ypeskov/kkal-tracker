@@ -18,7 +18,7 @@ spec:
             claimName: kkal-tracker-pvc
       containers:
         - name: kkal-tracker
-          image: ypeskov/kcal-tracker:v2.0.5
+          image: ypeskov/kcal-tracker:v2.0.6
           ports:
             - containerPort: 8080
           envFrom:
