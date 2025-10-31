@@ -94,6 +94,10 @@ func (h *Handler) Register(c echo.Context) error {
 		if errors.Is(err, authservice.ErrUserAlreadyExists) {
 			return echo.NewHTTPError(http.StatusConflict, "User already exists")
 		}
+		if errors.Is(err, authservice.ErrEmailSendFailed) {
+			h.logger.Error("Registration failed - email sending failed", "error", err)
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "Failed to send activation email. Please try again later or contact support.")
+		}
 		h.logger.Error("Registration failed", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}

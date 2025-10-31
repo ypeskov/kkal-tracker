@@ -211,3 +211,32 @@ func (r *UserRepositoryImpl) ActivateUser(userID int) error {
 	r.logger.Info("User activated successfully", "user_id", userID)
 	return nil
 }
+
+// Delete removes a user from the database
+func (r *UserRepositoryImpl) Delete(userID int) error {
+	r.logger.Debug("Deleting user", slog.Int("user_id", userID))
+
+	query, err := r.sqlLoader.Load(QueryDeleteUser)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		r.logger.Error("Failed to delete user", "error", err, "user_id", userID)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		r.logger.Warn("No user deleted (user not found)", "user_id", userID)
+		return ErrNotFound
+	}
+
+	r.logger.Info("User deleted successfully", "user_id", userID)
+	return nil
+}
