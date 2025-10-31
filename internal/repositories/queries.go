@@ -11,6 +11,7 @@ const (
 	QueryUpdateUserProfile     = "updateUserProfile"
 	QueryAddWeightEntry        = "addWeightEntry"
 	QueryActivateUser          = "activateUser"
+	QueryDeleteUser            = "deleteUser"
 
 	// Group of CalorieEntries queries
 	QueryInsertCalorieEntry           = "insertCalorieEntry"
@@ -138,6 +139,13 @@ func getQueries() map[string]string {
 		UPDATE users
 		SET is_active = true, updated_at = NOW()
 		WHERE id = $1
+	`,
+
+		buildKey(QueryDeleteUser, DialectSQLite): `
+		DELETE FROM users WHERE id = ?
+	`,
+		buildKey(QueryDeleteUser, DialectPostgres): `
+		DELETE FROM users WHERE id = $1
 	`,
 
 		// Weight History queries

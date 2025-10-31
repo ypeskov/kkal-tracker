@@ -143,6 +143,10 @@ func (s *Service) Register(email, password, languageCode string, skipActivation 
 		activationToken, err := s.tokenRepo.Create(user.ID, expiresAt)
 		if err != nil {
 			s.logger.Error("Failed to create activation token", "error", err, "user_id", user.ID)
+			// Rollback: delete the created user
+			if deleteErr := s.userRepo.Delete(user.ID); deleteErr != nil {
+				s.logger.Error("Failed to rollback user creation", "error", deleteErr, "user_id", user.ID)
+			}
 			return nil, "", err
 		}
 
@@ -155,7 +159,18 @@ func (s *Service) Register(email, password, languageCode string, skipActivation 
 		err = s.emailService.SendActivationEmail(user.Email, activationToken.Token, language)
 		if err != nil {
 			s.logger.Error("Failed to send activation email", "error", err, "user_id", user.ID)
-			// Note: We don't return error here - user is created, they can try to resend email later
+
+			// Rollback: delete activation token and user
+			if tokenDeleteErr := s.tokenRepo.Delete(activationToken.Token); tokenDeleteErr != nil {
+				s.logger.Error("Failed to rollback activation token", "error", tokenDeleteErr, "user_id", user.ID)
+			}
+			if userDeleteErr := s.userRepo.Delete(user.ID); userDeleteErr != nil {
+				s.logger.Error("Failed to rollback user creation", "error", userDeleteErr, "user_id", user.ID)
+			}
+
+			s.logger.Warn("Registration rolled back due to email failure", "email", email, "user_id", user.ID)
+			// Return error to frontend - registration failed
+			return nil, "", ErrEmailSendFailed
 		}
 
 		s.logger.Info("Inactive user created, activation email sent", "email", email, "user_id", user.ID)

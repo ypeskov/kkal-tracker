@@ -15,6 +15,7 @@ type UserRepository interface {
 	UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height, weight *float64, language string) error
 	AddWeightEntry(userID int, weight float64) error
 	ActivateUser(userID int) error
+	Delete(userID int) error
 }
 
 // CalorieEntryRepository defines the contract for calorie entry data access
