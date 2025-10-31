@@ -188,11 +188,123 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Production**: JSON logging format, structured error handling
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
 - **Comments**: ALWAYS write comments in English only. Never use Russian, Ukrainian, or any other language for code comments. This ensures international accessibility and consistency across the codebase
-- **Server Management**: 
+- **Server Management**:
   # ⚠️  CRITICAL WARNING - DO NOT START DEVELOPMENT SERVER ⚠️
   # NEVER RUN `make dev` OR ANY SERVER COMMANDS WITHOUT EXPLICIT USER APPROVAL
   # THE USER MANAGES THE DEVELOPMENT SERVER (Air) IN A SEPARATE TERMINAL SESSION
   # ONLY BUILD COMMANDS (`make build`, `make build-frontend`) ARE ALLOWED
+
+## Frontend Style Standards
+
+The frontend follows strict Tailwind CSS utility-first approach with standardized layout patterns. **ALWAYS** adhere to these guidelines when creating or modifying pages:
+
+### Page Layout Standards
+
+#### Standard Content Pages (Dashboard, Food List, Profile, etc.)
+Use **constrained width** layout for better readability and consistency:
+
+```tsx
+<div className="max-w-screen-xl mx-auto px-4 py-2 md:px-6 lg:px-8">
+  {/* Page content */}
+</div>
+```
+
+- **Width**: `max-w-screen-xl` (1280px maximum)
+- **Centering**: `mx-auto` (horizontally centered)
+- **Padding**: Responsive padding that increases on larger screens
+  - Mobile: `px-4 py-2`
+  - Medium: `md:px-6`
+  - Large: `lg:px-8`
+
+#### Data Visualization Pages (Reports, Charts, Dashboards with graphs)
+Use **full-width** layout to maximize chart visibility:
+
+```tsx
+<div className="px-4 py-2 md:px-6 lg:px-8">
+  {/* Page content with charts */}
+</div>
+```
+
+- **No max-width**: Allows content to use full viewport width
+- **Same padding**: Maintains consistent spacing with other pages
+
+### Card/Section Styling
+
+All card components should use the **Dashboard card pattern** for visual consistency:
+
+```tsx
+<div className="bg-white rounded-lg shadow-md p-4">
+  {/* Card content */}
+</div>
+```
+
+- **Background**: `bg-white`
+- **Border radius**: `rounded-lg` (8px)
+- **Shadow**: `shadow-md` (medium shadow for depth)
+- **Padding**: `p-4` or custom padding like `p-lg`, `pl-lg`, `pr-lg` if defined
+
+### Page Header Styling
+
+For page titles and headers:
+
+```tsx
+<div className="mb-6">
+  <h2 className="text-3xl font-semibold text-gray-800">{t('page.title')}</h2>
+</div>
+```
+
+- **Title size**: `text-3xl` (1.875rem)
+- **Weight**: `font-semibold`
+- **Color**: `text-gray-800`
+- **Bottom margin**: `mb-6` for spacing
+
+### ⚠️ Critical Rules
+
+1. **NEVER use undefined CSS classes**: Do not use semantic classes like `.page`, `.card`, `.page-header`, etc. These were removed during Tailwind migration
+2. **ONLY use Tailwind utilities**: All styling must use Tailwind CSS utility classes
+3. **Follow existing patterns**: Reference `DashboardPage.tsx`, `FoodList.tsx`, `Profile.tsx`, and `Report.tsx` for layout patterns
+4. **Responsive design**: Always include responsive breakpoints (`md:`, `lg:`) for padding and layout
+5. **Consistency over customization**: Prefer standardized patterns over unique layouts for each page
+
+### Form Input Styling
+
+Standard input field styling:
+
+```tsx
+<input
+  type="text"
+  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+/>
+```
+
+### Button Styling
+
+Primary action buttons:
+
+```tsx
+<button className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+  {t('common.save')}
+</button>
+```
+
+Secondary/outline buttons:
+
+```tsx
+<button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+  {t('common.cancel')}
+</button>
+```
+
+### Migration from Old CSS
+
+If you encounter old semantic CSS classes during refactoring:
+
+| Old Class | Replacement |
+|-----------|-------------|
+| `.page` | `max-w-screen-xl mx-auto px-4 py-2 md:px-6 lg:px-8` (or full-width variant) |
+| `.card` | `bg-white rounded-lg shadow-md` |
+| `.page-header` | `mb-6` |
+| `.page-title` | `text-3xl font-semibold text-gray-800` |
 
 ## Dependencies
 

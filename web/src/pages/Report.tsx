@@ -197,9 +197,9 @@ export default function Report() {
   }, [reportData]);
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2 className="page-title">{t('report.title')}</h2>
+    <div className="px-4 py-2 md:px-6 lg:px-8">
+      <div className="mb-6">
+        <h2 className="text-3xl font-semibold text-gray-800">{t('report.title')}</h2>
       </div>
 
       {/* Tabs */}
@@ -229,7 +229,7 @@ export default function Report() {
       </div>
 
       {/* Date Range Filters */}
-      <div className="card p-4 mb-4">
+      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
         {/* All controls in one row on desktop, stacked on mobile */}
         <div className="flex flex-col lg:flex-row lg:items-end gap-3 lg:gap-4">
           {/* From Date */}
@@ -348,7 +348,7 @@ export default function Report() {
         <div className="space-y-4">
           {/* Weight and Calories Statistics */}
           {(showWeight && reportData?.weight_history && reportData.weight_history.length > 0) || avgCaloriesPerDay > 0 ? (
-            <div className="card p-4">
+            <div className="bg-white rounded-lg shadow-md p-4">
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center text-center">
                 {showWeight && reportData?.weight_history && reportData.weight_history.length > 0 && (
                   <>
@@ -377,7 +377,7 @@ export default function Report() {
           ) : null}
 
           {/* Chart */}
-          <div className="card p-4">
+          <div className="bg-white rounded-lg shadow-md p-4">
             <div className="h-64 sm:h-96">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">

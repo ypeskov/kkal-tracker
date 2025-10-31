@@ -169,7 +169,7 @@ export default function Profile() {
 
 
   return (
-    <div className="page p-2">
+    <div className="max-w-screen-xl mx-auto px-4 py-2 md:px-6 lg:px-8">
 
       {profileError && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -179,7 +179,7 @@ export default function Profile() {
 
       <form ref={formRef} onSubmit={handleSave} className="space-y-6">
         {/* Information Group */}
-        <div className="card p-lg">
+        <div className="bg-white rounded-lg shadow-md p-lg">
           <h3 className="text-lg font-semibold mb-4">{t('profile.information')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -243,7 +243,7 @@ export default function Profile() {
         </div>
 
         {/* Physical Parameters Group */}
-        <div className="card pl-lg pr-lg">
+        <div className="bg-white rounded-lg shadow-md pl-lg pr-lg">
           <h3 className="text-lg font-semibold mb-4">{t('profile.physicalParameters')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -318,7 +318,7 @@ export default function Profile() {
         </div>
 
         {/* Save Button */}
-        <div className="card pl-lg pr-lg flex justify-end">
+        <div className="bg-white rounded-lg shadow-md pl-lg pr-lg flex justify-end">
           <button
             type="submit"
             disabled={profileLoading || updateMutation.isPending || !hasUnsavedChanges()}
