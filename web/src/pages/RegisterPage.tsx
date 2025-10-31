@@ -71,12 +71,12 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <a
-            href="/"
-            className="w-full inline-block bg-blue-500 hover:bg-blue-600 !text-white hover:!text-white hover:no-underline font-medium py-3 px-4 rounded-lg transition-colors"
+          <button
+            onClick={() => window.location.href = '/'}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
           >
             {t('auth.loginLink')}
-          </a>
+          </button>
         </div>
       </div>
     )
