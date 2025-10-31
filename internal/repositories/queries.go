@@ -100,10 +100,11 @@ func getQueries() map[string]string {
 		FROM global_ingredients gi
 		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
 		WHERE gin.language_code = ?
+		GROUP BY gin.name
 	`,
 		buildKey(QueryCopyGlobalIngredients, DialectPostgres): `
 		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id)
-		SELECT $1, gin.name, gi.kcal_per_100g, gi.fats, gi.carbs, gi.proteins, gi.id
+		SELECT DISTINCT ON (gin.name) $1, gin.name, gi.kcal_per_100g, gi.fats, gi.carbs, gi.proteins, gi.id
 		FROM global_ingredients gi
 		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
 		WHERE gin.language_code = $2
