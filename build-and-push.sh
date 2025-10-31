@@ -25,10 +25,10 @@ TAG:
 
 EXAMPLES:
     $(basename "$0")                    # Build with tag 'latest'
-    $(basename "$0") v1.2.3              # Build with tag 'v1.2.3' and 'latest'
+    $(basename "$0") 1.2.3              # Build with tag 'v1.2.3' and 'latest'
     $(basename "$0") push                # Build and push with tag 'latest'
-    $(basename "$0") v1.2.3 push         # Build with tag 'v1.2.3' and push
-    $(basename "$0") --platform=linux/arm64 v1.0  # Build for ARM64 platform
+    $(basename "$0") 1.2.3 push         # Build with tag 'v1.2.3' and push
+    $(basename "$0") --platform=linux/arm64 1.0  # Build for ARM64 platform
 
 The built image will be named: ${IMAGE_NAME}:TAG
 After build, the tag will be written to version.txt file.
