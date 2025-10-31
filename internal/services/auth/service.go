@@ -130,15 +130,11 @@ func (s *Service) Register(email, password, languageCode string, skipActivation 
 		return user, token, nil
 	} else {
 		// Web registration path: Create INACTIVE user, send activation email
-		s.logger.Debug("Creating inactive user (skipActivation=false)", "email", email, "language", languageCode)
+		s.logger.Debug("Creating inactive user (skipActivation=false)", "email", email)
 
 		user, err := s.userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode, false)
 		if err != nil {
-			s.logger.Error("failed to create inactive user",
-				"error", err,
-				"email", email,
-				"language", languageCode,
-				"error_detail", err.Error())
+			s.logger.Error("failed to create inactive user", "error", err)
 			return nil, "", err
 		}
 

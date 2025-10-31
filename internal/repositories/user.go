@@ -59,96 +59,14 @@ func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCod
 
 	r.logger.Debug("User created in database", slog.Int64("id", id), slog.Bool("is_active", isActive))
 
-	// Check if this user_id already has ingredients (shouldn't happen, but let's verify)
-	var existingIngredientsCount int
-	checkQuery := `SELECT COUNT(*) FROM user_ingredients WHERE user_id = ?`
-	if checkErr := tx.QueryRow(checkQuery, id).Scan(&existingIngredientsCount); checkErr == nil {
-		if existingIngredientsCount > 0 {
-			r.logger.Warn("User already has ingredients before copying",
-				slog.Int64("user_id", id),
-				slog.Int("existing_count", existingIngredientsCount))
-		}
-	}
-
 	// Copy global ingredients to user_ingredients
 	copyQuery, err := r.sqlLoader.Load(QueryCopyGlobalIngredients)
 	if err != nil {
-		r.logger.Error("Failed to load copy query", "error", err)
 		return nil, err
 	}
 
-	// Log duplicate ingredient names before copying
-	checkDuplicatesQuery := `
-		SELECT gin.name, COUNT(DISTINCT gi.id) as cnt
-		FROM global_ingredients gi
-		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
-		WHERE gin.language_code = ?
-		GROUP BY gin.name
-		HAVING cnt > 1
-	`
-	rows, queryErr := tx.Query(checkDuplicatesQuery, languageCode)
-	if queryErr == nil {
-		var duplicates []string
-		for rows.Next() {
-			var name string
-			var count int
-			if scanErr := rows.Scan(&name, &count); scanErr == nil {
-				duplicates = append(duplicates, name)
-			}
-		}
-		rows.Close()
-		if len(duplicates) > 0 {
-			r.logger.Warn("Found duplicate ingredient names",
-				slog.String("language", languageCode),
-				slog.Int("duplicate_count", len(duplicates)),
-				slog.Any("duplicate_names", duplicates))
-		}
-	}
-
-	r.logger.Debug("Executing ingredient copy query",
-		slog.Int64("user_id", id),
-		slog.String("language", languageCode),
-		slog.String("query", copyQuery))
-
 	result, err = tx.Exec(copyQuery, id, languageCode, languageCode)
 	if err != nil {
-		// Log what would have been inserted to debug the constraint violation
-		debugQuery := `
-			SELECT gin.name, gi.id, gi.kcal_per_100g
-			FROM global_ingredients gi
-			JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
-			WHERE gin.language_code = ?
-			ORDER BY gin.name
-		`
-		debugRows, debugErr := tx.Query(debugQuery, languageCode)
-		if debugErr == nil {
-			var ingredientNames []string
-			for debugRows.Next() {
-				var name string
-				var ingredientID int
-				var kcal float64
-				if scanErr := debugRows.Scan(&name, &ingredientID, &kcal); scanErr == nil {
-					ingredientNames = append(ingredientNames, name)
-				}
-			}
-			debugRows.Close()
-			r.logger.Error("Failed to copy ingredients - ingredient list",
-				"error", err,
-				slog.Int64("user_id", id),
-				slog.String("language", languageCode),
-				slog.Int("ingredient_count", len(ingredientNames)),
-				slog.Any("ingredient_names", ingredientNames))
-		}
-
-		// Check if user already has ingredients (shouldn't happen in a new user transaction)
-		checkExistingQuery := `SELECT COUNT(*) FROM user_ingredients WHERE user_id = ?`
-		var existingCount int
-		if countErr := tx.QueryRow(checkExistingQuery, id).Scan(&existingCount); countErr == nil {
-			r.logger.Error("Existing user_ingredients check",
-				slog.Int64("user_id", id),
-				slog.Int("existing_count", existingCount))
-		}
-
 		r.logger.Error("Failed to copy ingredients",
 			"error", err,
 			slog.Int64("user_id", id),
@@ -157,9 +75,9 @@ func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCod
 	}
 
 	rowsInserted, _ := result.RowsAffected()
-	r.logger.Debug("Ingredients copied successfully",
+	r.logger.Debug("Ingredients copied",
 		slog.Int64("user_id", id),
-		slog.Int64("rows_inserted", rowsInserted))
+		slog.Int64("count", rowsInserted))
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
