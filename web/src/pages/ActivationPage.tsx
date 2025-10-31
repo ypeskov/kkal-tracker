@@ -67,17 +67,17 @@ export default function ActivationPage({ token: tokenProp }: ActivationPageProps
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {t('auth.activationSuccess')}
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              {t('auth.activationSuccessTitle')}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-6">
               {t('auth.activationSuccess')}
             </p>
           </div>
 
           <a
             href="/"
-            className="w-full inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors text-center"
+            className="w-full inline-block bg-blue-500 hover:bg-blue-600 !text-white hover:!text-white hover:no-underline font-medium py-3 px-4 rounded-lg transition-colors"
           >
             {t('auth.loginButton')}
           </a>
@@ -105,7 +105,7 @@ export default function ActivationPage({ token: tokenProp }: ActivationPageProps
 
         <a
           href="/"
-          className="w-full inline-block bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-colors text-center"
+          className="w-full inline-block bg-gray-500 hover:bg-gray-600 !text-white hover:!text-white hover:no-underline font-medium py-3 px-4 rounded-lg transition-colors"
         >
           {t('auth.loginLink')}
         </a>

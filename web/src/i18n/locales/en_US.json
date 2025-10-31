@@ -22,6 +22,7 @@
     "userAlreadyExists": "User with this email already exists.",
     "passwordsDoNotMatch": "Passwords do not match.",
     "passwordTooShort": "Password must be at least 6 characters.",
+    "activationSuccessTitle": "Activation Successful!",
     "activationSuccess": "Account activated successfully! You can now log in.",
     "activationFailed": "Activation failed. The link may be invalid or expired.",
     "activating": "Activating your account...",
