@@ -25,13 +25,14 @@ func NewUserRepository(db *sql.DB, logger *slog.Logger, dialect Dialect) *UserRe
 
 func (r *UserRepositoryImpl) Create(email, passwordHash string) (*models.User, error) {
 	r.logger.Debug("Creating user", slog.String("email", email))
-	return r.CreateWithLanguage(email, passwordHash, "en_US")
+	return r.CreateWithLanguage(email, passwordHash, "en_US", true)
 }
 
-func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error) {
+func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCode string, isActive bool) (*models.User, error) {
 	r.logger.Debug("Creating user with language",
 		slog.String("email", email),
-		slog.String("language", languageCode))
+		slog.String("language", languageCode),
+		slog.Bool("is_active", isActive))
 
 	// Start transaction to ensure user creation and ingredient copying are atomic
 	tx, err := r.db.Begin()
@@ -40,13 +41,13 @@ func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCod
 	}
 	defer tx.Rollback()
 
-	// Create the user with language preference
+	// Create the user with language preference and activation status
 	query, err := r.sqlLoader.Load(QueryInsertUser)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := tx.Exec(query, email, passwordHash, languageCode)
+	result, err := tx.Exec(query, email, passwordHash, languageCode, isActive)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCod
 		return nil, err
 	}
 
-	r.logger.Debug("User created in database", slog.Int64("id", id))
+	r.logger.Debug("User created in database", slog.Int64("id", id), slog.Bool("is_active", isActive))
 
 	// Copy global ingredients to user_ingredients
 	copyQuery, err := r.sqlLoader.Load(QueryCopyGlobalIngredients)
@@ -93,6 +94,7 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
+		&user.IsActive,
 		&user.FirstName,
 		&user.LastName,
 		&user.Age,
@@ -126,6 +128,7 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
+		&user.IsActive,
 		&user.FirstName,
 		&user.LastName,
 		&user.Age,
@@ -178,4 +181,33 @@ func (r *UserRepositoryImpl) AddWeightEntry(userID int, weight float64) error {
 
 	_, err = r.db.Exec(query, userID, weight)
 	return err
+}
+
+// ActivateUser sets the user's is_active status to true
+func (r *UserRepositoryImpl) ActivateUser(userID int) error {
+	r.logger.Debug("Activating user", slog.Int("user_id", userID))
+
+	query, err := r.sqlLoader.Load(QueryActivateUser)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		r.logger.Error("Failed to activate user", "error", err, "user_id", userID)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		r.logger.Warn("No user activated (user not found)", "user_id", userID)
+		return ErrNotFound
+	}
+
+	r.logger.Info("User activated successfully", "user_id", userID)
+	return nil
 }

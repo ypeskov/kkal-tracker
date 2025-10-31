@@ -4,25 +4,37 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"time"
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/repositories"
+	emailservice "ypeskov/kkal-tracker/internal/services/email"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
-	userRepo   repositories.UserRepository
-	jwtService *auth.JWTService
-	logger     *slog.Logger
+	userRepo         repositories.UserRepository
+	tokenRepo        repositories.ActivationTokenRepository
+	jwtService       *auth.JWTService
+	emailService     *emailservice.Service
+	logger           *slog.Logger
 }
 
-func New(userRepo repositories.UserRepository, jwtService *auth.JWTService, logger *slog.Logger) *Service {
+func New(
+	userRepo repositories.UserRepository,
+	tokenRepo repositories.ActivationTokenRepository,
+	jwtService *auth.JWTService,
+	emailService *emailservice.Service,
+	logger *slog.Logger,
+) *Service {
 	return &Service{
-		userRepo:   userRepo,
-		jwtService: jwtService,
-		logger:     logger.With("service", "auth"),
+		userRepo:     userRepo,
+		tokenRepo:    tokenRepo,
+		jwtService:   jwtService,
+		emailService: emailService,
+		logger:       logger.With("service", "auth"),
 	}
 }
 
@@ -41,6 +53,12 @@ func (s *Service) Login(email, password string) (*models.User, string, error) {
 	if !user.CheckPassword(password) {
 		s.logger.Debug("Login failed - invalid password", "email", email)
 		return nil, "", ErrInvalidCredentials
+	}
+
+	// Check if user is activated
+	if !user.IsActive {
+		s.logger.Debug("Login failed - user not activated", "email", email, "user_id", user.ID)
+		return nil, "", ErrUserNotActivated
 	}
 
 	token, err := s.jwtService.GenerateToken(user.ID, user.Email)
@@ -69,8 +87,8 @@ func (s *Service) GetCurrentUser(userID int) (*models.User, error) {
 	return user, nil
 }
 
-func (s *Service) Register(email, password, languageCode string) (*models.User, string, error) {
-	s.logger.Debug("Register called", "email", email, "language", languageCode)
+func (s *Service) Register(email, password, languageCode string, skipActivation bool) (*models.User, string, error) {
+	s.logger.Debug("Register called", "email", email, "language", languageCode, "skip_activation", skipActivation)
 
 	// Check if user already exists
 	existingUser, err := s.userRepo.GetByEmail(email)
@@ -81,7 +99,7 @@ func (s *Service) Register(email, password, languageCode string) (*models.User, 
 
 	if existingUser != nil {
 		s.logger.Debug("Register failed - user already exists", "email", email)
-		return nil, "", errors.New("user already exists")
+		return nil, "", ErrUserAlreadyExists
 	}
 
 	// Hash the password
@@ -91,24 +109,97 @@ func (s *Service) Register(email, password, languageCode string) (*models.User, 
 		return nil, "", err
 	}
 
-	// Create new user with hashed password
-	user, err := s.userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode)
+	if skipActivation {
+		// CLI/Admin path: Create ACTIVE user immediately, no email
+		s.logger.Debug("Creating active user (skipActivation=true)", "email", email)
+
+		user, err := s.userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode, true)
+		if err != nil {
+			s.logger.Error("failed to create active user", "error", err)
+			return nil, "", err
+		}
+
+		// Generate JWT token for immediate use
+		token, err := s.jwtService.GenerateToken(user.ID, user.Email)
+		if err != nil {
+			s.logger.Error("Failed to generate token for new active user", "error", err)
+			return nil, "", err
+		}
+
+		s.logger.Info("Active user created successfully", "email", email, "user_id", user.ID)
+		return user, token, nil
+	} else {
+		// Web registration path: Create INACTIVE user, send activation email
+		s.logger.Debug("Creating inactive user (skipActivation=false)", "email", email)
+
+		user, err := s.userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode, false)
+		if err != nil {
+			s.logger.Error("failed to create inactive user", "error", err)
+			return nil, "", err
+		}
+
+		// Generate activation token (expires in 24 hours)
+		expiresAt := time.Now().Add(24 * time.Hour)
+		activationToken, err := s.tokenRepo.Create(user.ID, expiresAt)
+		if err != nil {
+			s.logger.Error("Failed to create activation token", "error", err, "user_id", user.ID)
+			return nil, "", err
+		}
+
+		// Send activation email
+		language := languageCode
+		if user.Language != nil {
+			language = *user.Language
+		}
+
+		err = s.emailService.SendActivationEmail(user.Email, activationToken.Token, language)
+		if err != nil {
+			s.logger.Error("Failed to send activation email", "error", err, "user_id", user.ID)
+			// Note: We don't return error here - user is created, they can try to resend email later
+		}
+
+		s.logger.Info("Inactive user created, activation email sent", "email", email, "user_id", user.ID)
+		return user, "", nil // No JWT token for inactive users
+	}
+}
+
+// ActivateUser activates a user account using an activation token
+func (s *Service) ActivateUser(token string) error {
+	s.logger.Debug("ActivateUser called", "token", token[:8]+"...")
+
+	// Get activation token from repository
+	activationToken, err := s.tokenRepo.GetByToken(token)
 	if err != nil {
-		s.logger.Error("failed to create user", "error", err)
-		return nil, "", err
+		if errors.Is(err, repositories.ErrNotFound) {
+			s.logger.Debug("Activation failed - token not found", "token", token[:8]+"...")
+			return ErrInvalidToken
+		}
+		s.logger.Error("Failed to get activation token", "error", err)
+		return err
 	}
 
-	// Note: CreateWithLanguage already copies ingredients, so we don't need to do it again
-	// The ingredient copying is handled in the repository transaction
-	// Ingredient copying is now handled in CreateWithLanguage
-
-	// Generate token for new user
-	token, err := s.jwtService.GenerateToken(user.ID, user.Email)
-	if err != nil {
-		s.logger.Error("Failed to generate token for new user", "error", err)
-		return nil, "", err
+	// Check if token is expired
+	if activationToken.IsExpired() {
+		s.logger.Debug("Activation failed - token expired", "token", token[:8]+"...", "expires_at", activationToken.ExpiresAt)
+		// Delete expired token
+		_ = s.tokenRepo.Delete(token)
+		return ErrInvalidToken
 	}
 
-	s.logger.Debug("Register successful", "email", email, "user_id", user.ID, "language", languageCode)
-	return user, token, nil
+	// Activate the user
+	err = s.userRepo.ActivateUser(activationToken.UserID)
+	if err != nil {
+		s.logger.Error("Failed to activate user", "error", err, "user_id", activationToken.UserID)
+		return err
+	}
+
+	// Delete used activation token
+	err = s.tokenRepo.Delete(token)
+	if err != nil {
+		s.logger.Error("Failed to delete activation token", "error", err, "token", token[:8]+"...")
+		// Don't return error - user is already activated
+	}
+
+	s.logger.Info("User activated successfully", "user_id", activationToken.UserID)
+	return nil
 }

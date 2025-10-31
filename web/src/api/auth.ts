@@ -3,6 +3,21 @@ interface LoginRequest {
   password: string
 }
 
+interface RegisterRequest {
+  email: string
+  password: string
+  language_code: string
+}
+
+interface RegisterResponse {
+  message: string
+  email: string
+}
+
+interface ActivationResponse {
+  message: string
+}
+
 interface User {
   id: number
   email: string
@@ -42,6 +57,36 @@ class AuthService {
 
     if (!response.ok) {
       throw new Error('Failed to get current user')
+    }
+
+    return response.json()
+  }
+
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Registration failed')
+    }
+
+    return response.json()
+  }
+
+  async activate(token: string): Promise<ActivationResponse> {
+    const response = await fetch(`/api/auth/activate/${token}`, {
+      method: 'GET',
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Activation failed')
     }
 
     return response.json()

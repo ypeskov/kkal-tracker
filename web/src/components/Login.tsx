@@ -87,6 +87,13 @@ export default function Login({ onLogin }: LoginProps) {
             </div>
           )}
         </form>
+
+        <div className="mt-6 text-center text-sm">
+          <span className="text-gray-600">{t('auth.dontHaveAccount')} </span>
+          <a href="/register" className="text-blue-500 hover:text-blue-600 font-medium">
+            {t('auth.registerLink')}
+          </a>
+        </div>
       </div>
     </div>
   )

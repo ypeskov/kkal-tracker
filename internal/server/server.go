@@ -20,6 +20,7 @@ import (
 	"ypeskov/kkal-tracker/internal/repositories"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
+	emailservice "ypeskov/kkal-tracker/internal/services/email"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
@@ -36,6 +37,7 @@ type Server struct {
 	db             *sql.DB
 	staticFiles    embed.FS
 	userRepo       repositories.UserRepository
+	tokenRepo      repositories.ActivationTokenRepository
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
 	weightRepo     repositories.WeightHistoryRepository
@@ -46,12 +48,14 @@ func (s *Server) setupRepositories() error {
 	switch s.config.DatabaseType {
 	case "sqlite":
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.tokenRepo = repositories.NewActivationTokenRepository(s.db, repositories.DialectSQLite, s.logger)
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.tokenRepo = repositories.NewActivationTokenRepository(s.db, repositories.DialectPostgres, s.logger)
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
@@ -95,7 +99,11 @@ func (s *Server) Start() *http.Server {
 	jwtService := auth.NewJWTService(s.config.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 
-	authService := authservice.New(s.userRepo, jwtService, s.logger)
+	// Initialize email service for activation emails
+	emailService := emailservice.New(s.config, s.logger)
+
+	// Initialize auth service with all dependencies
+	authService := authservice.New(s.userRepo, s.tokenRepo, jwtService, emailService, s.logger)
 	calorieService := calorieservice.New(s.calorieRepo, s.ingredientRepo, s.logger)
 	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
 	profileService := profileservice.New(s.db, s.userRepo, s.weightRepo, s.logger)

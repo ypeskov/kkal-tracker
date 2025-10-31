@@ -15,6 +15,13 @@ type Config struct {
 	JWTSecret    string
 	LogLevel     string
 	Environment  string
+	// SMTP Configuration
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
+	SMTPFrom     string
+	AppURL       string
 }
 
 func New() *Config {
@@ -35,6 +42,13 @@ func New() *Config {
 		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"),
 		LogLevel:     getEnv("LOG_LEVEL", "info"),
 		Environment:  getEnv("ENVIRONMENT", "development"),
+		// SMTP Configuration
+		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:     getEnvInt("SMTP_PORT", 587),
+		SMTPUser:     getEnv("SMTP_USER", ""),
+		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:     getEnv("SMTP_FROM", "noreply@kkal-tracker.com"),
+		AppURL:       getEnv("APP_URL", "http://localhost:8080"),
 	}
 }
 

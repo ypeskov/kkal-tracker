@@ -7,6 +7,8 @@ import { authService } from './api/auth';
 import { router } from './router';
 import { RouterProvider } from '@tanstack/react-router';
 import i18n from './i18n';
+import RegisterPage from './pages/RegisterPage';
+import ActivationPage from './pages/ActivationPage';
 
 // Helper function to convert backend language codes to i18n format
 const convertLanguageCode = (backendCode: string): string => {
@@ -17,6 +19,36 @@ function App() {
   const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  // Track pathname changes
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+
+    // Also track programmatic navigation
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function(...args) {
+      originalPushState.apply(window.history, args);
+      handleLocationChange();
+    };
+
+    window.history.replaceState = function(...args) {
+      originalReplaceState.apply(window.history, args);
+      handleLocationChange();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, []);
 
   useEffect(() => {
     const token = authService.getToken();
@@ -63,15 +95,33 @@ function App() {
     );
   }
 
-  return (
-    <div className={`min-h-screen bg-gray-100 ${
-      !isAuthenticated ? 'flex flex-col items-center justify-center' : ''
-    }`}>
-      {!isAuthenticated ? (
+  // Check if current path is a public route (register or activate)
+  const isPublicRoute = currentPath === '/register' || currentPath.startsWith('/activate/');
+
+  // Render public pages directly without RouterProvider
+  if (!isAuthenticated && isPublicRoute) {
+    if (currentPath === '/register') {
+      return <RegisterPage />;
+    }
+    if (currentPath.startsWith('/activate/')) {
+      const token = currentPath.split('/activate/')[1];
+      return <ActivationPage token={token} />;
+    }
+  }
+
+  // Show login for unauthenticated users on protected routes
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
         <Login onLogin={() => setIsAuthenticated(true)} />
-      ) : (
-        <RouterProvider router={router} context={{ user: user!, onLogout: handleLogout }} />
-      )}
+      </div>
+    );
+  }
+
+  // Show app for authenticated users
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <RouterProvider router={router} context={{ user: user!, onLogout: handleLogout }} />
     </div>
   );
 }

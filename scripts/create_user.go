@@ -55,10 +55,11 @@ func main() {
 
 	userRepo := repositories.NewUserRepository(db, appLogger, repositories.DialectSQLite)
 
-	user, err := userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode)
+	// Create active user directly (skipActivation = true in repository)
+	user, err := userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode, true)
 	if err != nil {
 		log.Fatal("Failed to create user:", err)
 	}
 
-	fmt.Printf("User created successfully: ID=%d, Email=%s, Language=%s\n", user.ID, user.Email, languageCode)
+	fmt.Printf("User created successfully: ID=%d, Email=%s, Language=%s, Active=%t\n", user.ID, user.Email, languageCode, user.IsActive)
 }

@@ -9,11 +9,12 @@ import (
 // UserRepository defines the contract for user data access
 type UserRepository interface {
 	Create(email, passwordHash string) (*models.User, error)
-	CreateWithLanguage(email, passwordHash, languageCode string) (*models.User, error)
+	CreateWithLanguage(email, passwordHash, languageCode string, isActive bool) (*models.User, error)
 	GetByID(id int) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
 	UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height, weight *float64, language string) error
 	AddWeightEntry(userID int, weight float64) error
+	ActivateUser(userID int) error
 }
 
 // CalorieEntryRepository defines the contract for calorie entry data access

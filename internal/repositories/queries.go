@@ -10,6 +10,7 @@ const (
 	QueryCopyGlobalIngredients = "copyGlobalIngredients"
 	QueryUpdateUserProfile     = "updateUserProfile"
 	QueryAddWeightEntry        = "addWeightEntry"
+	QueryActivateUser          = "activateUser"
 
 	// Group of CalorieEntries queries
 	QueryInsertCalorieEntry           = "insertCalorieEntry"
@@ -40,6 +41,12 @@ const (
 	QueryInsertGlobalIngredientName  = "insertGlobalIngredientName"
 	QueryGetGlobalIngredientByID     = "getGlobalIngredientByID"
 	QueryGetGlobalIngredientNames    = "getGlobalIngredientNames"
+
+	// Activation Token queries
+	QueryCreateActivationToken       = "createActivationToken"
+	QueryGetActivationTokenByToken   = "getActivationTokenByToken"
+	QueryDeleteActivationToken       = "deleteActivationToken"
+	QueryDeleteExpiredActivationTokens = "deleteExpiredActivationTokens"
 )
 
 // buildKey creates a query key by combining query name and dialect
@@ -53,35 +60,35 @@ func getQueries() map[string]string {
 		// User queries
 		//language=SQLite
 		buildKey(QueryInsertUser, DialectSQLite): `
-		INSERT INTO users (email, password_hash, language)
-		VALUES (?, ?, ?)
+		INSERT INTO users (email, password_hash, language, is_active)
+		VALUES (?, ?, ?, ?)
 		RETURNING id;
 	`,
 		// language=PostgreSQL
 		buildKey(QueryInsertUser, DialectPostgres): `
-		INSERT INTO users (email, password_hash, language)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (email, password_hash, language, is_active)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id;
 	`,
 
 		buildKey(QueryGetUserByEmail, DialectSQLite): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`,
 		buildKey(QueryGetUserByEmail, DialectPostgres): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`,
 
 		buildKey(QueryGetUserByID, DialectSQLite): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`,
 		buildKey(QueryGetUserByID, DialectPostgres): `
-		SELECT id, email, password_hash, first_name, last_name, age, height, language, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, language, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`,
@@ -120,6 +127,17 @@ func getQueries() map[string]string {
 		buildKey(QueryAddWeightEntry, DialectPostgres): `
 		INSERT INTO weight_history (user_id, weight)
 		VALUES ($1, $2)
+	`,
+
+		buildKey(QueryActivateUser, DialectSQLite): `
+		UPDATE users
+		SET is_active = 1, updated_at = datetime('now')
+		WHERE id = ?
+	`,
+		buildKey(QueryActivateUser, DialectPostgres): `
+		UPDATE users
+		SET is_active = true, updated_at = NOW()
+		WHERE id = $1
 	`,
 
 		// Weight History queries
@@ -397,6 +415,42 @@ func getQueries() map[string]string {
 		SELECT language_code, name
 		FROM global_ingredient_names
 		WHERE ingredient_id = $1
+	`,
+
+		// Activation Token queries
+		buildKey(QueryCreateActivationToken, DialectSQLite): `
+		INSERT INTO activation_tokens (user_id, token, expires_at)
+		VALUES (?, ?, ?)
+	`,
+		buildKey(QueryCreateActivationToken, DialectPostgres): `
+		INSERT INTO activation_tokens (user_id, token, expires_at)
+		VALUES ($1, $2, $3)
+		RETURNING id
+	`,
+
+		buildKey(QueryGetActivationTokenByToken, DialectSQLite): `
+		SELECT id, user_id, token, created_at, expires_at
+		FROM activation_tokens
+		WHERE token = ?
+	`,
+		buildKey(QueryGetActivationTokenByToken, DialectPostgres): `
+		SELECT id, user_id, token, created_at, expires_at
+		FROM activation_tokens
+		WHERE token = $1
+	`,
+
+		buildKey(QueryDeleteActivationToken, DialectSQLite): `
+		DELETE FROM activation_tokens WHERE token = ?
+	`,
+		buildKey(QueryDeleteActivationToken, DialectPostgres): `
+		DELETE FROM activation_tokens WHERE token = $1
+	`,
+
+		buildKey(QueryDeleteExpiredActivationTokens, DialectSQLite): `
+		DELETE FROM activation_tokens WHERE expires_at < ?
+	`,
+		buildKey(QueryDeleteExpiredActivationTokens, DialectPostgres): `
+		DELETE FROM activation_tokens WHERE expires_at < $1
 	`,
 	}
 }

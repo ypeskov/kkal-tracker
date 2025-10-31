@@ -11,6 +11,7 @@ type User struct {
 	ID           int       `json:"id"`
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
+	IsActive     bool      `json:"is_active"`
 	FirstName    *string   `json:"first_name,omitempty"`
 	LastName     *string   `json:"last_name,omitempty"`
 	Age          *int      `json:"age,omitempty"`

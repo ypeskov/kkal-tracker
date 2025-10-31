@@ -4,6 +4,8 @@ import DashboardPage from './pages/DashboardPage';
 import FoodList from './pages/FoodList';
 import Report from './pages/Report';
 import Profile from './pages/Profile';
+import RegisterPage from './pages/RegisterPage';
+import ActivationPage from './pages/ActivationPage';
 
 export interface User {
   id: number;
@@ -43,11 +45,25 @@ const profileRoute = createRoute({
   component: Profile,
 });
 
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
+});
+
+const activationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/activate/$token',
+  component: ActivationPage,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   foodListRoute,
   reportRoute,
   profileRoute,
+  registerRoute,
+  activationRoute,
 ]);
 
 export const router = createRouter({
