@@ -65,7 +65,7 @@ func (r *UserRepositoryImpl) CreateWithLanguage(email, passwordHash, languageCod
 		return nil, err
 	}
 
-	_, err = tx.Exec(copyQuery, id, languageCode)
+	_, err = tx.Exec(copyQuery, id, languageCode, languageCode)
 	if err != nil {
 		return nil, err
 	}

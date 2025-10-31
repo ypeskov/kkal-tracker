@@ -100,7 +100,12 @@ func getQueries() map[string]string {
 		FROM global_ingredients gi
 		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
 		WHERE gin.language_code = ?
-		GROUP BY gin.name
+		AND gi.id IN (
+			SELECT MIN(gi2.id)
+			FROM global_ingredients gi2
+			JOIN global_ingredient_names gin2 ON gi2.id = gin2.ingredient_id
+			WHERE gin2.language_code = ? AND gin2.name = gin.name
+		)
 	`,
 		buildKey(QueryCopyGlobalIngredients, DialectPostgres): `
 		INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins, global_ingredient_id)
@@ -108,6 +113,7 @@ func getQueries() map[string]string {
 		FROM global_ingredients gi
 		JOIN global_ingredient_names gin ON gi.id = gin.ingredient_id
 		WHERE gin.language_code = $2
+		ORDER BY gin.name, gi.id
 	`,
 
 		buildKey(QueryUpdateUserProfile, DialectSQLite): `
