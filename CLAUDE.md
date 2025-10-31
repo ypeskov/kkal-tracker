@@ -79,6 +79,9 @@ go mod tidy       # Clean up dependencies
 │   │   └── weight_history.go
 │   ├── repositories/            # Data access layer
 │   │   ├── interfaces.go        # Repository interfaces
+│   │   ├── queries.go           # Centralized SQL queries
+│   │   ├── errors.go            # Repository-level errors
+│   │   ├── SqlLoader.go         # SQL file loader utility
 │   │   ├── user.go
 │   │   ├── calorie_entry.go
 │   │   ├── ingredient.go
@@ -93,24 +96,68 @@ go mod tidy       # Clean up dependencies
 │       └── weight/              # Weight tracking
 ├── kubernetes/                  # K8s deployment configs
 │   ├── base/                    # Base configurations
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── ingress.yaml
+│   │   ├── pv.yaml
+│   │   ├── pvc.yaml
+│   │   ├── configmap-backup.yaml
+│   │   ├── cronjob-backup.yaml
+│   │   └── kustomization.yaml
 │   └── overlays/                # Environment overlays
 │       ├── dev/
 │       └── prod/
 ├── migrations/                  # Goose SQL migrations
+│   ├── 20250907200000_initial_schema.sql
+│   ├── 20250907200001_create_indexes.sql
+│   ├── 20250907200002_add_ingredients_table.sql
+│   ├── 20250907200003_add_unique_constraint_user_ingredients.sql
+│   ├── 20250907200004_add_user_profile_fields.sql
+│   ├── 20250907200005_add_weight_to_users.sql
+│   └── 20250919055016_remove_weight_from_users.sql
 ├── scripts/                     # Utility scripts
+│   └── create_user.go           # User creation utility
 ├── web/                         # React frontend
 │   ├── src/
 │   │   ├── api/                 # API service classes
 │   │   ├── components/          # React components
 │   │   ├── hooks/               # Custom React hooks
 │   │   ├── i18n/                # Internationalization
-│   │   └── pages/               # Page components
+│   │   ├── pages/               # Page components
+│   │   ├── styles/              # Global styles and CSS
+│   │   ├── utils/               # Utility functions
+│   │   ├── App.tsx              # Root application component
+│   │   ├── main.tsx             # Application entry point
+│   │   └── router.tsx           # Router configuration
+│   ├── public/                  # Static assets
+│   │   ├── favicon.ico
+│   │   ├── icon.png
+│   │   ├── icon.svg
+│   │   ├── steak-icon.png
+│   │   └── steak-icon.svg
 │   ├── dist/                    # Built frontend assets
 │   ├── embed.go                 # Go embedded filesystem
-│   └── package.json
+│   ├── index.html               # HTML template
+│   ├── package.json             # Node dependencies
+│   ├── vite.config.ts           # Vite configuration
+│   ├── tailwind.config.js       # Tailwind CSS config
+│   ├── postcss.config.js        # PostCSS config
+│   └── tsconfig.json            # TypeScript config
+├── bin/                         # Compiled binaries
+├── data/                        # SQLite database files
+│   └── app.db
+├── tmp/                         # Air temporary files
+│   └── build-errors.log
 ├── .air.toml                    # Air live reload config
+├── .env                         # Local environment variables (git-ignored)
 ├── .env.sample                  # Environment variables template
-└── Makefile                     # Build automation
+├── .gitignore                   # Git ignore patterns
+├── Dockerfile                   # Container image definition
+├── build-and-push.sh            # Docker build and push script
+├── version.txt                  # Application version
+├── Makefile                     # Build automation
+├── CLAUDE.md                    # Claude Code context (this file)
+└── README.md                    # Project documentation
 ```
 
 ## Environment Variables
@@ -171,10 +218,13 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - TypeScript v5.6.2
 
 ## Build Process
-1. Frontend builds to `web/dist/`
-2. Go embeds `web/dist` files via `web/embed.go`
-3. Single binary serves both API and static files
-4. Air watches Go files and triggers rebuilds (excludes `web/dist`)
+1. Frontend builds to `web/dist/` (via Vite)
+2. Go embeds `web/dist` files via `web/embed.go` using `//go:embed`
+3. Single binary (`main`) serves both API and static files
+4. Air watches Go, TS, TSX, JS, HTML, CSS files and triggers rebuilds
+5. Air excludes `web/dist`, `web/node_modules`, `tmp`, `bin`, `data` from watching
+6. Build errors logged to `tmp/build-errors.log`
+7. Docker images versioned via `version.txt` (current: v1.2.12)
 
 ## Features
 - **User Authentication**: JWT-based login/logout with bcrypt password hashing
@@ -206,6 +256,8 @@ The application follows a clean architecture pattern with separation of concerns
 - Interface-based design for testability
 - Separate repositories for each domain entity
 - Centralized query management in `queries.go`
+- Custom error types in `errors.go` for consistent error handling
+- SQL file loader utility in `SqlLoader.go` for loading SQL from files
 
 ### API Endpoints
 All API routes are prefixed with `/api`:
@@ -218,11 +270,23 @@ All API routes are prefixed with `/api`:
 
 ## Deployment
 
+### Docker
+- **Dockerfile**: Multi-stage build for optimized image size
+- **Build script**: `build-and-push.sh` - Automated Docker build and push
+  - Supports custom tags and platform selection (e.g., `linux/amd64`)
+  - Optional push to Docker registry
+  - Usage: `./build-and-push.sh [--platform=PLATFORM] [push] [TAG]`
+- **Image**: `ypeskov/kcal-tracker` (versioned with `version.txt`)
+
 ### Kubernetes
 Full Kubernetes deployment configuration in `kubernetes/` directory:
 - **Base configurations**: `kubernetes/base/` - Common resources
+  - Deployment, Service, Ingress
+  - Persistent Volume & Persistent Volume Claim
+  - ConfigMap for backup configuration
+  - CronJob for automated backups
 - **Environment overlays**: `kubernetes/overlays/{dev,prod}/` - Environment-specific configs
-- Includes CronJob for automated database backups
+- Includes CronJob for automated database backups to Google Drive
 
 ### Database Management
 - **Migrations**: Manual control for production safety

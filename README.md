@@ -280,13 +280,261 @@ When creating users with `scripts/create_user.go`:
 
 The application compiles to a single binary with embedded frontend assets, making it easy to deploy anywhere.
 
+### Docker Deployment
+
+#### Building Docker Image
+
+The project includes an automated build script `build-and-push.sh` that handles Docker image creation and publishing.
+
+**Basic Usage:**
+
+```bash
+# Build image with default tag (latest)
+./build-and-push.sh
+
+# Build with custom tag (version.txt will be updated to "v1.2.13")
+./build-and-push.sh 1.2.13
+
+# Build and push to Docker registry
+./build-and-push.sh push
+
+# Build with custom tag and push
+./build-and-push.sh 1.2.13 push
+```
+
+**Advanced Options:**
+
+```bash
+# Build for specific platform (e.g., for ARM servers)
+./build-and-push.sh --platform=linux/arm64
+
+# Build for multiple platforms and push
+./build-and-push.sh --platform=linux/amd64,linux/arm64 push
+
+# Show help
+./build-and-push.sh --help
+```
+
+**Complete Example Workflow:**
+
+```bash
+# 1. Build and test locally
+./build-and-push.sh 1.2.13
+# Note: Script automatically updates version.txt to "v1.2.13" after successful build
+
+# 2. Test the image
+docker run -p 8080:8080 -e JWT_SECRET=test-secret ypeskov/kcal-tracker:1.2.13
+
+# 3. Push to registry
+./build-and-push.sh 1.2.13 push
+
+# Or combine build and push in one command
+./build-and-push.sh 1.2.13 push
+```
+
+**Multi-architecture Build:**
+
+```bash
+# Build for both AMD64 and ARM64 and push
+./build-and-push.sh --platform=linux/amd64,linux/arm64 1.2.13 push
+```
+
+The script:
+- Uses multi-stage Docker builds for minimal image size
+- Embeds frontend assets into the final binary
+- Supports custom tags and platform targeting
+- Automatically tags images with both version and `latest`
+- **Automatically updates `version.txt`** with the tag after successful build (adds "v" prefix)
+- Pushes to Docker Hub (`ypeskov/kcal-tracker`) when requested
+
+**Note**: You don't need to manually update `version.txt` - the script does this automatically after a successful build.
+
+#### Manual Docker Build
+
+If you prefer manual building:
+
+```bash
+# Build image
+docker build -t ypeskov/kcal-tracker:v1.2.13 .
+
+# Tag as latest
+docker tag ypeskov/kcal-tracker:v1.2.13 ypeskov/kcal-tracker:latest
+
+# Push to registry
+docker push ypeskov/kcal-tracker:v1.2.13
+docker push ypeskov/kcal-tracker:latest
+```
+
 ### Kubernetes Deployment
 
-Full Kubernetes configurations are available in the `kubernetes/` directory:
-- **Base configurations**: Common resources for all environments
-- **Environment overlays**: Specific configs for dev and prod
-- **Automated backups**: Includes CronJob for scheduled database backups to Google Drive
+Full Kubernetes configurations are available in the `kubernetes/` directory with Kustomize support.
 
-### Docker Support
+#### Directory Structure
 
-The application is Docker-ready and can be containerized for easy deployment. The single binary architecture ensures minimal container size and fast startup times.
+```
+kubernetes/
+├── base/                          # Base configurations (common to all environments)
+│   ├── deployment.yaml           # Deployment spec
+│   ├── service.yaml              # Service definition
+│   ├── ingress.yaml              # Ingress rules
+│   ├── pv.yaml                   # Persistent Volume
+│   ├── pvc.yaml                  # Persistent Volume Claim
+│   ├── configmap-backup.yaml     # Backup configuration
+│   ├── cronjob-backup.yaml       # Automated backup CronJob
+│   └── kustomization.yaml        # Base kustomization
+└── overlays/
+    ├── dev/                      # Development environment
+    │   └── kustomization.yaml
+    └── prod/                     # Production environment
+        └── kustomization.yaml
+```
+
+#### Deployment Process
+
+**1. Update Image Tag in Manifests**
+
+After building a new Docker image, update the Kubernetes manifests to use the new version:
+
+```bash
+# Using kustomize to update image tag
+cd kubernetes/overlays/prod
+kustomize edit set image ypeskov/kcal-tracker:v1.2.13
+
+# Or manually edit the kustomization.yaml file
+```
+
+Alternatively, edit `kubernetes/overlays/prod/kustomization.yaml`:
+
+```yaml
+images:
+  - name: ypeskov/kcal-tracker
+    newTag: v1.2.13  # Update this line
+```
+
+**2. Review Changes**
+
+Preview the changes before applying:
+
+```bash
+# Preview dev environment
+kubectl kustomize kubernetes/overlays/dev
+
+# Preview prod environment
+kubectl kustomize kubernetes/overlays/prod
+```
+
+**3. Apply to Cluster**
+
+Deploy to your Kubernetes cluster:
+
+```bash
+# Deploy to development
+kubectl apply -k kubernetes/overlays/dev
+
+# Deploy to production
+kubectl apply -k kubernetes/overlays/prod
+```
+
+**4. Verify Deployment**
+
+Check the deployment status:
+
+```bash
+# Check pod status
+kubectl get pods -l app=kkal-tracker
+
+# Check deployment rollout
+kubectl rollout status deployment/kkal-tracker
+
+# View logs
+kubectl logs -f deployment/kkal-tracker
+
+# Check service and ingress
+kubectl get svc,ingress
+```
+
+#### Complete Deployment Workflow
+
+Here's a full example from building to deploying:
+
+```bash
+# 1. Build and push Docker image
+./build-and-push.sh 1.2.13 push
+# Script automatically updates version.txt to "v1.2.13" after successful build
+
+# 2. Commit version change
+git add version.txt
+git commit -m "bump version to v1.2.13"
+
+# 3. Update Kubernetes manifests
+cd kubernetes/overlays/prod
+kustomize edit set image ypeskov/kcal-tracker:1.2.13
+
+# 4. Commit manifest changes
+git add kustomization.yaml
+git commit -m "deploy: update to v1.2.13"
+git push
+
+# 5. Apply to cluster
+kubectl apply -k kubernetes/overlays/prod
+
+# 6. Monitor rollout
+kubectl rollout status deployment/kkal-tracker
+kubectl logs -f deployment/kkal-tracker
+```
+
+#### Environment Configuration
+
+Configure environment variables in your Kubernetes manifests:
+
+**For Development** (`kubernetes/overlays/dev/kustomization.yaml`):
+```yaml
+configMapGenerator:
+  - name: kkal-tracker-config
+    literals:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug
+      - DATABASE_TYPE=sqlite
+```
+
+**For Production** (`kubernetes/overlays/prod/kustomization.yaml`):
+```yaml
+configMapGenerator:
+  - name: kkal-tracker-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info
+      - DATABASE_TYPE=postgres
+
+secretGenerator:
+  - name: kkal-tracker-secrets
+    literals:
+      - JWT_SECRET=your-production-secret-here
+      - POSTGRES_URL=postgres://user:pass@postgres-service/kkal_tracker
+```
+
+#### Automated Backups
+
+The Kubernetes deployment includes a CronJob for automated database backups:
+
+- **Schedule**: Configured via CronJob spec (default: daily)
+- **Target**: Google Drive (via rclone OAuth2)
+- **Configuration**: `kubernetes/base/configmap-backup.yaml`
+- **Job Definition**: `kubernetes/base/cronjob-backup.yaml`
+
+To configure backups, update the ConfigMap with your Google Drive credentials and folder path.
+
+#### Rollback
+
+If you need to rollback to a previous version:
+
+```bash
+# Check rollout history
+kubectl rollout history deployment/kkal-tracker
+
+# Rollback to previous version
+kubectl rollout undo deployment/kkal-tracker
+
+# Rollback to specific revision
+kubectl rollout undo deployment/kkal-tracker --to-revision=2
+```
