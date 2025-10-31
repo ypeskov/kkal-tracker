@@ -79,7 +79,7 @@ export default function ActivationPage({ token: tokenProp }: ActivationPageProps
             href="/"
             className="w-full inline-block bg-blue-500 hover:bg-blue-600 !text-white hover:!text-white hover:no-underline font-medium py-3 px-4 rounded-lg transition-colors"
           >
-            {t('auth.loginButton')}
+            {t('auth.loginButton')}++++
           </a>
         </div>
       </div>
