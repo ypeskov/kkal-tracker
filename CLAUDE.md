@@ -337,6 +337,7 @@ If you encounter old semantic CSS classes during refactoring:
 5. Air excludes `web/dist`, `web/node_modules`, `tmp`, `bin`, `data` from watching
 6. Build errors logged to `tmp/build-errors.log`
 7. Docker images versioned via `version.txt` (current: v1.2.12)
+8. **IMPORTANT**: `build-and-push.sh` always builds without cache (`--no-cache`) and removes `web/dist/` before building
 
 ## Features
 - **User Authentication**: JWT-based login/logout with bcrypt password hashing
@@ -385,6 +386,8 @@ All API routes are prefixed with `/api`:
 ### Docker
 - **Dockerfile**: Multi-stage build for optimized image size
 - **Build script**: `build-and-push.sh` - Automated Docker build and push
+  - **Always builds without cache** (`--no-cache`) to ensure fresh builds
+  - **Automatically cleans `web/dist/`** before build
   - Supports custom tags and platform selection (e.g., `linux/amd64`)
   - Optional push to Docker registry
   - Usage: `./build-and-push.sh [--platform=PLATFORM] [push] [TAG]`

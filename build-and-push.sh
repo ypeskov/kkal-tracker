@@ -57,9 +57,13 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-# Build the image
-echo "Building ${IMAGE_NAME}:${TAG}..."
-docker build $PLATFORM_ARG -t "${IMAGE_NAME}:${TAG}" -t "${IMAGE_NAME}:latest" .
+# Clean local dist to avoid cache issues
+echo "Cleaning local web/dist directory..."
+rm -rf web/dist
+
+# Build the image without cache (always fresh build)
+echo "Building ${IMAGE_NAME}:${TAG} (no cache)..."
+docker build --no-cache $PLATFORM_ARG -t "${IMAGE_NAME}:${TAG}" -t "${IMAGE_NAME}:latest" .
 
 # Push the image if requested
 if [ "$PUSH" == true ]; then
