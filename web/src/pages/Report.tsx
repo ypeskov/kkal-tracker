@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import WeightCaloriesChart from '@/components/reports/WeightCaloriesChart';
 import WeightHistory from '@/components/reports/WeightHistory';
+import TabNavigation from '@/components/TabNavigation';
+import ReportFilters from '@/components/ReportFilters';
+import StatisticsCard from '@/components/StatisticsCard';
 import { reportsService } from '@/api/reports';
 import { BarChart3, Weight } from 'lucide-react';
 
@@ -203,177 +206,52 @@ export default function Report() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <button
-          onClick={() => setActiveTab('chart')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-            activeTab === 'chart'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <BarChart3 size={18} />
-          <span>{t('report.charts_tab')}</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('weight')}
-          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-            activeTab === 'weight'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Weight size={18} />
-          <span>{t('report.weight_history_tab')}</span>
-        </button>
-      </div>
+      <TabNavigation
+        tabs={[
+          { id: 'chart', label: t('report.charts_tab'), icon: <BarChart3 size={18} /> },
+          { id: 'weight', label: t('report.weight_history_tab'), icon: <Weight size={18} /> },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setActiveTab(tabId as 'chart' | 'weight')}
+      />
 
       {/* Date Range Filters */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-        {/* All controls in one row on desktop, stacked on mobile */}
-        <div className="flex flex-col lg:flex-row lg:items-end gap-3 lg:gap-4">
-          {/* From Date */}
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-1">
-              {t('report.date_from')}
-            </label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 py-3 rounded-lg shadow-sm"
-            />
-          </div>
-
-          {/* To Date */}
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-1">
-              {t('report.date_to')}
-            </label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 py-3 rounded-lg shadow-sm"
-            />
-          </div>
-
-          {/* Chart controls */}
-          {activeTab === 'chart' && (
-            <>
-              {/* Period dropdown */}
-              <div className="flex-shrink-0">
-                <label className="block text-sm font-medium mb-1">
-                  {t('report.period')}
-                </label>
-                <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value as Period)}
-                  className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 pt-4 pb-3 rounded-lg shadow-sm"
-                >
-                  <option value="daily">{t('report.daily')}</option>
-                  <option value="weekly">{t('report.weekly')}</option>
-                  <option value="monthly">{t('report.monthly')}</option>
-                  <option value="yearly">{t('report.yearly')}</option>
-                </select>
-              </div>
-
-              {/* Step Interval dropdown - only visible for daily period */}
-              {period === 'daily' && (
-                <div className="flex-shrink-0">
-                  <label className="block text-sm font-medium mb-1">
-                    {t('report.step_interval')}
-                  </label>
-                  <select
-                    value={stepInterval}
-                    onChange={(e) => setStepInterval(e.target.value as StepInterval)}
-                    className="input border-2 bg-gray-50 focus:bg-white font-semibold text-lg px-4 pt-4 pb-3 rounded-lg shadow-sm"
-                  >
-                    <option value="1">{t('report.step_1_day')}</option>
-                    <option value="5">{t('report.step_5_days')}</option>
-                    <option value="10">{t('report.step_10_days')}</option>
-                    <option value="15">{t('report.step_15_days')}</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Checkboxes */}
-              <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-center lg:h-[58px]">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showWeight}
-                    onChange={(e) => setShowWeight(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-sm font-medium">{t('report.weight')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showCalories}
-                    onChange={(e) => setShowCalories(e.target.checked)}
-                    className="w-4 h-4 text-green-600 rounded"
-                  />
-                  <span className="text-sm font-medium">{t('report.calories')}</span>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Weight stats for weight history tab */}
-          {activeTab === 'weight' && weightStats && weightStats.min > 0 && (
-            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:ml-auto w-full lg:w-auto">
-              <div className="flex flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-gray-600">{t('report.min_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{weightStats.min} kg</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-gray-600">{t('report.max_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{weightStats.max} kg</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-gray-600">{t('report.avg_weight')}</span>
-                  <span className="text-lg font-bold text-blue-600">{weightStats.average} kg</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <ReportFilters
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        activeTab={activeTab}
+        period={period}
+        onPeriodChange={setPeriod}
+        stepInterval={stepInterval}
+        onStepIntervalChange={setStepInterval}
+        showWeight={showWeight}
+        onShowWeightChange={setShowWeight}
+        showCalories={showCalories}
+        onShowCaloriesChange={setShowCalories}
+        weightStats={weightStats}
+      />
 
       {/* Tab Content */}
       {activeTab === 'chart' ? (
         <div className="space-y-4">
           {/* Weight and Calories Statistics */}
           {(showWeight && reportData?.weight_history && reportData.weight_history.length > 0) || avgCaloriesPerDay > 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center text-center">
-                {showWeight && reportData?.weight_history && reportData.weight_history.length > 0 && (
-                  <>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-600">{t('report.min_weight')}</span>
-                      <span className="text-xl font-bold text-blue-600">{weightStats.min} kg</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-600">{t('report.max_weight')}</span>
-                      <span className="text-xl font-bold text-blue-600">{weightStats.max} kg</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-600">{t('report.avg_weight')}</span>
-                      <span className="text-xl font-bold text-blue-600">{weightStats.average} kg</span>
-                    </div>
-                  </>
-                )}
-                {avgCaloriesPerDay > 0 && (
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-600">{t('report.avg_calories_per_day')}</span>
-                    <span className="text-xl font-bold text-green-600">{avgCaloriesPerDay} kcal</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <StatisticsCard
+              stats={[
+                ...(showWeight && reportData?.weight_history && reportData.weight_history.length > 0
+                  ? [
+                      { label: t('report.min_weight'), value: `${weightStats.min} kg`, color: 'text-blue-600' },
+                      { label: t('report.max_weight'), value: `${weightStats.max} kg`, color: 'text-blue-600' },
+                      { label: t('report.avg_weight'), value: `${weightStats.average} kg`, color: 'text-blue-600' },
+                    ]
+                  : []),
+                ...(avgCaloriesPerDay > 0
+                  ? [{ label: t('report.avg_calories_per_day'), value: `${avgCaloriesPerDay} kcal`, color: 'text-green-600' }]
+                  : []),
+              ]}
+            />
           ) : null}
 
           {/* Chart */}

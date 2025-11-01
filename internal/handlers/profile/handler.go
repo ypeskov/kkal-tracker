@@ -55,6 +55,17 @@ func (h *Handler) UpdateProfile(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	// Get current profile to preserve email (email is used as login and cannot be changed by users)
+	currentProfile, err := h.profileService.GetProfile(userID)
+	if err != nil {
+		h.logger.Error("Failed to get current profile", "user_id", userID, "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get current profile")
+	}
+
+	// Always use current email - users cannot change their login email
+	// Service layer still supports email updates for potential future admin functionality
+	req.Email = currentProfile.Email
+
 	h.logger.Debug("UpdateProfile request", "user_id", userID, "email", req.Email, "first_name", req.FirstName, "last_name", req.LastName)
 
 	// Pass DTO directly to service - service handles conversion
