@@ -212,17 +212,15 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                 <p className="text-lg font-bold text-gray-800">{periodDelta.firstWeight.toFixed(2)} kg</p>
               </div>
               <div className="text-center">
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
-                  periodDelta.delta > 0 
-                    ? 'bg-red-100 border-2 border-red-300' 
-                    : periodDelta.delta < 0 
-                    ? 'bg-green-100 border-2 border-green-300' 
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${periodDelta.delta > 0
+                  ? 'bg-red-100 border-2 border-red-300'
+                  : periodDelta.delta < 0
+                    ? 'bg-green-100 border-2 border-green-300'
                     : 'bg-gray-100 border-2 border-gray-300'
-                }`}>
-                  <span className="text-xs text-gray-600">{t('report.total_delta')}</span>
-                  <span className={`text-2xl font-bold ${
-                    periodDelta.delta > 0 ? 'text-red-700' : periodDelta.delta < 0 ? 'text-green-700' : 'text-gray-700'
                   }`}>
+                  <span className="text-xs text-gray-600">{t('report.total_delta')}</span>
+                  <span className={`text-2xl font-bold ${periodDelta.delta > 0 ? 'text-red-700' : periodDelta.delta < 0 ? 'text-green-700' : 'text-gray-700'
+                    }`}>
                     {periodDelta.delta > 0 ? '+' : ''}{periodDelta.delta.toFixed(2)} kg
                   </span>
                 </div>
