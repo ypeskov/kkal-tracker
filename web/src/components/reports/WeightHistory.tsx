@@ -45,6 +45,40 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     });
   }, [weightHistory, sortOrder]);
 
+  // Calculate deltas (weight change from previous measurement)
+  const weightHistoryWithDelta = useMemo(() => {
+    if (!sortedWeightHistory || sortedWeightHistory.length === 0) return [];
+
+    // First, create a chronologically sorted array (oldest first) for delta calculation
+    const chronologicalSorted = [...sortedWeightHistory].sort((a, b) => {
+      const dateA = new Date(a.recorded_at);
+      const dateB = new Date(b.recorded_at);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Calculate deltas
+    const withDeltas = chronologicalSorted.map((entry, index) => {
+      if (index === 0) {
+        // First entry has no previous measurement
+        return { ...entry, delta: null };
+      }
+      const delta = entry.weight - chronologicalSorted[index - 1].weight;
+      return { ...entry, delta };
+    });
+
+    // Return in the display sort order
+    return withDeltas.sort((a, b) => {
+      const dateA = new Date(a.recorded_at);
+      const dateB = new Date(b.recorded_at);
+
+      if (sortOrder === 'desc') {
+        return dateB.getTime() - dateA.getTime();
+      } else {
+        return dateA.getTime() - dateB.getTime();
+      }
+    });
+  }, [sortedWeightHistory, sortOrder]);
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: () => weightService.createWeightEntry({
@@ -223,24 +257,34 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                 </button>
               </th>
               <th className="text-left p-3 font-medium">{t('report.weight')}</th>
+              <th className="text-left p-3 font-medium">{t('report.delta')}</th>
               <th className="text-right p-3 font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
-            {!sortedWeightHistory || sortedWeightHistory.length === 0 ? (
+            {!weightHistoryWithDelta || weightHistoryWithDelta.length === 0 ? (
               <tr>
-                <td colSpan={3} className="text-center p-8 text-gray-500">
+                <td colSpan={4} className="text-center p-8 text-gray-500">
                   {t('report.no_weight_entries')}
                 </td>
               </tr>
             ) : (
-              sortedWeightHistory.map((entry) => (
+              weightHistoryWithDelta.map((entry) => (
                 <tr key={entry.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">
                     {format(new Date(entry.recorded_at), 'PPP')}
                   </td>
                   <td className="p-3">
                     {entry.weight.toFixed(2)} kg
+                  </td>
+                  <td className="p-3">
+                    {entry.delta !== null ? (
+                      <span className={`font-medium ${entry.delta > 0 ? 'text-red-600' : entry.delta < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                        {entry.delta > 0 ? '+' : ''}{entry.delta.toFixed(2)} kg
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-2">

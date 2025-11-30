@@ -100,6 +100,7 @@
     "add_weight_entry": "Додати запис ваги",
     "edit_weight_entry": "Редагувати запис ваги",
     "date": "Дата",
+    "delta": "Зміна",
     "no_weight_entries": "Записи ваги не знайдено",
     "confirm_delete_weight": "Ви впевнені, що хочете видалити цей запис ваги?",
     "period": "Період",

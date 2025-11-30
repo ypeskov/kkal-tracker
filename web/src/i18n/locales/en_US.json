@@ -100,6 +100,7 @@
     "add_weight_entry": "Add Weight Entry",
     "edit_weight_entry": "Edit Weight Entry",
     "date": "Date",
+    "delta": "Delta",
     "no_weight_entries": "No weight entries found",
     "confirm_delete_weight": "Are you sure you want to delete this weight entry?",
     "period": "Period",
