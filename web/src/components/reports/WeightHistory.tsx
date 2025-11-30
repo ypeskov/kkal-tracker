@@ -79,6 +79,29 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     });
   }, [sortedWeightHistory, sortOrder]);
 
+  // Calculate period delta (first to last in date range)
+  const periodDelta = useMemo(() => {
+    if (!weightHistory || weightHistory.length < 2) return null;
+
+    // Sort chronologically to get first and last
+    const chronologicalSorted = [...weightHistory].sort((a, b) => {
+      const dateA = new Date(a.recorded_at);
+      const dateB = new Date(b.recorded_at);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const firstEntry = chronologicalSorted[0];
+    const lastEntry = chronologicalSorted[chronologicalSorted.length - 1];
+
+    return {
+      delta: lastEntry.weight - firstEntry.weight,
+      firstWeight: firstEntry.weight,
+      lastWeight: lastEntry.weight,
+      firstDate: firstEntry.recorded_at,
+      lastDate: lastEntry.recorded_at,
+    };
+  }, [weightHistory]);
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: () => weightService.createWeightEntry({
@@ -171,6 +194,48 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
 
   return (
     <div className="space-y-4">
+      {/* Period Delta Summary */}
+      {periodDelta && (
+        <div className="card p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">
+                {t('report.period_change')}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {format(new Date(periodDelta.firstDate), 'PP')} → {format(new Date(periodDelta.lastDate), 'PP')}
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-xs text-gray-600 mb-1">{t('report.first_weight')}</p>
+                <p className="text-lg font-bold text-gray-800">{periodDelta.firstWeight.toFixed(2)} kg</p>
+              </div>
+              <div className="text-center">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  periodDelta.delta > 0 
+                    ? 'bg-red-100 border-2 border-red-300' 
+                    : periodDelta.delta < 0 
+                    ? 'bg-green-100 border-2 border-green-300' 
+                    : 'bg-gray-100 border-2 border-gray-300'
+                }`}>
+                  <span className="text-xs text-gray-600">{t('report.total_delta')}</span>
+                  <span className={`text-2xl font-bold ${
+                    periodDelta.delta > 0 ? 'text-red-700' : periodDelta.delta < 0 ? 'text-green-700' : 'text-gray-700'
+                  }`}>
+                    {periodDelta.delta > 0 ? '+' : ''}{periodDelta.delta.toFixed(2)} kg
+                  </span>
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-600 mb-1">{t('report.last_weight')}</p>
+                <p className="text-lg font-bold text-gray-800">{periodDelta.lastWeight.toFixed(2)} kg</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit Form */}
       {showAddForm && (
         <div className="card p-4">
