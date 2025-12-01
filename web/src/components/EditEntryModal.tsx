@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { handleNumericInput } from '@/utils/numericInput';
+import CalculatorInput from './CalculatorInput';
 
 interface EditEntryModalProps {
   entry: any;
@@ -73,7 +73,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
           <h2 className="text-xl font-medium text-gray-800 m-0">{t('dashboard.editEntry')}</h2>
         </div>
-        
+
         <form onSubmit={handleUpdateSubmit} className="p-5">
           <div className="flex flex-col md:flex-row gap-4 mb-4 items-stretch md:items-end">
             <div className="flex flex-col flex-1">
@@ -114,16 +114,14 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               />
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <div className="flex flex-col flex-1">
               <label htmlFor="editWeight" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.weight')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="editWeight"
                 value={editWeight}
-                onChange={(e) => handleNumericInput(e.target.value, setEditWeight)}
+                onChange={setEditWeight}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
               />
@@ -131,12 +129,10 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
 
             <div className="flex flex-col flex-1">
               <label htmlFor="editKcalPer100g" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.kcalPer100g')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="editKcalPer100g"
                 value={editKcalPer100g}
-                onChange={(e) => handleNumericInput(e.target.value, setEditKcalPer100g)}
+                onChange={setEditKcalPer100g}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 required
               />
@@ -147,24 +143,20 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
             <div className="flex flex-col">
               <label htmlFor="editFats" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fats')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="editFats"
                 value={editFats}
-                onChange={(e) => handleNumericInput(e.target.value, setEditFats)}
+                onChange={setEditFats}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
 
             <div className="flex flex-col">
               <label htmlFor="editCarbs" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.carbs')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="editCarbs"
                 value={editCarbs}
-                onChange={(e) => handleNumericInput(e.target.value, setEditCarbs)}
+                onChange={setEditCarbs}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
@@ -172,12 +164,10 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
             <div className="flex flex-col col-span-1 md:col-span-1">
               <label htmlFor="editProteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.proteins')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="editProteins"
                 value={editProteins}
-                onChange={(e) => handleNumericInput(e.target.value, setEditProteins)}
+                onChange={setEditProteins}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>

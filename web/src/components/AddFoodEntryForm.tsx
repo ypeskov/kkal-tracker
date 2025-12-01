@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ingredient } from '@/api/ingredients';
 import FoodAutocomplete from './FoodAutocomplete';
-import { handleNumericInput } from '@/utils/numericInput';
+import CalculatorInput from './CalculatorInput';
 
 interface AddFoodEntryFormProps {
   onSubmit: (entry: any) => void;
@@ -95,37 +95,35 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
                 <label htmlFor="weight" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.weight')}:</label>
                 <label htmlFor="kcalPer100g" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.kcalPer100g')}:</label>
               </div>
-              <div className="flex justify-between">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="weight"
-                  value={weight}
-                  onChange={(e) => handleNumericInput(e.target.value, setWeight)}
-                  className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="kcalPer100g"
-                  value={kcalPer100g}
-                  onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
-                  className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+              <div className="flex justify-between gap-2">
+                <div className="w-[45%]">
+                  <CalculatorInput
+                    id="weight"
+                    value={weight}
+                    onChange={setWeight}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-[45%]">
+                  <CalculatorInput
+                    id="kcalPer100g"
+                    value={kcalPer100g}
+                    onChange={setKcalPer100g}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             {/* Desktop weight field */}
             <div className="hidden lg:flex lg:flex-col">
               <label htmlFor="weight-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.weight')}:</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CalculatorInput
                 id="weight-desktop"
                 value={weight}
-                onChange={(e) => handleNumericInput(e.target.value, setWeight)}
+                onChange={setWeight}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
@@ -135,12 +133,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           {/* Calories - desktop only */}
           <div className="hidden lg:flex lg:flex-col">
             <label htmlFor="kcalPer100g-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.kcalPer100g')}:</label>
-            <input
-              type="text"
-              inputMode="decimal"
+            <CalculatorInput
               id="kcalPer100g-desktop"
               value={kcalPer100g}
-              onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
+              onChange={setKcalPer100g}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -153,23 +149,23 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             <label htmlFor="fats" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.fats')}:</label>
             <label htmlFor="carbs" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.carbs')}:</label>
           </div>
-          <div className="flex justify-between">
-            <input
-              type="text"
-              inputMode="decimal"
-              id="fats"
-              value={fats}
-              onChange={(e) => handleNumericInput(e.target.value, setFats)}
-              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <input
-              type="text"
-              inputMode="decimal"
-              id="carbs"
-              value={carbs}
-              onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
-              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex justify-between gap-2">
+            <div className="w-[45%]">
+              <CalculatorInput
+                id="fats"
+                value={fats}
+                onChange={setFats}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="w-[45%]">
+              <CalculatorInput
+                id="carbs"
+                value={carbs}
+                onChange={setCarbs}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
 
@@ -180,14 +176,14 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             <div className="w-[45%]"></div>
           </div>
           <div className="flex justify-between">
-            <input
-              type="text"
-              inputMode="decimal"
-              id="proteins"
-              value={proteins}
-              onChange={(e) => handleNumericInput(e.target.value, setProteins)}
-              className="w-[45%] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div className="w-[45%]">
+              <CalculatorInput
+                id="proteins"
+                value={proteins}
+                onChange={setProteins}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
             <div className="w-[45%]"></div>
           </div>
         </div>
@@ -196,24 +192,20 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
         <div className="hidden lg:grid lg:grid-cols-3 gap-4 mb-4">
           <div className="flex flex-col">
             <label htmlFor="fats-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
-            <input
-              type="text"
-              inputMode="decimal"
+            <CalculatorInput
               id="fats-desktop"
               value={fats}
-              onChange={(e) => handleNumericInput(e.target.value, setFats)}
+              onChange={setFats}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div className="flex flex-col">
             <label htmlFor="carbs-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.carbs')}:</label>
-            <input
-              type="text"
-              inputMode="decimal"
+            <CalculatorInput
               id="carbs-desktop"
               value={carbs}
-              onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
+              onChange={setCarbs}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -221,12 +213,10 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
           <div className="flex flex-col col-span-1 md:col-span-1">
             <label htmlFor="proteins-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
-            <input
-              type="text"
-              inputMode="decimal"
+            <CalculatorInput
               id="proteins-desktop"
               value={proteins}
-              onChange={(e) => handleNumericInput(e.target.value, setProteins)}
+              onChange={setProteins}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>

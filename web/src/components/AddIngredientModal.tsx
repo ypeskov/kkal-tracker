@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreateIngredientData } from '@/api/ingredients';
-import { handleNumericInput } from '@/utils/numericInput';
+import CalculatorInput from './CalculatorInput';
 // Modal.css imports removed - using Tailwind CSS
 
 interface AddIngredientModalProps {
@@ -24,7 +24,7 @@ export default function AddIngredientModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const data: CreateIngredientData = {
       name: name.trim(),
       kcalPer100g: parseFloat(kcalPer100g),
@@ -65,13 +65,11 @@ export default function AddIngredientModal({
 
           <div className="mb-4">
             <label htmlFor="kcalPer100g" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.caloriesPer100g')}</label>
-            <input
+            <CalculatorInput
               id="kcalPer100g"
-              type="text"
-              inputMode="decimal"
               value={kcalPer100g}
-              onChange={(e) => handleNumericInput(e.target.value, setKcalPer100g)}
-                            required
+              onChange={setKcalPer100g}
+              required
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
             />
           </div>
@@ -80,26 +78,22 @@ export default function AddIngredientModal({
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="mb-4">
               <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
-              <input
+              <CalculatorInput
                 id="proteins"
-                type="text"
-              inputMode="decimal"
-                    value={proteins}
-                onChange={(e) => handleNumericInput(e.target.value, setProteins)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                value={proteins}
+                onChange={setProteins}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 placeholder={t('foodList.optional')}
               />
             </div>
 
             <div className="mb-4">
               <label htmlFor="carbs" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.carbs')}</label>
-              <input
+              <CalculatorInput
                 id="carbs"
-                type="text"
-              inputMode="decimal"
-                    value={carbs}
-                onChange={(e) => handleNumericInput(e.target.value, setCarbs)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                value={carbs}
+                onChange={setCarbs}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 placeholder={t('foodList.optional')}
               />
             </div>
@@ -107,13 +101,11 @@ export default function AddIngredientModal({
             {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
             <div className="mb-4 col-span-1 md:col-span-1">
               <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
-              <input
+              <CalculatorInput
                 id="fats"
-                type="text"
-              inputMode="decimal"
-                    value={fats}
-                onChange={(e) => handleNumericInput(e.target.value, setFats)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                value={fats}
+                onChange={setFats}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
                 placeholder={t('foodList.optional')}
               />
             </div>
