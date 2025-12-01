@@ -14,6 +14,7 @@ A comprehensive calorie tracking and weight management web application built wit
 - **Reports & Analytics**: Data visualization and calorie/weight trends with Chart.js
 - **Dashboard**: Real-time view of today's entries with total calorie count
 - **Internationalization**: Full i18n support (English, Ukrainian, Russian) with language switcher
+- **Integrated Calculator**: Built-in calculator for all numeric fields (weight, calories, macros) with support for mathematical expressions and real-time evaluation
 
 ### Technical Features
 - **Backend**: Go with Echo framework v4.13.4

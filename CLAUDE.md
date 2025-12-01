@@ -121,11 +121,17 @@ go mod tidy       # Clean up dependencies
 │   ├── src/
 │   │   ├── api/                 # API service classes
 │   │   ├── components/          # React components
+│   │   │   ├── Calculator.tsx   # Calculator popup component
+│   │   │   ├── CalculatorInput.tsx  # Input with integrated calculator
+│   │   │   └── ...              # Other components
 │   │   ├── hooks/               # Custom React hooks
 │   │   ├── i18n/                # Internationalization
 │   │   ├── pages/               # Page components
 │   │   ├── styles/              # Global styles and CSS
 │   │   ├── utils/               # Utility functions
+│   │   │   ├── calculator.ts    # Math expression evaluation utilities
+│   │   │   ├── numericInput.ts  # Numeric input validation
+│   │   │   └── ...              # Other utilities
 │   │   ├── App.tsx              # Root application component
 │   │   ├── main.tsx             # Application entry point
 │   │   └── router.tsx           # Router configuration
@@ -277,6 +283,31 @@ Standard input field styling:
 />
 ```
 
+Numeric input with integrated calculator:
+
+```tsx
+import CalculatorInput from '@/components/CalculatorInput';
+
+<CalculatorInput
+  id="weight"
+  value={weight}
+  onChange={setWeight}
+  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  required
+/>
+```
+
+**Calculator Features:**
+- Replaces standard numeric inputs for weight, calories, fats, carbs, proteins
+- Calculator icon button appears on the right side of input
+- Clicking icon shows/hides calculator keypad below input
+- Input field acts as calculator display (no separate display)
+- Supports keyboard input and calculator buttons simultaneously
+- Evaluates expressions with `=` button or Enter key
+- Special buttons: `C` (clear), `←` (backspace)
+- Focus remains on input when using calculator buttons
+- Used in: AddFoodEntryForm, EditEntryModal, AddIngredientModal, EditIngredientModal
+
 ### Button Styling
 
 Primary action buttons:
@@ -351,6 +382,14 @@ If you encounter old semantic CSS classes during refactoring:
 - **Persistent Sessions**: JWT tokens stored in sessionStorage
 - **Responsive UI**: Clean, modern interface with proper form validation
 - **Database Backup**: Automated backups to Google Drive via OAuth2
+- **Integrated Calculator**: Built-in calculator for all numeric input fields (weight, calories, macros)
+  - Calculator icon button on all numeric inputs
+  - Input field serves as calculator display
+  - Support for mathematical expressions (+, -, *, /, parentheses)
+  - Real-time expression evaluation
+  - Keyboard and button input modes
+  - Auto-evaluation on Enter key or blur
+  - Collapsible calculator panel with numeric keypad
 
 ## Service Architecture
 
