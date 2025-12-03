@@ -6,7 +6,7 @@ export interface ProfileData {
     age?: number;
     height?: number;
     weight?: number;
-    language?: string;
+    language: string;
     created_at?: string;
     updated_at?: string;
 }
