@@ -1,3 +1,5 @@
+import { ProfileData } from '@/types/profile'
+
 interface LoginRequest {
   email: string
   password: string
@@ -18,14 +20,8 @@ interface ActivationResponse {
   message: string
 }
 
-interface User {
-  id: number
-  email: string
-  language?: string
-}
-
 class AuthService {
-  async login(credentials: LoginRequest): Promise<{ token: string; user: User }> {
+  async login(credentials: LoginRequest): Promise<{ token: string; user: ProfileData }> {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
@@ -43,7 +39,7 @@ class AuthService {
     return data
   }
 
-  async getCurrentUser(): Promise<User> {
+  async getCurrentUser(): Promise<ProfileData> {
     const token = sessionStorage.getItem('token')
     if (!token) {
       throw new Error('No token found')

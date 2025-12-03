@@ -1,19 +1,15 @@
-import { createRouter, createRoute, createRootRouteWithContext } from '@tanstack/react-router';
+import { ProfileData } from '@/types/profile';
+import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
 import Root from './components/Root';
+import ActivationPage from './pages/ActivationPage';
 import DashboardPage from './pages/DashboardPage';
 import FoodList from './pages/FoodList';
-import Report from './pages/Report';
 import Profile from './pages/Profile';
 import RegisterPage from './pages/RegisterPage';
-import ActivationPage from './pages/ActivationPage';
-
-export interface User {
-  id: number;
-  email: string;
-}
+import Report from './pages/Report';
 
 export interface RouterContext {
-  user: User | undefined;
+  user: ProfileData | undefined;
   onLogout: (() => void) | undefined;
 }
 

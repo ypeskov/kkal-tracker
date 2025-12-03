@@ -1,24 +1,6 @@
-export interface ProfileData {
-  id: number;
-  first_name?: string;
-  last_name?: string;
-  email: string;
-  age?: number;
-  height?: number;
-  weight?: number;
-  language: string;
-  created_at: string;
-  updated_at: string;
-}
+import { ProfileData, ProfileUpdateRequest } from '@/types/profile';
 
-export interface ProfileUpdateRequest {
-  first_name?: string;
-  last_name?: string;
-  email: string;
-  age?: number;
-  height?: number;
-  language: string;
-}
+export type { ProfileData, ProfileUpdateRequest };
 
 class ProfileAPI {
   private getHeaders = () => {
