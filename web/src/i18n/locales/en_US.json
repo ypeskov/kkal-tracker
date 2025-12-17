@@ -148,7 +148,33 @@
     "dashboard": "Dashboard",
     "foodList": "Food List",
     "reports": "Reports",
+    "aiInsights": "AI Insights",
     "profile": "Profile"
+  },
+  "ai": {
+    "title": "AI Insights",
+    "description": "Get personalized nutrition analysis and recommendations powered by AI",
+    "provider": "Provider",
+    "model": "Model",
+    "analyze": "Analyze",
+    "analyzing": "AI is analyzing your data...",
+    "analysisResult": "AI Analysis",
+    "noProviders": "No AI providers available",
+    "noProvidersTitle": "No AI Providers Configured",
+    "noProvidersDescription": "To use AI analysis, configure an AI provider by setting the OPENAI_API_KEY environment variable.",
+    "selectAndAnalyze": "Select a period and click Analyze to get AI-powered insights about your nutrition and weight trends",
+    "questionLabel": "Ask a specific question (optional)",
+    "questionPlaceholder": "e.g., Why am I not losing weight?",
+    "send": "Send",
+    "period": {
+      "label": "Analysis Period",
+      "week": "Last 7 days",
+      "twoWeeks": "Last 14 days",
+      "month": "Last 30 days",
+      "threeMonths": "Last 90 days",
+      "sixMonths": "Last 180 days",
+      "year": "Last year"
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -168,7 +194,8 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "cancel": "Cancel",
-    "clear": "Clear"
+    "clear": "Clear",
+    "refresh": "Refresh"
   },
   "language": {
     "select": "Language",

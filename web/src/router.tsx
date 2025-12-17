@@ -2,6 +2,7 @@ import { ProfileData } from '@/types/profile';
 import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
 import Root from './components/Root';
 import ActivationPage from './pages/ActivationPage';
+import AIInsights from './pages/AIInsights';
 import DashboardPage from './pages/DashboardPage';
 import FoodList from './pages/FoodList';
 import Profile from './pages/Profile';
@@ -53,10 +54,17 @@ const activationRoute = createRoute({
   component: ActivationPage,
 });
 
+const aiInsightsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/ai-insights',
+  component: AIInsights,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   foodListRoute,
   reportRoute,
+  aiInsightsRoute,
   profileRoute,
   registerRoute,
   activationRoute,

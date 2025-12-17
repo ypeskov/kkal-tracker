@@ -1,3 +1,5 @@
+import { languagesService } from '@/api/languages';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 // Helper function to convert backend language codes to i18n format
@@ -15,6 +17,12 @@ interface LanguageSelectorProps {
 export default function LanguageSelector({ value, onChange, className = '', disabled = false }: LanguageSelectorProps) {
   const { t, i18n } = useTranslation();
 
+  const { data: languages = [] } = useQuery({
+    queryKey: ['languages'],
+    queryFn: languagesService.getLanguages,
+    staleTime: Infinity, // Languages rarely change
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLang = e.target.value;
     onChange(newLang);
@@ -25,23 +33,16 @@ export default function LanguageSelector({ value, onChange, className = '', disa
     }
   };
 
-  const languages = [
-    { code: 'en_US', label: t('language.en_US') },
-    { code: 'uk_UA', label: t('language.uk_UA') },
-    { code: 'ru_UA', label: t('language.ru_UA') },
-    { code: 'bg_BG', label: t('language.bg_BG') },
-  ];
-
   return (
     <select
       value={value}
       onChange={handleChange}
-      disabled={disabled}
+      disabled={disabled || languages.length === 0}
       className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 ${className}`}
     >
       {languages.map(lang => (
         <option key={lang.code} value={lang.code}>
-          {lang.label}
+          {t(`language.${lang.code}`)}
         </option>
       ))}
     </select>

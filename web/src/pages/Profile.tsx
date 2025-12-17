@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { profileAPI, ProfileUpdateRequest } from '@/api/profile';
+import { profileService, ProfileUpdateRequest } from '@/api/profile';
 import { weightService } from '@/api/weight';
 import LanguageSelector from '@/components/LanguageSelector';
 import ProfileFormField from '@/components/ProfileFormField';
@@ -37,7 +37,7 @@ export default function Profile() {
   // Fetch profile data
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile'],
-    queryFn: profileAPI.getProfile,
+    queryFn: profileService.getProfile,
   });
 
   // Fetch latest weight from history
@@ -49,7 +49,7 @@ export default function Profile() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: profileAPI.updateProfile,
+    mutationFn: profileService.updateProfile,
     onSuccess: (data) => {
       queryClient.setQueryData(['profile'], data);
 

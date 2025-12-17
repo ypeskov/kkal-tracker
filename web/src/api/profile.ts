@@ -2,7 +2,7 @@ import { ProfileData, ProfileUpdateRequest } from '@/types/profile';
 
 export type { ProfileData, ProfileUpdateRequest };
 
-class ProfileAPI {
+class ProfileService {
   private getHeaders = () => {
     const token = sessionStorage.getItem('token');
     return {
@@ -39,4 +39,4 @@ class ProfileAPI {
   }
 }
 
-export const profileAPI = new ProfileAPI();
+export const profileService = new ProfileService();

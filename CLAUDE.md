@@ -178,6 +178,13 @@ DATABASE_TYPE=sqlite                    # Options: sqlite, postgres
 DATABASE_PATH=./data/app.db            # For SQLite
 # POSTGRES_URL=postgres://user:password@localhost/kkal_tracker?sslmode=disable  # For PostgreSQL
 
+# AI Configuration (providers are activated when API keys are set)
+OPENAI_API_KEY=sk-...                  # OpenAI API key
+OPENAI_BASE_URL=                        # Optional: custom base URL for proxy/Azure
+# ANTHROPIC_API_KEY=sk-ant-...         # Anthropic API key (future)
+# ANTHROPIC_BASE_URL=                   # Optional: custom base URL
+# OLLAMA_BASE_URL=http://localhost:11434  # Ollama local server URL
+
 # Google Drive Backup (Optional)
 # Use rclone to generate OAuth2 token: https://rclone.org/drive/
 GDRIVE_OAUTH_TOKEN={"access_token":"...","token_type":"Bearer","refresh_token":"..."}
@@ -377,6 +384,12 @@ If you encounter old semantic CSS classes during refactoring:
 - **Ingredient Database**: Global ingredients with multilingual names and nutritional data
 - **User Profiles**: Personal settings and preference management
 - **Reports & Analytics**: Data visualization and calorie/weight trends
+- **AI Insights**: AI-powered nutrition and weight analysis with personalized recommendations
+  - OpenAI integration (GPT-4o-mini by default)
+  - Provider selection in UI (extensible architecture for multiple providers)
+  - Customizable analysis periods (7, 14, 30, 90 days)
+  - Optional specific questions for targeted advice
+  - Multilingual responses based on user's language preference
 - **Dashboard**: View today's entries with total calorie count
 - **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA) with language switcher
 - **Persistent Sessions**: JWT tokens stored in sessionStorage
@@ -419,6 +432,9 @@ All API routes are prefixed with `/api`:
 - `/api/weight/*` - Weight history tracking
 - `/api/profile/*` - User profile management
 - `/api/reports/*` - Analytics and reporting
+- `/api/ai/*` - AI analysis endpoints
+  - `GET /api/ai/providers` - List available AI providers
+  - `POST /api/ai/analyze` - Perform AI analysis
 
 ## Deployment
 

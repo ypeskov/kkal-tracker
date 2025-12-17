@@ -44,10 +44,18 @@ const (
 	QueryGetGlobalIngredientNames    = "getGlobalIngredientNames"
 
 	// Activation Token queries
-	QueryCreateActivationToken       = "createActivationToken"
-	QueryGetActivationTokenByToken   = "getActivationTokenByToken"
-	QueryDeleteActivationToken       = "deleteActivationToken"
+	QueryCreateActivationToken         = "createActivationToken"
+	QueryGetActivationTokenByToken     = "getActivationTokenByToken"
+	QueryDeleteActivationToken         = "deleteActivationToken"
 	QueryDeleteExpiredActivationTokens = "deleteExpiredActivationTokens"
+
+	// AI Provider queries
+	QueryGetAllAIProviders         = "getAllAIProviders"
+	QueryGetActiveAIProviders      = "getActiveAIProviders"
+	QueryGetAIProviderByID         = "getAIProviderByID"
+	QueryUpdateAIProviderModel     = "updateAIProviderModel"
+	QuerySetAIProviderActive       = "setAIProviderActive"
+	QuerySetAIProviderActiveByType = "setAIProviderActiveByType"
 )
 
 // buildKey creates a query key by combining query name and dialect
@@ -466,6 +474,75 @@ func getQueries() map[string]string {
 	`,
 		buildKey(QueryDeleteExpiredActivationTokens, DialectPostgres): `
 		DELETE FROM activation_tokens WHERE expires_at < $1
+	`,
+
+		// AI Provider queries (same for SQLite and Postgres)
+		buildKey(QueryGetAllAIProviders, DialectSQLite): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		ORDER BY provider_type, display_name
+	`,
+		buildKey(QueryGetAllAIProviders, DialectPostgres): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		ORDER BY provider_type, display_name
+	`,
+
+		buildKey(QueryGetActiveAIProviders, DialectSQLite): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		WHERE is_active = 1
+		ORDER BY provider_type, display_name
+	`,
+		buildKey(QueryGetActiveAIProviders, DialectPostgres): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		WHERE is_active = true
+		ORDER BY provider_type, display_name
+	`,
+
+		buildKey(QueryGetAIProviderByID, DialectSQLite): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		WHERE id = ?
+	`,
+		buildKey(QueryGetAIProviderByID, DialectPostgres): `
+		SELECT id, provider_type, display_name, model, is_active, created_at, updated_at
+		FROM ai_providers
+		WHERE id = $1
+	`,
+
+		buildKey(QueryUpdateAIProviderModel, DialectSQLite): `
+		UPDATE ai_providers
+		SET model = ?, updated_at = datetime('now')
+		WHERE id = ?
+	`,
+		buildKey(QueryUpdateAIProviderModel, DialectPostgres): `
+		UPDATE ai_providers
+		SET model = $1, updated_at = NOW()
+		WHERE id = $2
+	`,
+
+		buildKey(QuerySetAIProviderActive, DialectSQLite): `
+		UPDATE ai_providers
+		SET is_active = ?, updated_at = datetime('now')
+		WHERE id = ?
+	`,
+		buildKey(QuerySetAIProviderActive, DialectPostgres): `
+		UPDATE ai_providers
+		SET is_active = $1, updated_at = NOW()
+		WHERE id = $2
+	`,
+
+		buildKey(QuerySetAIProviderActiveByType, DialectSQLite): `
+		UPDATE ai_providers
+		SET is_active = ?, updated_at = datetime('now')
+		WHERE provider_type = ?
+	`,
+		buildKey(QuerySetAIProviderActiveByType, DialectPostgres): `
+		UPDATE ai_providers
+		SET is_active = $1, updated_at = NOW()
+		WHERE provider_type = $2
 	`,
 	}
 }

@@ -9,15 +9,18 @@ import (
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/config"
+	aihandler "ypeskov/kkal-tracker/internal/handlers/ai"
 	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
+	languageshandler "ypeskov/kkal-tracker/internal/handlers/languages"
 	"ypeskov/kkal-tracker/internal/handlers/profile"
 	reportshandler "ypeskov/kkal-tracker/internal/handlers/reports"
 	"ypeskov/kkal-tracker/internal/handlers/static"
 	weighthandler "ypeskov/kkal-tracker/internal/handlers/weight"
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
+	aiservice "ypeskov/kkal-tracker/internal/services/ai"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	emailservice "ypeskov/kkal-tracker/internal/services/email"
@@ -41,6 +44,7 @@ type Server struct {
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
 	weightRepo     repositories.WeightHistoryRepository
+	aiProviderRepo repositories.AIProviderRepository
 }
 
 // setupRepositories configures repositories based on the database type
@@ -52,6 +56,7 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.aiProviderRepo = repositories.NewAIProviderRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
@@ -59,6 +64,7 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.aiProviderRepo = repositories.NewAIProviderRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.logger.Debug("Configured PostgreSQL repositories")
 	default:
 		return fmt.Errorf("unsupported database type: %s", s.config.DatabaseType)
@@ -109,6 +115,7 @@ func (s *Server) Start() *http.Server {
 	profileService := profileservice.New(s.db, s.userRepo, s.weightRepo, s.logger)
 	weightService := weightservice.New(s.weightRepo, s.logger)
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
+	aiSvc := aiservice.New(s.config, s.aiProviderRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
@@ -116,8 +123,14 @@ func (s *Server) Start() *http.Server {
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
 	weightHandler := weighthandler.NewHandler(weightService, s.logger)
 	reportsHandler := reportshandler.New(reportsService, s.logger)
+	aiHandler := aihandler.New(aiSvc, calorieService, weightService, s.userRepo, s.logger)
 
 	apiGroup := e.Group("/api")
+
+	// Public routes (no auth required)
+	languagesHandler := languageshandler.NewHandler(s.logger)
+	languagesGroup := apiGroup.Group("/languages")
+	languagesHandler.RegisterRoutes(languagesGroup)
 
 	authGroup := apiGroup.Group("/auth")
 	authHandler.RegisterRoutes(authGroup, authMiddleware)
@@ -139,6 +152,10 @@ func (s *Server) Start() *http.Server {
 	// Reports routes require authentication
 	reportsGroup := apiGroup.Group("/reports", authMiddleware.RequireAuth)
 	reportsHandler.RegisterRoutes(reportsGroup)
+
+	// AI routes require authentication
+	aiGroup := apiGroup.Group("/ai", authMiddleware.RequireAuth)
+	aiHandler.RegisterRoutes(aiGroup)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)

@@ -1,22 +1,27 @@
-import { useTranslation } from 'react-i18next'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { profileAPI } from '@/api/profile'
+import { languagesService } from '@/api/languages';
+import { profileService } from '@/api/profile';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 // Helper function to convert i18n language codes to backend format
 const convertToBackendLanguageCode = (i18nCode: string): string => {
   return i18nCode.replace('-', '_');
 };
 
-const languages = [
-  { code: 'en-US', name: 'language.en_US' },
-  { code: 'uk-UA', name: 'language.uk_UA' },
-  { code: 'ru-UA', name: 'language.ru_UA' },
-  { code: 'bg-BG', name: 'language.bg_BG' }
-]
+// Helper function to convert backend language codes to i18n format
+const convertToI18nLanguageCode = (backendCode: string): string => {
+  return backendCode.replace('_', '-');
+};
 
 export default function LanguageSwitcher() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
+
+  const { data: languages = [] } = useQuery({
+    queryKey: ['languages'],
+    queryFn: languagesService.getLanguages,
+    staleTime: Infinity, // Languages rarely change
+  });
 
   // Update language mutation
   const updateLanguageMutation = useMutation({
@@ -38,7 +43,7 @@ export default function LanguageSwitcher() {
         language: convertToBackendLanguageCode(language),
       }
 
-      return profileAPI.updateProfile(updateData)
+      return profileService.updateProfile(updateData)
     },
     onSuccess: (data) => {
       // Update profile query data
@@ -76,13 +81,13 @@ export default function LanguageSwitcher() {
       id="language-select"
       value={i18n.language}
       onChange={(e) => changeLanguage(e.target.value)}
-      disabled={updateLanguageMutation.isPending}
+      disabled={updateLanguageMutation.isPending || languages.length === 0}
       className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm ${updateLanguageMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
       title={updateLanguageMutation.isPending ? 'Saving language preference...' : 'Select language'}
     >
       {languages.map((language) => (
-        <option key={language.code} value={language.code}>
-          {t(language.name)}
+        <option key={language.code} value={convertToI18nLanguageCode(language.code)}>
+          {t(`language.${language.code}`)}
         </option>
       ))}
     </select>
