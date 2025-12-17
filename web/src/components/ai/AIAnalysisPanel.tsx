@@ -56,21 +56,12 @@ export default function AIAnalysisPanel({
         <h3 className="text-lg font-semibold text-gray-800">{t('ai.analysisResult')}</h3>
       </div>
 
-      <div className="prose prose-sm max-w-none mb-4">
-        <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-          {result.analysis}
-        </div>
-      </div>
+      <div
+        className="prose prose-sm max-w-none mb-4 text-gray-700 leading-relaxed [&>h3]:text-lg [&>h3]:font-semibold [&>h3]:text-gray-800 [&>h3]:mt-4 [&>h3]:mb-2 [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-3 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-3"
+        dangerouslySetInnerHTML={{ __html: result.analysis }}
+      />
 
       <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
-        <div className="flex items-center gap-1">
-          <span className="font-medium">{t('ai.provider')}:</span>
-          <span>{result.provider}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="font-medium">{t('ai.model')}:</span>
-          <span>{result.model}</span>
-        </div>
         <div className="flex items-center gap-1">
           <Clock size={14} />
           <span>{(result.duration_ms / 1000).toFixed(1)}s</span>

@@ -7,17 +7,11 @@ import (
 	"strconv"
 )
 
-// AIProviderConfig holds configuration for a single AI provider
-type AIProviderConfig struct {
-	APIKey  string
-	BaseURL string
-}
-
-// AIConfig holds configuration for all AI providers
+// AIConfig holds configuration for AI
 type AIConfig struct {
-	OpenAI       AIProviderConfig
-	Anthropic    AIProviderConfig
-	Ollama       AIProviderConfig
+	APIKey       string
+	BaseURL      string
+	Model        string
 	UseMaxTokens bool // Whether to limit response tokens
 	MaxTokens    int  // Maximum completion tokens (if UseMaxTokens is true)
 }
@@ -68,17 +62,9 @@ func New() *Config {
 		AppURL:       getEnv("APP_URL", "http://localhost:8080"),
 		// AI Configuration
 		AI: AIConfig{
-			OpenAI: AIProviderConfig{
-				APIKey:  getEnv("OPENAI_API_KEY", ""),
-				BaseURL: getEnv("OPENAI_BASE_URL", ""),
-			},
-			Anthropic: AIProviderConfig{
-				APIKey:  getEnv("ANTHROPIC_API_KEY", ""),
-				BaseURL: getEnv("ANTHROPIC_BASE_URL", ""),
-			},
-			Ollama: AIProviderConfig{
-				BaseURL: getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
-			},
+			APIKey:       getEnv("OPENAI_API_KEY", ""),
+			BaseURL:      getEnv("OPENAI_BASE_URL", ""),
+			Model:        getEnv("OPENAI_MODEL", "gpt-5.2"),
 			UseMaxTokens: getEnvBool("AI_USE_MAX_TOKENS", false),
 			MaxTokens:    getEnvInt("AI_MAX_TOKENS", 2000),
 		},

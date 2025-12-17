@@ -40,16 +40,6 @@ type WeightHistoryRepository interface {
 	Delete(id, userID int) error
 }
 
-// AIProviderRepository defines the contract for AI provider data access
-type AIProviderRepository interface {
-	GetAll() ([]*models.AIProvider, error)
-	GetActive() ([]*models.AIProvider, error)
-	GetByID(id string) (*models.AIProvider, error)
-	UpdateModel(id string, model string) error
-	SetActive(id string, isActive bool) error
-	SetActiveByType(providerType string, isActive bool) error
-}
-
 // IngredientRepository defines the contract for ingredient data access
 type IngredientRepository interface {
 	// User ingredients

@@ -39,27 +39,12 @@ func New(
 	}
 }
 
-// GetProviders returns the list of available (active) AI providers
-func (h *Handler) GetProviders(c echo.Context) error {
-	providers, err := h.aiService.GetAvailableProviders()
-	if err != nil {
-		h.logger.Error("Failed to get providers", slog.String("error", err.Error()))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get providers")
-	}
-
-	response := ProvidersResponse{
-		Providers: make([]ProviderResponse, 0, len(providers)),
-	}
-
-	for _, p := range providers {
-		response.Providers = append(response.Providers, ProviderResponse{
-			ID:          p.ID,
-			DisplayName: p.DisplayName,
-			Model:       p.Model,
-		})
-	}
-
-	return c.JSON(http.StatusOK, response)
+// GetStatus returns the AI service status
+func (h *Handler) GetStatus(c echo.Context) error {
+	return c.JSON(http.StatusOK, StatusResponse{
+		Available: h.aiService.IsAvailable(),
+		Model:     h.aiService.GetModel(),
+	})
 }
 
 // Analyze performs AI analysis on user's nutrition and weight data
@@ -84,7 +69,6 @@ func (h *Handler) Analyze(c echo.Context) error {
 
 	h.logger.Debug("AI analysis requested",
 		slog.Int("user_id", userID),
-		slog.String("provider", req.Provider),
 		slog.Int("period_days", req.PeriodDays))
 
 	// Calculate date range
@@ -126,18 +110,14 @@ func (h *Handler) Analyze(c echo.Context) error {
 		UserContext:   userContext,
 		NutritionData: nutritionData,
 		WeightData:    weightData,
-		Query:         req.Query,
 		PeriodDays:    req.PeriodDays,
 	}
 
 	// Perform analysis
-	result, err := h.aiService.Analyze(c.Request().Context(), req.Provider, analysisReq)
+	result, err := h.aiService.Analyze(c.Request().Context(), analysisReq)
 	if err != nil {
 		if errors.Is(err, aiservice.ErrProviderNotAvailable) {
-			return echo.NewHTTPError(http.StatusBadRequest, "Selected AI provider is not available")
-		}
-		if errors.Is(err, aiservice.ErrProviderNotFound) {
-			return echo.NewHTTPError(http.StatusNotFound, "AI provider not found")
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "AI provider is not configured")
 		}
 		h.logger.Error("AI analysis failed", slog.String("error", err.Error()))
 		return echo.NewHTTPError(http.StatusInternalServerError, "AI analysis failed")
@@ -145,7 +125,6 @@ func (h *Handler) Analyze(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, AnalysisResultResponse{
 		Analysis:   result.Analysis,
-		Provider:   result.Provider,
 		Model:      result.Model,
 		TokensUsed: result.TokensUsed,
 		DurationMs: result.DurationMs,
@@ -162,12 +141,20 @@ func (h *Handler) aggregateNutritionData(entries []*models.CalorieEntry) []aiser
 
 		if _, exists := byDate[date]; !exists {
 			byDate[date] = &aiservice.NutritionDataPoint{
-				Date: date,
+				Date:      date,
+				FoodItems: make([]aiservice.FoodItem, 0),
 			}
 		}
 
 		point := byDate[date]
 		point.Calories += entry.Calories
+
+		// Add food item to the list
+		point.FoodItems = append(point.FoodItems, aiservice.FoodItem{
+			Name:     entry.Food,
+			Weight:   entry.Weight,
+			Calories: entry.Calories,
+		})
 
 		// Calculate macros based on weight
 		if entry.Fats != nil {
@@ -206,6 +193,6 @@ func (h *Handler) convertWeightData(history []*models.WeightHistory) []aiservice
 
 // RegisterRoutes registers AI handler routes
 func (h *Handler) RegisterRoutes(g *echo.Group) {
-	g.GET("/providers", h.GetProviders)
+	g.GET("/status", h.GetStatus)
 	g.POST("/analyze", h.Analyze)
 }

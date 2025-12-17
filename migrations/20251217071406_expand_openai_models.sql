@@ -9,7 +9,7 @@ UPDATE ai_providers SET provider_type = 'anthropic' WHERE id = 'anthropic';
 UPDATE ai_providers SET provider_type = 'ollama' WHERE id = 'ollama';
 
 -- Replace existing openai entry with GPT-4.5
-UPDATE ai_providers SET id = 'openai-gpt-4.5', display_name = 'GPT-4.5', model = 'gpt-4.5' WHERE id = 'openai';
+UPDATE ai_providers SET id = 'openai-gpt-4.5', display_name = 'GPT-4.5', model = 'gpt-4.5-preview' WHERE id = 'openai';
 
 -- Insert GPT-5.2 (December 2025 - latest)
 INSERT INTO ai_providers (id, provider_type, display_name, model, is_active) VALUES

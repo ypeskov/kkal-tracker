@@ -2,25 +2,17 @@ import { authService } from './auth';
 
 const API_BASE_URL = '/api/ai';
 
-export interface AIProvider {
-  id: string;
-  display_name: string;
-  model: string;
-}
-
-export interface ProvidersResponse {
-  providers: AIProvider[];
+export interface AIStatus {
+  available: boolean;
+  model?: string;
 }
 
 export interface AnalyzeRequest {
-  provider: string;
   period_days: number;
-  query?: string;
 }
 
 export interface AnalysisResult {
   analysis: string;
-  provider: string;
   model: string;
   tokens_used?: number;
   duration_ms: number;
@@ -34,17 +26,16 @@ class AIService {
     };
   }
 
-  async getProviders(): Promise<AIProvider[]> {
-    const response = await fetch(`${API_BASE_URL}/providers`, {
+  async getStatus(): Promise<AIStatus> {
+    const response = await fetch(`${API_BASE_URL}/status`, {
       headers: this.getHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch AI providers');
+      throw new Error('Failed to fetch AI status');
     }
 
-    const data: ProvidersResponse = await response.json();
-    return data.providers;
+    return response.json();
   }
 
   async analyze(request: AnalyzeRequest): Promise<AnalysisResult> {
@@ -64,7 +55,3 @@ class AIService {
 }
 
 export const aiService = new AIService();
-
-
-
-

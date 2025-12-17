@@ -44,7 +44,6 @@ type Server struct {
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
 	weightRepo     repositories.WeightHistoryRepository
-	aiProviderRepo repositories.AIProviderRepository
 }
 
 // setupRepositories configures repositories based on the database type
@@ -56,7 +55,6 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
-		s.aiProviderRepo = repositories.NewAIProviderRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
@@ -64,7 +62,6 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
-		s.aiProviderRepo = repositories.NewAIProviderRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.logger.Debug("Configured PostgreSQL repositories")
 	default:
 		return fmt.Errorf("unsupported database type: %s", s.config.DatabaseType)
@@ -115,7 +112,7 @@ func (s *Server) Start() *http.Server {
 	profileService := profileservice.New(s.db, s.userRepo, s.weightRepo, s.logger)
 	weightService := weightservice.New(s.weightRepo, s.logger)
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
-	aiSvc := aiservice.New(s.config, s.aiProviderRepo, s.logger)
+	aiSvc := aiservice.New(s.config, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)

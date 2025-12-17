@@ -37,7 +37,7 @@ func NewOpenAIProvider(apiKey string, baseURL string, useMaxTokens bool, maxToke
 
 // GetProviderName returns the provider identifier
 func (p *OpenAIProvider) GetProviderName() string {
-	return string(ProviderOpenAI)
+	return "openai"
 }
 
 // IsAvailable checks if the provider is properly configured
@@ -93,7 +93,6 @@ func (p *OpenAIProvider) Analyze(ctx context.Context, model string, req Analysis
 
 	return &AnalysisResponse{
 		Analysis:   resp.Choices[0].Message.Content,
-		Provider:   p.GetProviderName(),
 		Model:      model,
 		TokensUsed: resp.Usage.TotalTokens,
 		DurationMs: duration,
@@ -110,7 +109,7 @@ func (p *OpenAIProvider) buildSystemPrompt(userCtx UserContext) string {
 	// Determine response language from config
 	responseLang := config.GetLanguageName(lang)
 
-	prompt := fmt.Sprintf(`You are a professional nutritionist and health advisor. 
+	prompt := fmt.Sprintf(`You are a professional nutritionist and health advisor.
 Analyze the user's nutrition and weight data to provide personalized insights and recommendations.
 
 Guidelines:
@@ -122,8 +121,14 @@ Guidelines:
 - Analyze macronutrient balance (proteins, fats, carbohydrates) - not just total calories
 - Comment on protein intake adequacy, fat quality distribution, and carbohydrate levels
 - Identify any imbalances in the macronutrient ratios
-- Use bullet points and clear formatting for readability
 - Keep the analysis concise but comprehensive (2-3 paragraphs max)
+
+IMPORTANT - Output Format:
+- Return your response as clean HTML (no markdown)
+- Use HTML tags for formatting: <h3> for section headers, <p> for paragraphs, <ul>/<li> for bullet lists, <strong> for emphasis
+- Do NOT wrap the response in code blocks or backticks
+- Do NOT include <html>, <head>, or <body> tags - just the content HTML
+- Example structure: <h3>Section Title</h3><p>Content here...</p><ul><li>Item 1</li><li>Item 2</li></ul>
 
 User profile:`, responseLang)
 
@@ -147,10 +152,18 @@ func (p *OpenAIProvider) buildUserPrompt(req AnalysisRequest) string {
 	if len(req.NutritionData) > 0 {
 		sb.WriteString("## Daily Nutrition Data:\n")
 		for _, d := range req.NutritionData {
-			sb.WriteString(fmt.Sprintf("- %s: %d kcal, %.1fg fat, %.1fg carbs, %.1fg protein\n",
+			sb.WriteString(fmt.Sprintf("### %s: %d kcal total, %.1fg fat, %.1fg carbs, %.1fg protein\n",
 				d.Date, d.Calories, d.Fats, d.Carbs, d.Proteins))
+
+			// Add food items for this day
+			if len(d.FoodItems) > 0 {
+				sb.WriteString("Foods eaten:\n")
+				for _, item := range d.FoodItems {
+					sb.WriteString(fmt.Sprintf("  - %s (%.0fg, %d kcal)\n", item.Name, item.Weight, item.Calories))
+				}
+			}
+			sb.WriteString("\n")
 		}
-		sb.WriteString("\n")
 	}
 
 	// Add weight data
@@ -162,19 +175,14 @@ func (p *OpenAIProvider) buildUserPrompt(req AnalysisRequest) string {
 		sb.WriteString("\n")
 	}
 
-	// Add specific query if provided
-	if req.Query != "" {
-		sb.WriteString(fmt.Sprintf("## Specific Question:\n%s\n", req.Query))
-	} else {
-		sb.WriteString("Please provide:\n")
-		sb.WriteString("1. Overall assessment of my nutrition habits\n")
-		sb.WriteString("2. Analysis of calorie intake trends\n")
-		sb.WriteString("3. Macronutrient balance analysis (proteins, fats, carbs ratio and adequacy)\n")
-		if len(req.WeightData) > 0 {
-			sb.WriteString("4. Weight trend analysis and correlation with nutrition\n")
-		}
-		sb.WriteString("5. Specific recommendations for improvement\n")
+	sb.WriteString("Please provide:\n")
+	sb.WriteString("1. Overall assessment of my nutrition habits\n")
+	sb.WriteString("2. Analysis of calorie intake trends\n")
+	sb.WriteString("3. Macronutrient balance analysis (proteins, fats, carbs ratio and adequacy)\n")
+	if len(req.WeightData) > 0 {
+		sb.WriteString("4. Weight trend analysis and correlation with nutrition\n")
 	}
+	sb.WriteString("5. Specific recommendations for improvement\n")
 
 	return sb.String()
 }
