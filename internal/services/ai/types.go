@@ -43,6 +43,7 @@ type AnalysisRequest struct {
 	UserContext   UserContext          `json:"user_context"`
 	NutritionData []NutritionDataPoint `json:"nutrition_data"`
 	WeightData    []WeightDataPoint    `json:"weight_data"`
+	Query         string               `json:"query,omitempty"` // Currently ignored; reserved for future use
 	PeriodDays    int                  `json:"period_days"`
 }
 

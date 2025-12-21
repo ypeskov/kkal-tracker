@@ -67,6 +67,10 @@ func (h *Handler) Analyze(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	// TODO: Query parameter is currently ignored but may be used in future
+	// to allow users to ask specific questions about their nutrition data
+	_ = req.Query
+
 	h.logger.Debug("AI analysis requested",
 		slog.Int("user_id", userID),
 		slog.Int("period_days", req.PeriodDays))
@@ -110,6 +114,7 @@ func (h *Handler) Analyze(c echo.Context) error {
 		UserContext:   userContext,
 		NutritionData: nutritionData,
 		WeightData:    weightData,
+		Query:         "", // Query is disabled for now; may be enabled in future versions
 		PeriodDays:    req.PeriodDays,
 	}
 

@@ -1,0 +1,31 @@
+Please analyze my nutrition and weight data from the last {{.PeriodDays}} days.
+
+{{if .NutritionData}}
+## Daily Nutrition Data:
+{{range .NutritionData}}
+### {{.Date}}: {{.Calories}} kcal total, {{printf "%.1f" .Fats}}g fat, {{printf "%.1f" .Carbs}}g carbs, {{printf "%.1f" .Proteins}}g protein
+{{- if .FoodItems}}
+Foods eaten:
+{{range .FoodItems}}  - {{.Name}} ({{printf "%.0f" .Weight}}g, {{.Calories}} kcal)
+{{end}}
+{{- end}}
+{{end}}
+{{end}}
+{{if .WeightData}}
+## Weight Measurements:
+{{range .WeightData}}- {{.Date}}: {{printf "%.1f" .Weight}} kg
+{{end}}
+{{end}}
+{{if .Query}}
+## Specific Question:
+{{.Query}}
+{{else}}
+Please provide:
+1. Overall assessment of my nutrition habits
+2. Analysis of calorie intake trends
+3. Macronutrient balance analysis (proteins, fats, carbs ratio and adequacy)
+{{- if .WeightData}}
+4. Weight trend analysis and correlation with nutrition
+{{- end}}
+5. Specific recommendations for improvement
+{{end}}

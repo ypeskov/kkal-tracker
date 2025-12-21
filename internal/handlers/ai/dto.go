@@ -2,7 +2,8 @@ package ai
 
 // AnalyzeRequest represents the request body for AI analysis
 type AnalyzeRequest struct {
-	PeriodDays int `json:"period_days" validate:"required,min=1,max=365"`
+	PeriodDays int    `json:"period_days" validate:"required,min=1,max=365"`
+	Query      string `json:"query,omitempty"` // Currently ignored; reserved for future use
 }
 
 // StatusResponse represents the AI service status
