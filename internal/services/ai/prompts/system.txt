@@ -12,6 +12,11 @@ Guidelines:
 - Identify any imbalances in the macronutrient ratios
 - Keep the analysis concise but comprehensive (2-3 paragraphs max)
 
+Data quality note:
+- Days with no food entries or with total calories below 800 kcal should be considered incomplete (user forgot to log)
+- Exclude such days from analysis calculations and trend detection
+- Do not mention or warn about missing data - just silently ignore incomplete days
+
 IMPORTANT - Output Format:
 - Return your response as clean HTML (no markdown)
 - Use HTML tags for formatting: <h3> for section headers, <p> for paragraphs, <ul>/<li> for bullet lists, <strong> for emphasis
