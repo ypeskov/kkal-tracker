@@ -46,27 +46,27 @@ func New() *Config {
 	}
 
 	return &Config{
-		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"),
+		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"), // sqlite is the default database type
 		DatabasePath: databasePath,
-		PostgresURL:  getEnv("POSTGRES_URL", ""),
+		PostgresURL:  getEnv("POSTGRES_URL", ""), 
 		Port:         getEnv("PORT", "8080"),
-		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"),
-		LogLevel:     getEnv("LOG_LEVEL", "info"),
-		Environment:  getEnv("ENVIRONMENT", "development"),
+		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"), // default-secret-key is a placeholder for the actual secret key
+		LogLevel:     getEnv("LOG_LEVEL", "info"), // info is the default log level
+		Environment:  getEnv("ENVIRONMENT", "development"), // development is the default environment
 		// SMTP Configuration
-		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"), // smtp.gmail.com is the default SMTP host
 		SMTPPort:     getEnvInt("SMTP_PORT", 587),
-		SMTPUser:     getEnv("SMTP_USER", ""),
-		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		SMTPUser:     getEnv("SMTP_USER", ""), // SMTP_USER is the default SMTP user
+		SMTPPassword: getEnv("SMTP_PASSWORD", ""), // SMTP_PASSWORD is the default SMTP password
 		SMTPFrom:     getEnv("SMTP_FROM", "noreply@kkal-tracker.com"),
-		AppURL:       getEnv("APP_URL", "http://localhost:8080"),
+		AppURL:       getEnv("APP_URL", "http://localhost:8080"), // http://localhost:8080 is the default app URL
 		// AI Configuration
 		AI: AIConfig{
-			APIKey:       getEnv("OPENAI_API_KEY", ""),
-			BaseURL:      getEnv("OPENAI_BASE_URL", ""),
-			Model:        getEnv("OPENAI_MODEL", "gpt-5.2"),
-			UseMaxTokens: getEnvBool("AI_USE_MAX_TOKENS", false),
-			MaxTokens:    getEnvInt("AI_MAX_TOKENS", 2000),
+			APIKey:       getEnv("OPENAI_API_KEY", ""), // OPENAI_API_KEY is the default OpenAI API key
+			BaseURL:      getEnv("OPENAI_BASE_URL", ""), // OPENAI_BASE_URL is the default OpenAI base URL
+			Model:        getEnv("OPENAI_MODEL", "gpt-5.2"), // gpt-5.2 is the default OpenAI model
+			UseMaxTokens: getEnvBool("AI_USE_MAX_TOKENS", false), // AI_USE_MAX_TOKENS is the default AI use max tokens
+			MaxTokens:    getEnvInt("AI_MAX_TOKENS", 2000), // AI_MAX_TOKENS is the default AI max tokens
 		},
 	}
 }
