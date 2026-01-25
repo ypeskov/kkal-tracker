@@ -87,11 +87,11 @@ func (p *OpenAIProvider) Analyze(ctx context.Context, model string, req Analysis
 			},
 			{
 				Role:    openai.ChatMessageRoleUser,
-				Content: userPrompt,
-			},
+			Content: userPrompt,
 		},
-		Temperature: 0.7,
-	}
+	},
+	Temperature: 0.4, // Lower temperature for more consistent and reliable health advice
+}
 
 	// Use MaxCompletionTokens for newer models (GPT-4.5+, GPT-5.x)
 	if p.useMaxTokens && p.maxTokens > 0 {

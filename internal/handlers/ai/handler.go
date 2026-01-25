@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -118,8 +119,11 @@ func (h *Handler) Analyze(c echo.Context) error {
 		PeriodDays:    req.PeriodDays,
 	}
 
-	// Perform analysis
-	result, err := h.aiService.Analyze(c.Request().Context(), analysisReq)
+	// Perform analysis with timeout to prevent hanging requests
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 30*time.Second)
+	defer cancel()
+
+	result, err := h.aiService.Analyze(ctx, analysisReq)
 	if err != nil {
 		if errors.Is(err, aiservice.ErrProviderNotAvailable) {
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "AI provider is not configured")

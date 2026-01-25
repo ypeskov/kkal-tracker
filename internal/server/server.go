@@ -129,7 +129,9 @@ func (s *Server) Start() *http.Server {
 	languagesGroup := apiGroup.Group("/languages")
 	languagesHandler.RegisterRoutes(languagesGroup)
 
-	authGroup := apiGroup.Group("/auth")
+	// Auth routes with rate limiting (5 requests per second to prevent brute force)
+	authRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(5))
+	authGroup := apiGroup.Group("/auth", authRateLimiter)
 	authHandler.RegisterRoutes(authGroup, authMiddleware)
 
 	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
@@ -150,8 +152,10 @@ func (s *Server) Start() *http.Server {
 	reportsGroup := apiGroup.Group("/reports", authMiddleware.RequireAuth)
 	reportsHandler.RegisterRoutes(reportsGroup)
 
-	// AI routes require authentication
-	aiGroup := apiGroup.Group("/ai", authMiddleware.RequireAuth)
+	// AI routes require authentication and strict rate limiting
+	// Rate: 2 requests per minute (1 request every 30 seconds) to control AI costs
+	aiRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(2.0/60.0))
+	aiGroup := apiGroup.Group("/ai", authMiddleware.RequireAuth, aiRateLimiter)
 	aiHandler.RegisterRoutes(aiGroup)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
