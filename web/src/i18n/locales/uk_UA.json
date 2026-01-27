@@ -126,6 +126,7 @@
     "title": "Профіль",
     "information": "Інформація",
     "physicalParameters": "Фізичні параметри",
+    "healthMetrics": "Показники здоров'я",
     "firstName": "Ім'я",
     "lastName": "Прізвище",
     "email": "Електронна пошта",
@@ -133,6 +134,10 @@
     "age": "Вік",
     "weight": "Вага (кг)",
     "height": "Зріст (см)",
+    "gender": "Стать",
+    "genderMale": "Чоловіча",
+    "genderFemale": "Жіноча",
+    "genderSelect": "Виберіть стать",
     "save": "Зберегти",
     "saving": "Збереження...",
     "saveSuccess": "Профіль успішно оновлено",
@@ -142,7 +147,33 @@
     "discardChanges": "Відхилити",
     "saveChanges": "Зберегти зміни",
     "weightTooltip": "Введіть вагу в Звіти > Історія ваги",
-    "noWeightData": "Дані про вагу відсутні"
+    "noWeightData": "Дані про вагу відсутні",
+    "bmi": "ІМТ (Індекс маси тіла)",
+    "bmr": "ОШ (Основний обмін речовин)",
+    "tdee": "ЗВВД (Загальні витрати енергії за день)",
+    "bmiValue": "{{value}}",
+    "bmrValue": "{{value}} ккал/день",
+    "tdeeValue": "{{value}} ккал/день",
+    "incompleteData": "Будь ласка, заповніть всі фізичні параметри (вік, зріст, вага, стать) для розрахунку показників здоров'я",
+    "bmiRequires": "Необхідно для розрахунку",
+    "bmrRequires": "Необхідно для розрахунку",
+    "tdeeRequires": "Необхідно для розрахунку",
+    "bmiCategory": {
+      "severely_underweight": "Сильна недостатня вага",
+      "underweight": "Недостатня вага",
+      "normal": "Нормальна вага",
+      "overweight": "Надлишкова вага",
+      "obese_class_1": "Ожиріння (I ступінь)",
+      "obese_class_2": "Ожиріння (II ступінь)",
+      "obese_class_3": "Ожиріння (III ступінь)"
+    },
+    "healthStatus": {
+      "incomplete_data": "Неповні дані для оцінки здоров'я",
+      "below_healthy_weight": "Нижче здорового діапазону ваги",
+      "healthy_weight": "Здоровий діапазон ваги",
+      "above_healthy_weight": "Вище здорового діапазону ваги",
+      "significantly_above_healthy_weight": "Значно вище здорового діапазону ваги"
+    }
   },
   "nav": {
     "dashboard": "Дашборд",
@@ -192,7 +223,8 @@
     "save": "Зберегти",
     "actions": "Дії",
     "clear": "Очистити",
-    "refresh": "Оновити"
+    "refresh": "Оновити",
+    "kcal": "ккал"
   },
   "language": {
     "select": "Мова",

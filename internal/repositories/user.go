@@ -99,6 +99,7 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 
 	user := &models.User{}
 	var language sql.NullString
+	var gender sql.NullString
 	err = r.db.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Email,
@@ -108,12 +109,16 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
+		&gender,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
 	if err == nil && language.Valid {
 		user.Language = &language.String
+	}
+	if err == nil && gender.Valid {
+		user.Gender = &gender.String
 	}
 
 	if err != nil {
@@ -133,6 +138,7 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 
 	user := &models.User{}
 	var language sql.NullString
+	var gender sql.NullString
 	err = r.db.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Email,
@@ -142,12 +148,16 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 		&user.LastName,
 		&user.Age,
 		&user.Height,
+		&gender,
 		&language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
 	if err == nil && language.Valid {
 		user.Language = &language.String
+	}
+	if err == nil && gender.Valid {
+		user.Gender = &gender.String
 	}
 
 	if err != nil {
@@ -158,7 +168,7 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 }
 
 // UpdateProfile updates user profile information
-func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height *float64, _ *float64, language string) error {
+func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height *float64, gender *string, _ *float64, language string) error {
 	r.logger.Debug("Updating user profile", slog.Int("user_id", userID))
 
 	query, err := r.sqlLoader.Load(QueryUpdateUserProfile)
@@ -172,6 +182,7 @@ func (r *UserRepositoryImpl) UpdateProfile(userID int, firstName, lastName *stri
 		email,
 		age,
 		height,
+		gender,
 		language,
 		userID,
 	)

@@ -16,6 +16,7 @@ type User struct {
 	LastName     *string   `json:"last_name,omitempty"`
 	Age          *int      `json:"age,omitempty"`
 	Height       *float64  `json:"height,omitempty"` // Height in cm
+	Gender       *string   `json:"gender,omitempty"` // Gender: "male" or "female"
 	Language     *string   `json:"language,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`

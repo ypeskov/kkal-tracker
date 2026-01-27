@@ -12,7 +12,7 @@ type UserRepository interface {
 	CreateWithLanguage(email, passwordHash, languageCode string, isActive bool) (*models.User, error)
 	GetByID(id int) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
-	UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height, weight *float64, language string) error
+	UpdateProfile(userID int, firstName, lastName *string, email string, age *int, height *float64, gender *string, weight *float64, language string) error
 	AddWeightEntry(userID int, weight float64) error
 	ActivateUser(userID int) error
 	Delete(userID int) error

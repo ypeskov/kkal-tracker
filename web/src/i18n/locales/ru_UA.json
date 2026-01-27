@@ -126,6 +126,7 @@
     "title": "Профиль",
     "information": "Информация",
     "physicalParameters": "Физические параметры",
+    "healthMetrics": "Показатели здоровья",
     "firstName": "Имя",
     "lastName": "Фамилия",
     "email": "Электронная почта",
@@ -133,6 +134,10 @@
     "age": "Возраст",
     "weight": "Вес (кг)",
     "height": "Рост (см)",
+    "gender": "Пол",
+    "genderMale": "Мужской",
+    "genderFemale": "Женский",
+    "genderSelect": "Выберите пол",
     "save": "Сохранить",
     "saving": "Сохранение...",
     "saveSuccess": "Профиль успешно обновлен",
@@ -142,7 +147,33 @@
     "discardChanges": "Отменить",
     "saveChanges": "Сохранить изменения",
     "weightTooltip": "Введите вес в Отчёты > История веса",
-    "noWeightData": "Данные о весе отсутствуют"
+    "noWeightData": "Данные о весе отсутствуют",
+    "bmi": "ИМТ (Индекс массы тела)",
+    "bmr": "ОО (Основной обмен)",
+    "tdee": "СЗРЭ (Суточный расход энергии)",
+    "bmiValue": "{{value}}",
+    "bmrValue": "{{value}} ккал/день",
+    "tdeeValue": "{{value}} ккал/день",
+    "incompleteData": "Пожалуйста, заполните все физические параметры (возраст, рост, вес, пол) для расчёта показателей здоровья",
+    "bmiRequires": "Необходимо для расчёта",
+    "bmrRequires": "Необходимо для расчёта",
+    "tdeeRequires": "Необходимо для расчёта",
+    "bmiCategory": {
+      "severely_underweight": "Сильный недостаток веса",
+      "underweight": "Недостаток веса",
+      "normal": "Нормальный вес",
+      "overweight": "Избыточный вес",
+      "obese_class_1": "Ожирение (I степень)",
+      "obese_class_2": "Ожирение (II степень)",
+      "obese_class_3": "Ожирение (III степень)"
+    },
+    "healthStatus": {
+      "incomplete_data": "Неполные данные для оценки здоровья",
+      "below_healthy_weight": "Ниже здорового диапазона веса",
+      "healthy_weight": "Здоровый диапазон веса",
+      "above_healthy_weight": "Выше здорового диапазона веса",
+      "significantly_above_healthy_weight": "Значительно выше здорового диапазона веса"
+    }
   },
   "nav": {
     "dashboard": "Дашборд",
@@ -192,7 +223,8 @@
     "save": "Сохранить",
     "actions": "Действия",
     "clear": "Очистить",
-    "refresh": "Обновить"
+    "refresh": "Обновить",
+    "kcal": "ккал"
   },
   "language": {
     "select": "Язык",

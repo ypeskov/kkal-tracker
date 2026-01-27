@@ -6,6 +6,7 @@ export interface ProfileData {
     age?: number;
     height?: number;
     weight?: number;
+    gender?: string;
     language: string;
     created_at?: string;
     updated_at?: string;
@@ -17,6 +18,7 @@ export interface ProfileUpdateRequest {
     email: string;
     age?: number;
     height?: number;
+    gender?: string;
     language: string;
 }
 

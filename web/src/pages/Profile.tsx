@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { profileService, ProfileUpdateRequest } from '@/api/profile';
 import { weightService } from '@/api/weight';
+import { metricsService } from '@/api/metrics';
 import LanguageSelector from '@/components/LanguageSelector';
 import ProfileFormField from '@/components/ProfileFormField';
 import ProfileFormSection from '@/components/ProfileFormSection';
@@ -25,6 +26,7 @@ export default function Profile() {
     email: '',
     age: undefined,
     height: undefined,
+    gender: undefined,
     language: 'en_US',
   });
   const [originalData, setOriginalData] = useState<ProfileUpdateRequest | null>(null);
@@ -44,6 +46,12 @@ export default function Profile() {
   const { data: weightHistory } = useQuery({
     queryKey: ['latestWeight'],
     queryFn: () => weightService.getWeightHistory(),
+  });
+
+  // Fetch health metrics
+  const { data: healthMetrics } = useQuery({
+    queryKey: ['healthMetrics'],
+    queryFn: metricsService.getHealthMetrics,
   });
 
 
@@ -67,10 +75,14 @@ export default function Profile() {
         email: data.email,
         age: data.age || undefined,
         height: data.height || undefined,
+        gender: data.gender || undefined,
         language: data.language,
       };
       setFormData(updatedFormData);
       setOriginalData(updatedFormData);
+
+      // Invalidate health metrics to recalculate after profile update
+      queryClient.invalidateQueries({ queryKey: ['healthMetrics'] });
 
       // Apply language change immediately to i18n
       const i18nLangCode = convertLanguageCode(data.language);
@@ -96,6 +108,7 @@ export default function Profile() {
         email: profile.email,
         age: profile.age || undefined,
         height: profile.height || undefined,
+        gender: profile.gender || undefined,
         language: profile.language,
       };
       setFormData(profileData);
@@ -122,6 +135,14 @@ export default function Profile() {
     setFormData(prev => ({
       ...prev,
       language,
+    }));
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value || undefined,
     }));
   };
 
@@ -231,7 +252,7 @@ export default function Profile() {
 
         {/* Physical Parameters Group */}
         <ProfileFormSection title={t('profile.physicalParameters')}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <ProfileFormField
               label={t('profile.age')}
               id="age"
@@ -258,6 +279,94 @@ export default function Profile() {
               step={0.1}
               disabled={profileLoading}
             />
+
+            <div>
+              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('profile.gender')}
+              </label>
+              <select
+                id="gender"
+                name="gender"
+                value={formData.gender || ''}
+                onChange={handleSelectChange}
+                disabled={profileLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+              >
+                <option value="">{t('profile.genderSelect')}</option>
+                <option value="male">{t('profile.genderMale')}</option>
+                <option value="female">{t('profile.genderFemale')}</option>
+              </select>
+            </div>
+          </div>
+        </ProfileFormSection>
+
+        {/* Health Metrics Group */}
+        <ProfileFormSection title={t('profile.healthMetrics')}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* BMI Card */}
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">{t('profile.bmi')}</div>
+              {healthMetrics?.bmi ? (
+                <>
+                  <div className="text-2xl font-bold text-blue-600">{healthMetrics.bmi.toFixed(1)}</div>
+                  {healthMetrics.bmi_category && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {t(`profile.bmiCategory.${healthMetrics.bmi_category}`)}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-sm text-gray-500 mt-2">
+                  {t('profile.bmiRequires')}:
+                  <ul className="mt-1 ml-4 list-disc text-xs">
+                    {!profile?.height && <li>{t('profile.height')}</li>}
+                    {!profile?.weight && <li>{t('profile.weight')}</li>}
+                  </ul>
+                </div>
+              )}
+            </div>
+            
+            {/* BMR Card */}
+            <div className="p-4 bg-green-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">{t('profile.bmr')}</div>
+              {healthMetrics?.bmr ? (
+                <>
+                  <div className="text-2xl font-bold text-green-600">{Math.round(healthMetrics.bmr)}</div>
+                  <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day</div>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500 mt-2">
+                  {t('profile.bmrRequires')}:
+                  <ul className="mt-1 ml-4 list-disc text-xs">
+                    {!profile?.age && <li>{t('profile.age')}</li>}
+                    {!profile?.height && <li>{t('profile.height')}</li>}
+                    {!profile?.weight && <li>{t('profile.weight')}</li>}
+                    {!profile?.gender && <li>{t('profile.gender')}</li>}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* TDEE Card */}
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">{t('profile.tdee')}</div>
+              {healthMetrics?.tdee ? (
+                <>
+                  <div className="text-2xl font-bold text-purple-600">{Math.round(healthMetrics.tdee)}</div>
+                  <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day (sedentary)</div>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500 mt-2">
+                  {t('profile.tdeeRequires')}:
+                  <ul className="mt-1 ml-4 list-disc text-xs">
+                    {!profile?.age && <li>{t('profile.age')}</li>}
+                    {!profile?.height && <li>{t('profile.height')}</li>}
+                    {!profile?.weight && <li>{t('profile.weight')}</li>}
+                    {!profile?.gender && <li>{t('profile.gender')}</li>}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         </ProfileFormSection>
 

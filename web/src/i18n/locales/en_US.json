@@ -126,6 +126,7 @@
     "title": "Profile",
     "information": "Information",
     "physicalParameters": "Physical Parameters",
+    "healthMetrics": "Health Metrics",
     "firstName": "First Name",
     "lastName": "Last Name",
     "email": "Email",
@@ -133,6 +134,10 @@
     "age": "Age",
     "weight": "Weight (kg)",
     "height": "Height (cm)",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderSelect": "Select gender",
     "save": "Save",
     "saving": "Saving...",
     "saveSuccess": "Profile updated successfully",
@@ -142,7 +147,33 @@
     "discardChanges": "Discard",
     "saveChanges": "Save Changes",
     "weightTooltip": "Enter weight in Reports > Weight History",
-    "noWeightData": "No weight data"
+    "noWeightData": "No weight data",
+    "bmi": "BMI (Body Mass Index)",
+    "bmr": "BMR (Basal Metabolic Rate)",
+    "tdee": "TDEE (Total Daily Energy Expenditure)",
+    "bmiValue": "{{value}}",
+    "bmrValue": "{{value}} kcal/day",
+    "tdeeValue": "{{value}} kcal/day",
+    "incompleteData": "Please fill in all physical parameters (age, height, weight, gender) to calculate health metrics",
+    "bmiRequires": "Required for calculation",
+    "bmrRequires": "Required for calculation",
+    "tdeeRequires": "Required for calculation",
+    "bmiCategory": {
+      "severely_underweight": "Severely Underweight",
+      "underweight": "Underweight",
+      "normal": "Normal Weight",
+      "overweight": "Overweight",
+      "obese_class_1": "Obese (Class I)",
+      "obese_class_2": "Obese (Class II)",
+      "obese_class_3": "Obese (Class III)"
+    },
+    "healthStatus": {
+      "incomplete_data": "Incomplete data for health assessment",
+      "below_healthy_weight": "Below healthy weight range",
+      "healthy_weight": "Healthy weight range",
+      "above_healthy_weight": "Above healthy weight range",
+      "significantly_above_healthy_weight": "Significantly above healthy weight range"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -189,13 +220,11 @@
     "delete": "Delete",
     "edit": "Edit",
     "actions": "Actions",
-    "update": "Update",
     "updating": "Updating...",
-    "delete": "Delete",
     "deleting": "Deleting...",
-    "cancel": "Cancel",
     "clear": "Clear",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "kcal": "kcal"
   },
   "language": {
     "select": "Language",

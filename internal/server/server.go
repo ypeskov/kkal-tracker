@@ -14,6 +14,7 @@ import (
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
 	languageshandler "ypeskov/kkal-tracker/internal/handlers/languages"
+	metricshandler "ypeskov/kkal-tracker/internal/handlers/metrics"
 	"ypeskov/kkal-tracker/internal/handlers/profile"
 	reportshandler "ypeskov/kkal-tracker/internal/handlers/reports"
 	"ypeskov/kkal-tracker/internal/handlers/static"
@@ -25,6 +26,7 @@ import (
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	emailservice "ypeskov/kkal-tracker/internal/services/email"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
+	metricsservice "ypeskov/kkal-tracker/internal/services/metrics"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
@@ -111,6 +113,7 @@ func (s *Server) Start() *http.Server {
 	ingredientService := ingredientservice.New(s.ingredientRepo, s.logger)
 	profileService := profileservice.New(s.db, s.userRepo, s.weightRepo, s.logger)
 	weightService := weightservice.New(s.weightRepo, s.logger)
+	metricsService := metricsservice.New(s.userRepo, s.weightRepo, s.logger)
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
 	aiSvc := aiservice.New(s.config, s.logger)
 
@@ -119,6 +122,7 @@ func (s *Server) Start() *http.Server {
 	ingredientHandler := ingredients.NewHandler(ingredientService, s.logger)
 	profileHandler := profile.NewProfileHandler(profileService, s.logger)
 	weightHandler := weighthandler.NewHandler(weightService, s.logger)
+	metricsHandler := metricshandler.NewMetricsHandler(metricsService, s.logger)
 	reportsHandler := reportshandler.New(reportsService, s.logger)
 	aiHandler := aihandler.New(aiSvc, calorieService, weightService, s.userRepo, s.logger)
 
@@ -147,6 +151,10 @@ func (s *Server) Start() *http.Server {
 	// Weight history routes require authentication
 	weightGroup := apiGroup.Group("/weight", authMiddleware.RequireAuth)
 	weightHandler.RegisterRoutes(weightGroup)
+
+	// Health metrics routes require authentication
+	metricsGroup := apiGroup.Group("", authMiddleware.RequireAuth)
+	metricsHandler.RegisterRoutes(metricsGroup)
 
 	// Reports routes require authentication
 	reportsGroup := apiGroup.Group("/reports", authMiddleware.RequireAuth)
