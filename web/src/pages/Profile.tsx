@@ -305,7 +305,8 @@ export default function Profile() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* BMI Card */}
             <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">{t('profile.bmi')}</div>
+              <div className="text-sm font-medium text-gray-700 mb-0.5">{t('profile.bmi')}</div>
+              <div className="text-xs text-gray-500 mb-2">{t('profile.bmiDescription')}</div>
               {healthMetrics?.bmi ? (
                 <>
                   <div className="text-2xl font-bold text-blue-600">{healthMetrics.bmi.toFixed(1)}</div>
@@ -328,7 +329,8 @@ export default function Profile() {
             
             {/* BMR Card */}
             <div className="p-4 bg-green-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">{t('profile.bmr')}</div>
+              <div className="text-sm font-medium text-gray-700 mb-0.5">{t('profile.bmr')}</div>
+              <div className="text-xs text-gray-500 mb-2">{t('profile.bmrDescription')}</div>
               {healthMetrics?.bmr ? (
                 <>
                   <div className="text-2xl font-bold text-green-600">{Math.round(healthMetrics.bmr)}</div>
@@ -349,7 +351,8 @@ export default function Profile() {
 
             {/* TDEE Card */}
             <div className="p-4 bg-purple-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">{t('profile.tdee')}</div>
+              <div className="text-sm font-medium text-gray-700 mb-0.5">{t('profile.tdee')}</div>
+              <div className="text-xs text-gray-500 mb-2">{t('profile.tdeeDescription')}</div>
               {healthMetrics?.tdee ? (
                 <>
                   <div className="text-2xl font-bold text-purple-600">{Math.round(healthMetrics.tdee)}</div>
