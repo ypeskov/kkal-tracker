@@ -27,16 +27,24 @@ func (s *Service) GetWeightHistory(userID int) ([]*models.WeightHistory, error) 
 }
 
 // GetWeightHistoryByDateRange retrieves weight entries for a user within a date range
+// If no dates are provided, returns all weight history
 func (s *Service) GetWeightHistoryByDateRange(userID int, dateFrom, dateTo string) ([]*models.WeightHistory, error) {
 	s.logger.Debug("GetWeightHistoryByDateRange called",
 		"user_id", userID,
 		"date_from", dateFrom,
 		"date_to", dateTo)
 
-	// If dates are empty, default to last 30 days
-	if dateFrom == "" || dateTo == "" {
+	// If dates are empty, return all weight history
+	if dateFrom == "" && dateTo == "" {
+		return s.weightRepo.GetByUserID(userID)
+	}
+
+	// If only one date is provided, default the other
+	if dateFrom == "" {
+		dateFrom = "1970-01-01"
+	}
+	if dateTo == "" {
 		dateTo = time.Now().Format("2006-01-02")
-		dateFrom = time.Now().AddDate(0, 0, -30).Format("2006-01-02")
 	}
 
 	return s.weightRepo.GetByUserIDAndDateRange(userID, dateFrom, dateTo)
