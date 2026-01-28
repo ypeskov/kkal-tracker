@@ -39,7 +39,7 @@ export default function LanguageSwitcher() {
         email: currentProfile.email,
         age: currentProfile.age || undefined,
         height: currentProfile.height || undefined,
-        weight: currentProfile.weight || undefined,
+        gender: currentProfile.gender || undefined,
         language: convertToBackendLanguageCode(language),
       }
 
