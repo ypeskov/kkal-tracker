@@ -29,17 +29,4 @@ export const metricsService = {
 
     return response.json();
   },
-
-  getBMIHistory: async (): Promise<any[]> => {
-    const response = await fetch(`${API_BASE_URL}/metrics/bmi-history`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch BMI history');
-    }
-
-    return response.json();
-  },
 };

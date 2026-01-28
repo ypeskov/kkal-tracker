@@ -153,35 +153,3 @@ func (s *Service) generateHealthStatus(metrics *HealthMetrics) string {
 		return "significantly_above_healthy_weight"
 	}
 }
-
-// GetBMIHistory calculates BMI history based on weight history
-func (s *Service) GetBMIHistory(userID int) ([]map[string]interface{}, error) {
-	s.logger.Debug("GetBMIHistory called", "user_id", userID)
-
-	user, err := s.userRepo.GetByID(userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	if user.Height == nil {
-		return nil, fmt.Errorf("user height not set")
-	}
-
-	weights, err := s.weightRepo.GetByUserID(userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get weight history: %w", err)
-	}
-
-	history := make([]map[string]interface{}, 0, len(weights))
-	for _, weight := range weights {
-		bmi := s.calculateBMI(weight.Weight, *user.Height)
-		history = append(history, map[string]interface{}{
-			"date":         weight.RecordedAt,
-			"weight":       weight.Weight,
-			"bmi":          bmi,
-			"bmi_category": s.getBMICategory(bmi),
-		})
-	}
-
-	return history, nil
-}
