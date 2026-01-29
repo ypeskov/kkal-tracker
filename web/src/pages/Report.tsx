@@ -274,7 +274,13 @@ export default function Report() {
                   calorieData={aggregatedData.calorieData}
                   showWeight={showWeight}
                   showCalories={showCalories}
-                  targetWeight={goalProgress?.target_weight}
+                  goalData={goalProgress ? {
+                    targetWeight: goalProgress.target_weight,
+                    targetDate: goalProgress.target_date,
+                    goalSetAt: goalProgress.goal_set_at,
+                    initialWeightAtGoal: goalProgress.initial_weight_at_goal,
+                    currentWeight: goalProgress.current_weight,
+                  } : undefined}
                 />
               )}
             </div>
