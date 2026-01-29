@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { metricsService } from '@/api/metrics';
 import { profileService, ProfileUpdateRequest } from '@/api/profile';
 import { weightService } from '@/api/weight';
-import { metricsService } from '@/api/metrics';
 import LanguageSelector from '@/components/LanguageSelector';
+import NotificationPopup from '@/components/NotificationPopup';
 import ProfileFormField from '@/components/ProfileFormField';
 import ProfileFormSection from '@/components/ProfileFormSection';
-import WeightDisplay from '@/components/WeightDisplay';
-import NotificationPopup from '@/components/NotificationPopup';
 import UnsavedChangesDialog from '@/components/UnsavedChangesDialog';
+import WeightDisplay from '@/components/WeightDisplay';
 import i18n from '@/i18n';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Helper function to convert backend language codes to i18n format
 const convertLanguageCode = (backendCode: string): string => {
@@ -28,6 +28,7 @@ export default function Profile() {
     height: undefined,
     gender: undefined,
     language: 'en_US',
+    activity_level: 'sedentary',
   });
   const [originalData, setOriginalData] = useState<ProfileUpdateRequest | null>(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -77,6 +78,7 @@ export default function Profile() {
         height: data.height || undefined,
         gender: data.gender || undefined,
         language: data.language,
+        activity_level: data.activity_level || 'sedentary',
       };
       setFormData(updatedFormData);
       setOriginalData(updatedFormData);
@@ -110,6 +112,7 @@ export default function Profile() {
         height: profile.height || undefined,
         gender: profile.gender || undefined,
         language: profile.language,
+        activity_level: profile.activity_level || 'sedentary',
       };
       setFormData(profileData);
       setOriginalData(profileData);
@@ -252,7 +255,7 @@ export default function Profile() {
 
         {/* Physical Parameters Group */}
         <ProfileFormSection title={t('profile.physicalParameters')}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <ProfileFormField
               label={t('profile.age')}
               id="age"
@@ -297,6 +300,26 @@ export default function Profile() {
                 <option value="female">{t('profile.genderFemale')}</option>
               </select>
             </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="activity_level" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('profile.activityLevel')}
+              </label>
+              <select
+                id="activity_level"
+                name="activity_level"
+                value={formData.activity_level || 'sedentary'}
+                onChange={handleSelectChange}
+                disabled={profileLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+              >
+                <option value="sedentary">{t('profile.activityLevels.sedentary')}</option>
+                <option value="lightly_active">{t('profile.activityLevels.lightly_active')}</option>
+                <option value="moderate">{t('profile.activityLevels.moderate')}</option>
+                <option value="very_active">{t('profile.activityLevels.very_active')}</option>
+                <option value="extra_active">{t('profile.activityLevels.extra_active')}</option>
+              </select>
+            </div>
           </div>
         </ProfileFormSection>
 
@@ -326,7 +349,7 @@ export default function Profile() {
                 </div>
               )}
             </div>
-            
+
             {/* BMR Card */}
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="text-sm font-medium text-gray-700 mb-0.5">{t('profile.bmr')}</div>
@@ -356,7 +379,9 @@ export default function Profile() {
               {healthMetrics?.tdee ? (
                 <>
                   <div className="text-2xl font-bold text-purple-600">{Math.round(healthMetrics.tdee)}</div>
-                  <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day (sedentary)</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {t('common.kcal')}/day ({healthMetrics.activity_level ? t(`profile.activityLevels.${healthMetrics.activity_level}`) : t('profile.activityLevels.sedentary')})
+                  </div>
                 </>
               ) : (
                 <div className="text-sm text-gray-500 mt-2">

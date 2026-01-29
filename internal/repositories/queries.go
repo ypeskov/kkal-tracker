@@ -48,7 +48,6 @@ const (
 	QueryGetActivationTokenByToken     = "getActivationTokenByToken"
 	QueryDeleteActivationToken         = "deleteActivationToken"
 	QueryDeleteExpiredActivationTokens = "deleteExpiredActivationTokens"
-
 )
 
 // buildKey creates a query key by combining query name and dialect
@@ -73,24 +72,24 @@ func getQueries() map[string]string {
 		RETURNING id;
 	`,
 
-	buildKey(QueryGetUserByEmail, DialectSQLite): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, created_at, updated_at
+		buildKey(QueryGetUserByEmail, DialectSQLite): `
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`,
-	buildKey(QueryGetUserByEmail, DialectPostgres): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, created_at, updated_at
+		buildKey(QueryGetUserByEmail, DialectPostgres): `
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`,
 
-	buildKey(QueryGetUserByID, DialectSQLite): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, created_at, updated_at
+		buildKey(QueryGetUserByID, DialectSQLite): `
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`,
-	buildKey(QueryGetUserByID, DialectPostgres): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, created_at, updated_at
+		buildKey(QueryGetUserByID, DialectPostgres): `
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`,
@@ -117,16 +116,16 @@ func getQueries() map[string]string {
 		ORDER BY gin.name, gi.id
 	`,
 
-	buildKey(QueryUpdateUserProfile, DialectSQLite): `
+		buildKey(QueryUpdateUserProfile, DialectSQLite): `
 		UPDATE users
-		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, gender = ?, language = ?, updated_at = datetime('now')
+		SET first_name = ?, last_name = ?, email = ?, age = ?, height = ?, gender = ?, language = ?, activity_level = ?, updated_at = datetime('now')
 		WHERE id = ?
 	`,
 
-	buildKey(QueryUpdateUserProfile, DialectPostgres): `UPDATE users
+		buildKey(QueryUpdateUserProfile, DialectPostgres): `UPDATE users
 		SET first_name = $1, last_name = $2, email = $3, age = $4, height = $5,
-		    gender = $6, language = $7, updated_at = NOW()
-		WHERE id = $8
+		    gender = $6, language = $7, activity_level = $8, updated_at = NOW()
+		WHERE id = $9
 	`,
 
 		buildKey(QueryAddWeightEntry, DialectSQLite): `

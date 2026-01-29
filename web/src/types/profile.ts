@@ -8,6 +8,7 @@ export interface ProfileData {
     weight?: number;
     gender?: string;
     language: string;
+    activity_level?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -20,5 +21,6 @@ export interface ProfileUpdateRequest {
     height?: number;
     gender?: string;
     language: string;
+    activity_level?: string;
 }
 

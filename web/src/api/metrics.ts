@@ -5,6 +5,7 @@ export interface HealthMetrics {
   bmi_category?: string;
   bmr?: number;
   tdee?: number;
+  activity_level?: string;
   health_status?: string;
 }
 

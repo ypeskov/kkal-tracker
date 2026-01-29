@@ -59,9 +59,18 @@ func (s *Service) GetHealthMetrics(userID int) (*HealthMetrics, error) {
 		bmr := s.calculateBMR(*currentWeight, *user.Height, *user.Age, *user.Gender)
 		metrics.BMR = &bmr
 
-		// Calculate TDEE with sedentary activity level as default
-		tdee := bmr * ActivityMultipliers[ActivitySedentary]
+		// Calculate TDEE using user's activity level (default to sedentary)
+		activityLevel := ActivitySedentary
+		if user.ActivityLevel != nil {
+			activityLevel = ActivityLevel(*user.ActivityLevel)
+		}
+		multiplier, ok := ActivityMultipliers[activityLevel]
+		if !ok {
+			multiplier = ActivityMultipliers[ActivitySedentary]
+		}
+		tdee := bmr * multiplier
 		metrics.TDEE = &tdee
+		metrics.ActivityLevel = string(activityLevel)
 	}
 
 	// Generate health status message

@@ -51,14 +51,15 @@ func (s *Service) GetProfile(userID int) (*ProfileResponse, error) {
 
 	// Convert domain model to DTO
 	response := &ProfileResponse{
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		Age:       user.Age,
-		Height:    user.Height,
-		Weight:    weight,
-		Gender:    user.Gender,
-		Language:  language,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Email:         user.Email,
+		Age:           user.Age,
+		Height:        user.Height,
+		Weight:        weight,
+		Gender:        user.Gender,
+		Language:      language,
+		ActivityLevel: user.ActivityLevel,
 	}
 
 	s.logger.Debug("GetProfile completed successfully", "user_id", userID, "email", response.Email)
@@ -78,7 +79,7 @@ func (s *Service) UpdateProfile(userID int, req *ProfileUpdateRequest) error {
 	defer tx.Rollback()
 
 	// Update user profile (without weight - now managed only in weight history)
-	if err := s.userRepo.UpdateProfile(userID, req.FirstName, req.LastName, req.Email, req.Age, req.Height, req.Gender, nil, req.Language); err != nil {
+	if err := s.userRepo.UpdateProfile(userID, req.FirstName, req.LastName, req.Email, req.Age, req.Height, req.Gender, nil, req.Language, req.ActivityLevel); err != nil {
 		s.logger.Error("Failed to update profile", "user_id", userID, "error", err)
 		return err
 	}

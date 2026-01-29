@@ -176,6 +176,15 @@
       "healthy_weight": "Healthy weight range",
       "above_healthy_weight": "Above healthy weight range",
       "significantly_above_healthy_weight": "Significantly above healthy weight range"
+    },
+    "activityLevel": "Activity Level",
+    "activityLevelSelect": "Select activity level",
+    "activityLevels": {
+      "sedentary": "Sedentary (little/no exercise)",
+      "lightly_active": "Lightly Active (1-3 days/week)",
+      "moderate": "Moderately Active (3-5 days/week)",
+      "very_active": "Very Active (6-7 days/week)",
+      "extra_active": "Extra Active (physical job)"
     }
   },
   "nav": {

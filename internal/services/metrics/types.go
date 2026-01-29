@@ -2,11 +2,12 @@ package metrics
 
 // HealthMetrics represents calculated health metrics for a user
 type HealthMetrics struct {
-	BMI          *float64 `json:"bmi,omitempty"`           // Body Mass Index
-	BMICategory  string   `json:"bmi_category,omitempty"`  // BMI category (underweight, normal, overweight, obese)
-	BMR          *float64 `json:"bmr,omitempty"`           // Basal Metabolic Rate (calories/day)
-	TDEE         *float64 `json:"tdee,omitempty"`          // Total Daily Energy Expenditure (optional)
-	HealthStatus string   `json:"health_status,omitempty"` // Overall health status message
+	BMI           *float64 `json:"bmi,omitempty"`            // Body Mass Index
+	BMICategory   string   `json:"bmi_category,omitempty"`   // BMI category (underweight, normal, overweight, obese)
+	BMR           *float64 `json:"bmr,omitempty"`            // Basal Metabolic Rate (calories/day)
+	TDEE          *float64 `json:"tdee,omitempty"`           // Total Daily Energy Expenditure (optional)
+	ActivityLevel string   `json:"activity_level,omitempty"` // Activity level used for TDEE calculation
+	HealthStatus  string   `json:"health_status,omitempty"`  // Overall health status message
 }
 
 // ActivityLevel represents different activity levels for TDEE calculation

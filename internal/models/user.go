@@ -8,18 +8,19 @@ import (
 
 // User is a pure data structure representing a user
 type User struct {
-	ID           int       `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	IsActive     bool      `json:"is_active"`
-	FirstName    *string   `json:"first_name,omitempty"`
-	LastName     *string   `json:"last_name,omitempty"`
-	Age          *int      `json:"age,omitempty"`
-	Height       *float64  `json:"height,omitempty"` // Height in cm
-	Gender       *string   `json:"gender,omitempty"` // Gender: "male" or "female"
-	Language     *string   `json:"language,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID            int       `json:"id"`
+	Email         string    `json:"email"`
+	PasswordHash  string    `json:"-"`
+	IsActive      bool      `json:"is_active"`
+	FirstName     *string   `json:"first_name,omitempty"`
+	LastName      *string   `json:"last_name,omitempty"`
+	Age           *int      `json:"age,omitempty"`
+	Height        *float64  `json:"height,omitempty"` // Height in cm
+	Gender        *string   `json:"gender,omitempty"` // Gender: "male" or "female"
+	Language      *string   `json:"language,omitempty"`
+	ActivityLevel *string   `json:"activity_level,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // SetPassword hashes and sets the user's password
@@ -39,5 +40,3 @@ func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	return err == nil
 }
-
-
