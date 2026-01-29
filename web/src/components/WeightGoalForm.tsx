@@ -174,7 +174,7 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-1">
               <span className="text-gray-600">
-                {goalProgress.is_gaining ? t('weightGoal.targetGain') : t('weightGoal.targetLoss')}: {goalProgress.target_weight} kg
+                {t('weightGoal.current')}: {goalProgress.current_weight.toFixed(1)} kg → {t('weightGoal.target')}: {goalProgress.target_weight} kg
               </span>
               <span className="font-semibold text-green-600">{goalProgress.progress_percent.toFixed(1)}%</span>
             </div>
