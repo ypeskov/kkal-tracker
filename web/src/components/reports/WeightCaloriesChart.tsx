@@ -1,18 +1,18 @@
-import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
   CategoryScale,
+  Chart as ChartJS,
+  ChartOptions,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
-  ChartOptions,
   TooltipItem,
 } from 'chart.js';
+import { differenceInDays, format } from 'date-fns';
+import { Line } from 'react-chartjs-2';
 import { useTranslation } from 'react-i18next';
-import { format, differenceInDays } from 'date-fns';
 
 // Register Chart.js components
 ChartJS.register(
@@ -67,7 +67,7 @@ export default function WeightCaloriesChart({
     const goalStartDate = new Date(goalData.goalSetAt);
     const today = new Date();
     const daysSinceGoalStart = differenceInDays(today, goalStartDate);
-    
+
     if (daysSinceGoalStart <= 0) return null;
 
     // Calculate average daily change based on actual progress
@@ -78,9 +78,9 @@ export default function WeightCaloriesChart({
     return sortedDates.map(dateStr => {
       const date = new Date(dateStr);
       const daysFromGoalStart = differenceInDays(date, goalStartDate);
-      
+
       if (daysFromGoalStart < 0) return null;
-      
+
       // Project weight based on average rate
       const projectedWeight = goalData.initialWeightAtGoal + (avgDailyChange * daysFromGoalStart);
       return projectedWeight;
@@ -174,7 +174,7 @@ export default function WeightCaloriesChart({
       },
       tooltip: {
         callbacks: {
-          label: function(context: TooltipItem<'line'>) {
+          label: function (context: TooltipItem<'line'>) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -221,7 +221,7 @@ export default function WeightCaloriesChart({
           text: `${t('report.calories_kcal')} (÷10)`,
         },
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return `10×${value.toFixed(1)}`;
           },
         },
