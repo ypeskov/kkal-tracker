@@ -324,7 +324,20 @@ export default function Profile() {
           </div>
         </ProfileFormSection>
 
-        {/* Weight Goal Group */}
+        {/* Save Button */}
+        <div className="bg-white rounded-lg shadow-md pl-lg pr-lg flex justify-end">
+          <button
+            type="submit"
+            disabled={profileLoading || updateMutation.isPending || !hasUnsavedChanges()}
+            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {updateMutation.isPending ? t('profile.saving') : t('profile.save')}
+          </button>
+        </div>
+      </form>
+
+      {/* Weight Goal Group - Outside of profile form to avoid nested forms */}
+      <div className="mt-6">
         <ProfileFormSection title={t('weightGoal.title')}>
           <WeightGoalForm 
             currentWeight={weightHistory && weightHistory.length > 0 
@@ -335,8 +348,10 @@ export default function Profile() {
             }
           />
         </ProfileFormSection>
+      </div>
 
-        {/* Health Metrics Group */}
+      {/* Health Metrics Group - Read-only display, outside form */}
+      <div className="mt-6">
         <ProfileFormSection title={t('profile.healthMetrics')}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* BMI Card */}
@@ -410,18 +425,7 @@ export default function Profile() {
             </div>
           </div>
         </ProfileFormSection>
-
-        {/* Save Button */}
-        <div className="bg-white rounded-lg shadow-md pl-lg pr-lg flex justify-end">
-          <button
-            type="submit"
-            disabled={profileLoading || updateMutation.isPending || !hasUnsavedChanges()}
-            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {updateMutation.isPending ? t('profile.saving') : t('profile.save')}
-          </button>
-        </div>
-      </form>
+      </div>
 
       {/* Notification Popup */}
       {notification && (

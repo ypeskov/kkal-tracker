@@ -1,9 +1,9 @@
 import { profileService } from '@/api/profile';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { Target, Calendar, Flame, TrendingDown, TrendingUp } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
+import { format } from 'date-fns';
+import { Calendar, Flame, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function WeightGoalCard() {
   const { t } = useTranslation();

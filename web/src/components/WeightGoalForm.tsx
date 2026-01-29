@@ -1,8 +1,8 @@
 import { profileService } from '@/api/profile';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format, addDays } from 'date-fns';
-import { Target, Trash2, AlertTriangle, TrendingDown, TrendingUp, Calendar, Flame } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { addDays, format } from 'date-fns';
+import { AlertTriangle, Calendar, Flame, Target, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface WeightGoalFormProps {
@@ -13,7 +13,7 @@ interface WeightGoalFormProps {
 export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  
+
   const [targetWeight, setTargetWeight] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [noDeadline, setNoDeadline] = useState(true);
@@ -95,7 +95,7 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
   // Calculate recommendations based on form inputs
   const calculateRecommendations = () => {
     if (!currentWeight || !targetWeight) return null;
-    
+
     const target = parseFloat(targetWeight);
     if (isNaN(target)) return null;
 
@@ -115,10 +115,10 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
     } else if (targetDate) {
       const days = Math.ceil((new Date(targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
       if (days <= 0) return null;
-      
+
       const dailyDeficit = Math.round((weightDiff * 7700) / days);
       const weeklyLoss = weightDiff / (days / 7);
-      
+
       return {
         dailyDeficit,
         days,
