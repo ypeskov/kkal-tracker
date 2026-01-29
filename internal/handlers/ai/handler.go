@@ -110,6 +110,53 @@ func (h *Handler) Analyze(c echo.Context) error {
 		userContext.Language = *user.Language
 	}
 
+	// Add weight goal context if set
+	if user.TargetWeight != nil {
+		userContext.TargetWeight = user.TargetWeight
+
+		// Add target date if set
+		if user.TargetDate != nil {
+			targetDateStr := user.TargetDate.Format("2006-01-02")
+			userContext.TargetDate = &targetDateStr
+		}
+
+		// Add current weight if available
+		if len(weightData) > 0 {
+			currentWeight := weightData[len(weightData)-1].Weight
+			userContext.CurrentWeight = &currentWeight
+
+			// Calculate progress percentage
+			if user.InitialWeightAtGoal != nil {
+				initialWeight := *user.InitialWeightAtGoal
+				targetWeight := *user.TargetWeight
+				isGaining := targetWeight > initialWeight
+
+				var progressPercent float64
+				if isGaining {
+					totalToGain := targetWeight - initialWeight
+					gained := currentWeight - initialWeight
+					if totalToGain > 0 {
+						progressPercent = (gained / totalToGain) * 100
+					}
+				} else {
+					totalToLose := initialWeight - targetWeight
+					lost := initialWeight - currentWeight
+					if totalToLose > 0 {
+						progressPercent = (lost / totalToLose) * 100
+					}
+				}
+
+				// Clamp to 0-100
+				if progressPercent < 0 {
+					progressPercent = 0
+				} else if progressPercent > 100 {
+					progressPercent = 100
+				}
+				userContext.GoalProgress = &progressPercent
+			}
+		}
+	}
+
 	// Build analysis request
 	analysisReq := aiservice.AnalysisRequest{
 		UserContext:   userContext,

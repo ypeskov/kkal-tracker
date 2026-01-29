@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { calorieService } from '@/api/calories';
 import { ingredientService } from '@/api/ingredients';
 import DashboardHeader from '@/components/DashboardHeader';
+import WeightGoalCard from '@/components/WeightGoalCard';
 import AddFoodEntryForm from '@/components/AddFoodEntryForm';
 import FilterSection from '@/components/FilterSection';
 import CalorieEntriesList from '@/components/CalorieEntriesList';
@@ -137,6 +138,8 @@ export default function DashboardPage() {
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-2 md:px-6 lg:px-8">
       <DashboardHeader user={user} />
+
+      <WeightGoalCard />
 
       <AddFoodEntryForm 
         onSubmit={addEntryMutation.mutate} 

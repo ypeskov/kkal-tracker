@@ -16,6 +16,8 @@ type UserRepository interface {
 	AddWeightEntry(userID int, weight float64) error
 	ActivateUser(userID int) error
 	Delete(userID int) error
+	SetWeightGoal(userID int, targetWeight float64, targetDate *string, initialWeight float64) error
+	ClearWeightGoal(userID int) error
 }
 
 // CalorieEntryRepository defines the contract for calorie entry data access

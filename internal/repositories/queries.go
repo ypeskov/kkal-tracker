@@ -12,6 +12,8 @@ const (
 	QueryAddWeightEntry        = "addWeightEntry"
 	QueryActivateUser          = "activateUser"
 	QueryDeleteUser            = "deleteUser"
+	QuerySetWeightGoal         = "setWeightGoal"
+	QueryClearWeightGoal       = "clearWeightGoal"
 
 	// Group of CalorieEntries queries
 	QueryInsertCalorieEntry           = "insertCalorieEntry"
@@ -73,23 +75,27 @@ func getQueries() map[string]string {
 	`,
 
 		buildKey(QueryGetUserByEmail, DialectSQLite): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, 
+		       target_weight, target_date, goal_set_at, initial_weight_at_goal, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`,
 		buildKey(QueryGetUserByEmail, DialectPostgres): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level,
+		       target_weight, target_date, goal_set_at, initial_weight_at_goal, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`,
 
 		buildKey(QueryGetUserByID, DialectSQLite): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level,
+		       target_weight, target_date, goal_set_at, initial_weight_at_goal, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`,
 		buildKey(QueryGetUserByID, DialectPostgres): `
-		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level, created_at, updated_at
+		SELECT id, email, password_hash, is_active, first_name, last_name, age, height, gender, language, activity_level,
+		       target_weight, target_date, goal_set_at, initial_weight_at_goal, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`,
@@ -153,6 +159,28 @@ func getQueries() map[string]string {
 	`,
 		buildKey(QueryDeleteUser, DialectPostgres): `
 		DELETE FROM users WHERE id = $1
+	`,
+
+		buildKey(QuerySetWeightGoal, DialectSQLite): `
+		UPDATE users
+		SET target_weight = ?, target_date = ?, goal_set_at = datetime('now'), initial_weight_at_goal = ?, updated_at = datetime('now')
+		WHERE id = ?
+	`,
+		buildKey(QuerySetWeightGoal, DialectPostgres): `
+		UPDATE users
+		SET target_weight = $1, target_date = $2, goal_set_at = NOW(), initial_weight_at_goal = $3, updated_at = NOW()
+		WHERE id = $4
+	`,
+
+		buildKey(QueryClearWeightGoal, DialectSQLite): `
+		UPDATE users
+		SET target_weight = NULL, target_date = NULL, goal_set_at = NULL, initial_weight_at_goal = NULL, updated_at = datetime('now')
+		WHERE id = ?
+	`,
+		buildKey(QueryClearWeightGoal, DialectPostgres): `
+		UPDATE users
+		SET target_weight = NULL, target_date = NULL, goal_set_at = NULL, initial_weight_at_goal = NULL, updated_at = NOW()
+		WHERE id = $1
 	`,
 
 		// Weight History queries

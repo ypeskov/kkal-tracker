@@ -101,6 +101,8 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 	var language sql.NullString
 	var gender sql.NullString
 	var activityLevel sql.NullString
+	var targetDate sql.NullTime
+	var goalSetAt sql.NullTime
 	err = r.db.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Email,
@@ -113,6 +115,10 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 		&gender,
 		&language,
 		&activityLevel,
+		&user.TargetWeight,
+		&targetDate,
+		&goalSetAt,
+		&user.InitialWeightAtGoal,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -124,6 +130,12 @@ func (r *UserRepositoryImpl) GetByID(id int) (*models.User, error) {
 	}
 	if err == nil && activityLevel.Valid {
 		user.ActivityLevel = &activityLevel.String
+	}
+	if err == nil && targetDate.Valid {
+		user.TargetDate = &targetDate.Time
+	}
+	if err == nil && goalSetAt.Valid {
+		user.GoalSetAt = &goalSetAt.Time
 	}
 
 	if err != nil {
@@ -145,6 +157,8 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 	var language sql.NullString
 	var gender sql.NullString
 	var activityLevel sql.NullString
+	var targetDate sql.NullTime
+	var goalSetAt sql.NullTime
 	err = r.db.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Email,
@@ -157,6 +171,10 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 		&gender,
 		&language,
 		&activityLevel,
+		&user.TargetWeight,
+		&targetDate,
+		&goalSetAt,
+		&user.InitialWeightAtGoal,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -168,6 +186,12 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*models.User, error) {
 	}
 	if err == nil && activityLevel.Valid {
 		user.ActivityLevel = &activityLevel.String
+	}
+	if err == nil && targetDate.Valid {
+		user.TargetDate = &targetDate.Time
+	}
+	if err == nil && goalSetAt.Valid {
+		user.GoalSetAt = &goalSetAt.Time
 	}
 
 	if err != nil {
@@ -269,5 +293,66 @@ func (r *UserRepositoryImpl) Delete(userID int) error {
 	}
 
 	r.logger.Info("User deleted successfully", "user_id", userID)
+	return nil
+}
+
+// SetWeightGoal sets a weight goal for the user
+func (r *UserRepositoryImpl) SetWeightGoal(userID int, targetWeight float64, targetDate *string, initialWeight float64) error {
+	r.logger.Debug("Setting weight goal",
+		slog.Int("user_id", userID),
+		slog.Float64("target_weight", targetWeight),
+		slog.Float64("initial_weight", initialWeight))
+
+	query, err := r.sqlLoader.Load(QuerySetWeightGoal)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(query, targetWeight, targetDate, initialWeight, userID)
+	if err != nil {
+		r.logger.Error("Failed to set weight goal", "error", err, "user_id", userID)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		r.logger.Warn("No user updated (user not found)", "user_id", userID)
+		return ErrNotFound
+	}
+
+	r.logger.Info("Weight goal set successfully", "user_id", userID)
+	return nil
+}
+
+// ClearWeightGoal clears the weight goal for the user
+func (r *UserRepositoryImpl) ClearWeightGoal(userID int) error {
+	r.logger.Debug("Clearing weight goal", slog.Int("user_id", userID))
+
+	query, err := r.sqlLoader.Load(QueryClearWeightGoal)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		r.logger.Error("Failed to clear weight goal", "error", err, "user_id", userID)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		r.logger.Warn("No user updated (user not found)", "user_id", userID)
+		return ErrNotFound
+	}
+
+	r.logger.Info("Weight goal cleared successfully", "user_id", userID)
 	return nil
 }

@@ -8,6 +8,7 @@ import TabNavigation from '@/components/TabNavigation';
 import ReportFilters from '@/components/ReportFilters';
 import StatisticsCard from '@/components/StatisticsCard';
 import { reportsService } from '@/api/reports';
+import { profileService } from '@/api/profile';
 import { BarChart3, Weight } from 'lucide-react';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -33,6 +34,12 @@ export default function Report() {
   const { data: reportData, isLoading } = useQuery({
     queryKey: ['reportData', dateFrom, dateTo],
     queryFn: () => reportsService.getReportData(dateFrom, dateTo),
+  });
+
+  // Fetch weight goal progress
+  const { data: goalProgress } = useQuery({
+    queryKey: ['weightGoalProgress'],
+    queryFn: profileService.getWeightGoalProgress,
   });
 
   // Aggregate data based on selected period
@@ -267,6 +274,7 @@ export default function Report() {
                   calorieData={aggregatedData.calorieData}
                   showWeight={showWeight}
                   showCalories={showCalories}
+                  targetWeight={goalProgress?.target_weight}
                 />
               )}
             </div>

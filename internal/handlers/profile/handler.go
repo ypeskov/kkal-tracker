@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -79,8 +80,81 @@ func (h *Handler) UpdateProfile(c echo.Context) error {
 	return h.GetProfile(c)
 }
 
+// SetWeightGoal sets a weight goal for the current user
+func (h *Handler) SetWeightGoal(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	h.logger.Debug("SetWeightGoal called", "user_id", userID)
+
+	var req profileservice.WeightGoalRequest
+	if err := c.Bind(&req); err != nil {
+		h.logger.Debug("SetWeightGoal failed - invalid request body", "user_id", userID, "error", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request")
+	}
+
+	if err := c.Validate(&req); err != nil {
+		h.logger.Debug("SetWeightGoal failed - validation error", "user_id", userID, "error", err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.profileService.SetWeightGoal(userID, &req); err != nil {
+		h.logger.Error("Failed to set weight goal", "user_id", userID, "error", err)
+
+		if errors.Is(err, profileservice.ErrNoWeightData) {
+			return echo.NewHTTPError(http.StatusBadRequest, "No weight data available. Please add a weight entry first.")
+		}
+		if errors.Is(err, profileservice.ErrTargetDateInPast) {
+			return echo.NewHTTPError(http.StatusBadRequest, "Target date must be in the future")
+		}
+		if errors.Is(err, profileservice.ErrInvalidGoal) {
+			return echo.NewHTTPError(http.StatusBadRequest, "Invalid goal parameters")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to set weight goal")
+	}
+
+	// Return the goal progress
+	return h.GetWeightGoalProgress(c)
+}
+
+// ClearWeightGoal clears the weight goal for the current user
+func (h *Handler) ClearWeightGoal(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	h.logger.Debug("ClearWeightGoal called", "user_id", userID)
+
+	if err := h.profileService.ClearWeightGoal(userID); err != nil {
+		h.logger.Error("Failed to clear weight goal", "user_id", userID, "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to clear weight goal")
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// GetWeightGoalProgress returns the current weight goal progress
+func (h *Handler) GetWeightGoalProgress(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	h.logger.Debug("GetWeightGoalProgress called", "user_id", userID)
+
+	progress, err := h.profileService.GetWeightGoalProgress(userID)
+	if err != nil {
+		if errors.Is(err, profileservice.ErrGoalNotSet) {
+			return c.JSON(http.StatusOK, nil) // No goal set
+		}
+		if errors.Is(err, profileservice.ErrNoWeightData) {
+			return echo.NewHTTPError(http.StatusBadRequest, "No weight data available")
+		}
+
+		h.logger.Error("Failed to get weight goal progress", "user_id", userID, "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get weight goal progress")
+	}
+
+	return c.JSON(http.StatusOK, progress)
+}
+
 // RegisterRoutes registers the profile routes
 func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/profile", h.GetProfile)
 	g.PUT("/profile", h.UpdateProfile)
+	g.PUT("/profile/goal", h.SetWeightGoal)
+	g.DELETE("/profile/goal", h.ClearWeightGoal)
+	g.GET("/profile/goal", h.GetWeightGoalProgress)
 }

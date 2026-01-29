@@ -33,9 +33,13 @@ type WeightDataPoint struct {
 
 // UserContext provides user profile information for personalized analysis
 type UserContext struct {
-	Age      *int     `json:"age,omitempty"`
-	Height   *float64 `json:"height,omitempty"`
-	Language string   `json:"language"`
+	Age           *int     `json:"age,omitempty"`
+	Height        *float64 `json:"height,omitempty"`
+	Language      string   `json:"language"`
+	TargetWeight  *float64 `json:"target_weight,omitempty"`
+	TargetDate    *string  `json:"target_date,omitempty"`
+	CurrentWeight *float64 `json:"current_weight,omitempty"`
+	GoalProgress  *float64 `json:"goal_progress,omitempty"` // Percentage 0-100
 }
 
 // AnalysisRequest represents a request for AI analysis

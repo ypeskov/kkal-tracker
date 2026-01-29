@@ -21,6 +21,12 @@ type User struct {
 	ActivityLevel *string   `json:"activity_level,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+
+	// Weight goal fields
+	TargetWeight        *float64   `json:"target_weight,omitempty"`         // Target weight in kg
+	TargetDate          *time.Time `json:"target_date,omitempty"`           // Optional target date
+	GoalSetAt           *time.Time `json:"goal_set_at,omitempty"`           // When the goal was set
+	InitialWeightAtGoal *float64   `json:"initial_weight_at_goal,omitempty"` // Weight when goal was set
 }
 
 // SetPassword hashes and sets the user's password

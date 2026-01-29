@@ -30,6 +30,7 @@ interface WeightCaloriesChartProps {
   calorieData: { date: string; calories: number }[];
   showWeight: boolean;
   showCalories: boolean;
+  targetWeight?: number; // Optional target weight for goal line
 }
 
 export default function WeightCaloriesChart({
@@ -37,6 +38,7 @@ export default function WeightCaloriesChart({
   calorieData,
   showWeight,
   showCalories,
+  targetWeight,
 }: WeightCaloriesChartProps) {
   const { t } = useTranslation();
 
@@ -63,6 +65,22 @@ export default function WeightCaloriesChart({
       tension: 0.1,
       spanGaps: true,
     });
+
+    // Add target weight line if set and showing weight
+    if (targetWeight && sortedDates.length > 0) {
+      datasets.push({
+        label: t('weightGoal.targetLine'),
+        data: sortedDates.map(() => targetWeight),
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'transparent',
+        borderDash: [5, 5],
+        borderWidth: 2,
+        yAxisID: 'y1',
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false,
+      });
+    }
   }
 
   if (showCalories) {

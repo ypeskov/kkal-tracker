@@ -7,6 +7,7 @@ import ProfileFormField from '@/components/ProfileFormField';
 import ProfileFormSection from '@/components/ProfileFormSection';
 import UnsavedChangesDialog from '@/components/UnsavedChangesDialog';
 import WeightDisplay from '@/components/WeightDisplay';
+import WeightGoalForm from '@/components/WeightGoalForm';
 import i18n from '@/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -321,6 +322,18 @@ export default function Profile() {
               </select>
             </div>
           </div>
+        </ProfileFormSection>
+
+        {/* Weight Goal Group */}
+        <ProfileFormSection title={t('weightGoal.title')}>
+          <WeightGoalForm 
+            currentWeight={weightHistory && weightHistory.length > 0 
+              ? [...weightHistory].sort((a, b) => 
+                  new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+                )[0].weight 
+              : undefined
+            }
+          />
         </ProfileFormSection>
 
         {/* Health Metrics Group */}

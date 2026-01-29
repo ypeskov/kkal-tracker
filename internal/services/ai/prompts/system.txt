@@ -31,3 +31,24 @@ User profile:
 {{- if .Height}}
 - Height: {{printf "%.1f" .Height}} cm
 {{- end}}
+{{- if .TargetWeight}}
+
+Weight goal:
+- Target weight: {{printf "%.1f" .TargetWeight}} kg
+{{- if .CurrentWeight}}
+- Current weight: {{printf "%.1f" .CurrentWeight}} kg
+{{- end}}
+{{- if .TargetDate}}
+- Target date: {{.TargetDate}}
+{{- else}}
+- No deadline set (flexible timeline)
+{{- end}}
+{{- if .GoalProgress}}
+- Progress: {{printf "%.1f" .GoalProgress}}%
+{{- end}}
+
+When providing recommendations, consider the user's weight goal and provide specific advice on:
+- Whether current calorie intake supports the goal
+- Recommended daily calorie adjustment if needed
+- Realistic expectations for reaching the target
+{{- end}}
