@@ -265,6 +265,7 @@
     "estimatedCompletion": "Est. completion: {{date}}",
     "estimatedShort": "Est: {{date}}",
     "targetLine": "Goal",
+    "trajectory": "Trend",
     "targetLoss": "Target",
     "targetGain": "Target",
     "manage": "Manage",

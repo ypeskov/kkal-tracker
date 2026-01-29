@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { profileService } from '@/api/profile';
+import { reportsService } from '@/api/reports';
+import ReportFilters from '@/components/ReportFilters';
 import WeightCaloriesChart from '@/components/reports/WeightCaloriesChart';
 import WeightHistory from '@/components/reports/WeightHistory';
-import TabNavigation from '@/components/TabNavigation';
-import ReportFilters from '@/components/ReportFilters';
 import StatisticsCard from '@/components/StatisticsCard';
-import { reportsService } from '@/api/reports';
-import { profileService } from '@/api/profile';
+import TabNavigation from '@/components/TabNavigation';
+import { useQuery } from '@tanstack/react-query';
+import { format, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { BarChart3, Weight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
 type StepInterval = '1' | '5' | '10' | '15';
@@ -249,10 +249,10 @@ export default function Report() {
               stats={[
                 ...(showWeight && reportData?.weight_history && reportData.weight_history.length > 0
                   ? [
-                      { label: t('report.min_weight'), value: `${weightStats.min} kg`, color: 'text-blue-600' },
-                      { label: t('report.max_weight'), value: `${weightStats.max} kg`, color: 'text-blue-600' },
-                      { label: t('report.avg_weight'), value: `${weightStats.average} kg`, color: 'text-blue-600' },
-                    ]
+                    { label: t('report.min_weight'), value: `${weightStats.min} kg`, color: 'text-blue-600' },
+                    { label: t('report.max_weight'), value: `${weightStats.max} kg`, color: 'text-blue-600' },
+                    { label: t('report.avg_weight'), value: `${weightStats.average} kg`, color: 'text-blue-600' },
+                  ]
                   : []),
                 ...(avgCaloriesPerDay > 0
                   ? [{ label: t('report.avg_calories_per_day'), value: `${avgCaloriesPerDay} kcal`, color: 'text-green-600' }]
@@ -274,7 +274,13 @@ export default function Report() {
                   calorieData={aggregatedData.calorieData}
                   showWeight={showWeight}
                   showCalories={showCalories}
-                  targetWeight={goalProgress?.target_weight}
+                  goalData={goalProgress ? {
+                    targetWeight: goalProgress.target_weight,
+                    targetDate: goalProgress.target_date,
+                    goalSetAt: goalProgress.goal_set_at,
+                    initialWeightAtGoal: goalProgress.initial_weight_at_goal,
+                    currentWeight: goalProgress.current_weight,
+                  } : undefined}
                 />
               )}
             </div>

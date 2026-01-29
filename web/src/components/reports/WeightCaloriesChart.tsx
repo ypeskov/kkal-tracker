@@ -1,18 +1,18 @@
-import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
   CategoryScale,
+  Chart as ChartJS,
+  ChartOptions,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
-  ChartOptions,
   TooltipItem,
 } from 'chart.js';
+import { differenceInDays, format } from 'date-fns';
+import { Line } from 'react-chartjs-2';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
 
 // Register Chart.js components
 ChartJS.register(
@@ -25,12 +25,20 @@ ChartJS.register(
   Legend
 );
 
+interface GoalData {
+  targetWeight: number;
+  targetDate?: string;
+  goalSetAt: string;
+  initialWeightAtGoal: number;
+  currentWeight: number;
+}
+
 interface WeightCaloriesChartProps {
   weightData: { date: string; weight: number }[];
   calorieData: { date: string; calories: number }[];
   showWeight: boolean;
   showCalories: boolean;
-  targetWeight?: number; // Optional target weight for goal line
+  goalData?: GoalData; // Goal data for trajectory line
 }
 
 export default function WeightCaloriesChart({
@@ -38,7 +46,7 @@ export default function WeightCaloriesChart({
   calorieData,
   showWeight,
   showCalories,
-  targetWeight,
+  goalData,
 }: WeightCaloriesChartProps) {
   const { t } = useTranslation();
 
@@ -51,6 +59,33 @@ export default function WeightCaloriesChart({
   // Create maps for quick lookup
   const weightMap = new Map(weightData.map(d => [d.date, d.weight]));
   const calorieMap = new Map(calorieData.map(d => [d.date, d.calories]));
+
+  // Calculate trajectory based on average weight change rate
+  const calculateTrajectory = () => {
+    if (!goalData || sortedDates.length === 0) return null;
+
+    const goalStartDate = new Date(goalData.goalSetAt);
+    const today = new Date();
+    const daysSinceGoalStart = differenceInDays(today, goalStartDate);
+
+    if (daysSinceGoalStart <= 0) return null;
+
+    // Calculate average daily change based on actual progress
+    const weightChange = goalData.currentWeight - goalData.initialWeightAtGoal;
+    const avgDailyChange = weightChange / daysSinceGoalStart;
+
+    // Generate trajectory points for each date in the chart
+    return sortedDates.map(dateStr => {
+      const date = new Date(dateStr);
+      const daysFromGoalStart = differenceInDays(date, goalStartDate);
+
+      if (daysFromGoalStart < 0) return null;
+
+      // Project weight based on average rate
+      const projectedWeight = goalData.initialWeightAtGoal + (avgDailyChange * daysFromGoalStart);
+      return projectedWeight;
+    });
+  };
 
   // Prepare datasets
   const datasets = [];
@@ -66,15 +101,32 @@ export default function WeightCaloriesChart({
       spanGaps: true,
     });
 
-    // Add target weight line if set and showing weight
-    if (targetWeight && sortedDates.length > 0) {
+    // Add trajectory line based on average progress
+    if (goalData && sortedDates.length > 0) {
+      const trajectoryData = calculateTrajectory();
+      if (trajectoryData) {
+        datasets.push({
+          label: t('weightGoal.trajectory'),
+          data: trajectoryData,
+          borderColor: 'rgb(249, 115, 22)', // Orange
+          backgroundColor: 'transparent',
+          borderDash: [8, 4],
+          borderWidth: 2,
+          yAxisID: 'y1',
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+        });
+      }
+
+      // Add horizontal target weight line
       datasets.push({
         label: t('weightGoal.targetLine'),
-        data: sortedDates.map(() => targetWeight),
+        data: sortedDates.map(() => goalData.targetWeight),
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'transparent',
-        borderDash: [5, 5],
-        borderWidth: 2,
+        borderDash: [3, 3],
+        borderWidth: 1,
         yAxisID: 'y1',
         pointRadius: 0,
         pointHoverRadius: 0,
@@ -122,7 +174,7 @@ export default function WeightCaloriesChart({
       },
       tooltip: {
         callbacks: {
-          label: function(context: TooltipItem<'line'>) {
+          label: function (context: TooltipItem<'line'>) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -169,7 +221,7 @@ export default function WeightCaloriesChart({
           text: `${t('report.calories_kcal')} (÷10)`,
         },
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return `10×${value.toFixed(1)}`;
           },
         },

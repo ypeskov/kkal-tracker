@@ -265,6 +265,7 @@
     "estimatedCompletion": "Очікуване завершення: {{date}}",
     "estimatedShort": "Орієнт: {{date}}",
     "targetLine": "Ціль",
+    "trajectory": "Тренд",
     "targetLoss": "Ціль",
     "targetGain": "Ціль",
     "manage": "Керувати",
