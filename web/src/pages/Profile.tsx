@@ -339,11 +339,11 @@ export default function Profile() {
       {/* Weight Goal Group - Outside of profile form to avoid nested forms */}
       <div className="mt-6">
         <ProfileFormSection title={t('weightGoal.title')}>
-          <WeightGoalForm 
-            currentWeight={weightHistory && weightHistory.length > 0 
-              ? [...weightHistory].sort((a, b) => 
-                  new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
-                )[0].weight 
+          <WeightGoalForm
+            currentWeight={weightHistory && weightHistory.length > 0
+              ? [...weightHistory].sort((a, b) =>
+                new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+              )[0].weight
               : undefined
             }
           />
