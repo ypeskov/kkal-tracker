@@ -1,9 +1,10 @@
 import { profileService } from '@/api/profile';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
-import { AlertTriangle, Calendar, Flame, Target, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import WeightGoalProgressDisplay from './WeightGoalProgressDisplay';
 
 interface WeightGoalFormProps {
   currentWeight?: number;
@@ -145,13 +146,9 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
   if (goalProgress && !showForm) {
     return (
       <div className="space-y-4">
-        {/* Progress Card */}
-        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-green-600" />
-              <h3 className="font-semibold text-gray-800">{t('weightGoal.currentGoal')}</h3>
-            </div>
+        <WeightGoalProgressDisplay
+          goalProgress={goalProgress}
+          headerAction={
             <div className="flex gap-2">
               <button
                 onClick={() => setShowForm(true)}
@@ -168,78 +165,8 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
                 <Trash2 size={16} />
               </button>
             </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">
-                {t('weightGoal.current')}: {goalProgress.current_weight.toFixed(1)} kg → {t('weightGoal.target')}: {goalProgress.target_weight} kg
-              </span>
-              <span className="font-semibold text-green-600">{goalProgress.progress_percent.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className="bg-green-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, goalProgress.progress_percent)}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="text-center p-2 bg-white/50 rounded-lg">
-              <p className="text-xs text-gray-500">{t('weightGoal.started')}</p>
-              <p className="font-bold text-gray-800">{goalProgress.initial_weight_at_goal.toFixed(1)} kg</p>
-            </div>
-            <div className="text-center p-2 bg-white/50 rounded-lg">
-              <p className="text-xs text-gray-500">{t('weightGoal.current')}</p>
-              <p className="font-bold text-gray-800">{goalProgress.current_weight.toFixed(1)} kg</p>
-            </div>
-            <div className="text-center p-2 bg-white/50 rounded-lg">
-              <p className="text-xs text-gray-500">
-                {goalProgress.is_gaining ? t('weightGoal.gained') : t('weightGoal.lost')}
-              </p>
-              <p className={`font-bold ${goalProgress.weight_lost > 0 ? 'text-green-600' : 'text-blue-600'}`}>
-                {Math.abs(goalProgress.weight_lost).toFixed(1)} kg
-              </p>
-            </div>
-            <div className="text-center p-2 bg-white/50 rounded-lg">
-              <p className="text-xs text-gray-500">{t('weightGoal.remaining')}</p>
-              <p className="font-bold text-orange-600">{Math.abs(goalProgress.weight_to_go).toFixed(1)} kg</p>
-            </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-3 pt-3 border-t border-green-200 flex flex-wrap gap-4 text-sm">
-            {goalProgress.target_date && goalProgress.days_remaining !== undefined && (
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Calendar size={14} />
-                <span>
-                  {t('weightGoal.daysRemaining', { days: goalProgress.days_remaining })}
-                </span>
-              </div>
-            )}
-            {goalProgress.daily_deficit_needed && (
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Flame size={14} />
-                <span>
-                  {t('weightGoal.dailyDeficit', { kcal: Math.round(goalProgress.daily_deficit_needed) })}
-                </span>
-              </div>
-            )}
-            {goalProgress.estimated_completion && !goalProgress.target_date && (
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Calendar size={14} />
-                <span>
-                  {t('weightGoal.estimatedCompletion', {
-                    date: format(new Date(goalProgress.estimated_completion), 'PP'),
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+          }
+        />
       </div>
     );
   }
