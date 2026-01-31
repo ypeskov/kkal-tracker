@@ -75,13 +75,19 @@ export default function WeightGoalProgressDisplay({
         </div>
         <div className="p-2 bg-white/50 rounded-lg">
           <p className="text-xs text-gray-500">
-            {goalProgress.is_gaining ? t('weightGoal.gained') : t('weightGoal.lost')}
+            {goalProgress.weight_lost > 0 ? t('weightGoal.lost') : t('weightGoal.gained')}
           </p>
-          <p className={`font-semibold ${goalProgress.weight_lost > 0 ? 'text-green-600' : 'text-blue-600'}`}>
-            {goalProgress.is_gaining ? (
-              <TrendingUp className="inline w-3 h-3 mr-1" />
-            ) : (
+          {/* Color: green if progress is in the right direction for the goal */}
+          <p className={`font-semibold ${
+            (goalProgress.is_gaining && goalProgress.weight_lost <= 0) || 
+            (!goalProgress.is_gaining && goalProgress.weight_lost > 0)
+              ? 'text-green-600' 
+              : 'text-red-500'
+          }`}>
+            {goalProgress.weight_lost > 0 ? (
               <TrendingDown className="inline w-3 h-3 mr-1" />
+            ) : (
+              <TrendingUp className="inline w-3 h-3 mr-1" />
             )}
             {Math.abs(goalProgress.weight_lost).toFixed(1)}
           </p>
