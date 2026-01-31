@@ -469,3 +469,86 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
 - Repository errors in `internal/repositories/errors.go`
 - Structured error responses with proper HTTP status codes
 - Consistent error format across all endpoints
+
+## Production Build & Deployment
+
+### Prerequisites
+- Code tested locally (`make dev`)
+- All changes committed to develop branch
+- Docker authenticated for push to Docker Hub
+
+### Build Steps
+
+#### 1. Commit Code Changes
+```bash
+git add .
+git commit -m "description of changes"
+git push origin develop
+```
+
+#### 2. Build and Push Docker Image
+Use the `build-and-push.sh` script:
+```bash
+./build-and-push.sh VERSION --push
+```
+
+Example:
+```bash
+./build-and-push.sh 5.1.1 --push
+```
+
+**What the script does:**
+- Removes `web/dist/` for a clean build
+- Builds image without cache (`--no-cache`)
+- Tags as both `VERSION` and `latest`
+- Pushes to Docker Hub (`ypeskov/kcal-tracker:VERSION`)
+- Writes version to `version.txt`
+
+**IMPORTANT:** Do NOT specify `--platform` flag, so the image builds for the host machine architecture (arm64 for Apple Silicon servers).
+
+#### 3. Commit Version Update
+```bash
+git add version.txt
+git commit -m "docker vVERSION"
+git push origin develop
+```
+
+#### 4. Update Kubernetes Deployment
+Edit `kubernetes/base/deployment.yaml`:
+```yaml
+image: ypeskov/kcal-tracker:VERSION
+```
+
+Commit:
+```bash
+git add kubernetes/base/deployment.yaml
+git commit -m "update deployment to vVERSION"
+git push origin develop
+```
+
+#### 5. Deploy to Server
+On the Kubernetes server:
+```bash
+# Option 1: Apply manifests
+kubectl apply -k kubernetes/overlays/prod/
+
+# Option 2: Update image directly
+kubectl set image deployment/kkal-tracker kkal-tracker=ypeskov/kcal-tracker:VERSION
+
+# Option 3: Restart deployment (if tag didn't change)
+kubectl rollout restart deployment kkal-tracker
+```
+
+#### 6. Verify Deployment
+```bash
+kubectl get pods
+kubectl logs POD_NAME
+kubectl logs POD_NAME --previous  # logs from previous run if crashed
+```
+
+### Common Errors
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `exec format error` | Image built for wrong architecture | Rebuild without `--platform` flag |
+| `CrashLoopBackOff` | Application error | Check `kubectl logs --previous` |
+| Pod doesn't update | Kubernetes caches image with same tag | Use a new version tag |
