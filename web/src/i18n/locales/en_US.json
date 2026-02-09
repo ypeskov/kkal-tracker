@@ -192,7 +192,31 @@
     "foodList": "Food List",
     "reports": "Reports",
     "aiInsights": "AI Insights",
-    "profile": "Profile"
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "export": {
+      "tab": "Export",
+      "title": "Export Data",
+      "dateFrom": "Date From",
+      "dateTo": "Date To",
+      "dataType": "Data to Export",
+      "dataTypes": {
+        "weight": "Weight only",
+        "food": "Food entries only",
+        "both": "Weight and Food"
+      },
+      "deliveryMethod": "Delivery Method",
+      "download": "Download file",
+      "email": "Send to email",
+      "exportButton": "Export",
+      "exporting": "Exporting...",
+      "downloadSuccess": "Export file downloaded successfully",
+      "emailSuccess": "Export sent to your email",
+      "error": "Export failed. Please try again."
+    }
   },
   "ai": {
     "title": "AI Insights",

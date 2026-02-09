@@ -469,6 +469,16 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
 - Repository errors in `internal/repositories/errors.go`
 - Structured error responses with proper HTTP status codes
 - Consistent error format across all endpoints
+- **CRITICAL: NEVER expose internal error details to clients.** In HTTP handlers, always return generic error messages in responses. Log the actual `err` for debugging, but send only a safe message to the client:
+  ```go
+  // CORRECT:
+  h.logger.Error("Export failed", "error", err, "user_id", userID)
+  return echo.NewHTTPError(http.StatusInternalServerError, "Export failed")
+
+  // WRONG — security vulnerability, leaks internal details:
+  return echo.NewHTTPError(http.StatusInternalServerError, "Export failed: "+err.Error())
+  ```
+  This applies to all `StatusInternalServerError` responses. Validation errors (`StatusBadRequest`) from `c.Validate()` are acceptable to pass through since they only contain field names and validation rules.
 
 ## Production Build & Deployment
 

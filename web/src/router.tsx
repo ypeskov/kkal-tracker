@@ -8,6 +8,7 @@ import FoodList from './pages/FoodList';
 import Profile from './pages/Profile';
 import RegisterPage from './pages/RegisterPage';
 import Report from './pages/Report';
+import Settings from './pages/Settings';
 
 export interface RouterContext {
   user: ProfileData | undefined;
@@ -60,12 +61,19 @@ const aiInsightsRoute = createRoute({
   component: AIInsights,
 });
 
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: Settings,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   foodListRoute,
   reportRoute,
   aiInsightsRoute,
   profileRoute,
+  settingsRoute,
   registerRoute,
   activationRoute,
 ]);

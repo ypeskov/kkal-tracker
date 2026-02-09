@@ -1,0 +1,26 @@
+{
+  "app": {
+    "name": "Kkal Tracker"
+  },
+  "email": {
+    "exportSubject": "Data Export"
+  },
+  "export": {
+    "sheets": {
+      "weight": "Weight History",
+      "food": "Food Entries"
+    },
+    "columns": {
+      "date": "Date",
+      "time": "Time",
+      "weight_kg": "Weight (kg)",
+      "food": "Food",
+      "weight_g": "Weight (g)",
+      "calories": "Calories",
+      "kcal_per100": "Kcal/100g",
+      "fats": "Fats (g)",
+      "carbs": "Carbs (g)",
+      "proteins": "Proteins (g)"
+    }
+  }
+}

@@ -1,5 +1,7 @@
 package email
 
+import "ypeskov/kkal-tracker/internal/i18n"
+
 // getSubject returns email subject based on language
 func (s *Service) getSubject(language string) string {
 	switch language {
@@ -10,6 +12,12 @@ func (s *Service) getSubject(language string) string {
 	default:
 		return "Account Activation - Kkal Tracker"
 	}
+}
+
+// getExportSubject returns export email subject based on language
+func (s *Service) getExportSubject(language string) string {
+	t := i18n.GetTranslator()
+	return t.Get(language, "email.exportSubject") + " - " + t.Get(language, "app.name")
 }
 
 // Email templates for activation emails in different languages
@@ -109,6 +117,99 @@ const activationTemplateRU = `
         <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
             Эта ссылка для активации действительна 24 часа.<br>
             Если вы не регистрировались, просто проигнорируйте это письмо.
+        </p>
+    </div>
+</body>
+</html>
+`
+
+// Export email templates
+const exportTemplateEN = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Data Export</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h1 style="color: #3b82f6; margin-bottom: 20px;">Your Data Export from {{.AppName}}</h1>
+
+        <p>Your requested data export is attached to this email.</p>
+
+        <p><strong>File:</strong> {{.FileName}}</p>
+
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            This is an automated message. Please do not reply to this email.
+        </p>
+    </div>
+</body>
+</html>
+`
+
+const exportTemplateUK = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Експорт даних</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h1 style="color: #3b82f6; margin-bottom: 20px;">Ваш експорт даних з {{.AppName}}</h1>
+
+        <p>Запитаний експорт даних прикріплено до цього листа.</p>
+
+        <p><strong>Файл:</strong> {{.FileName}}</p>
+
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Це автоматичне повідомлення. Будь ласка, не відповідайте на цей лист.
+        </p>
+    </div>
+</body>
+</html>
+`
+
+const exportTemplateRU = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Экспорт данных</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h1 style="color: #3b82f6; margin-bottom: 20px;">Ваш экспорт данных из {{.AppName}}</h1>
+
+        <p>Запрошенный экспорт данных прикреплен к этому письму.</p>
+
+        <p><strong>Файл:</strong> {{.FileName}}</p>
+
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Это автоматическое сообщение. Пожалуйста, не отвечайте на это письмо.
+        </p>
+    </div>
+</body>
+</html>
+`
+
+const exportTemplateBG = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Експорт на данни</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h1 style="color: #3b82f6; margin-bottom: 20px;">Вашият експорт на данни от {{.AppName}}</h1>
+
+        <p>Заявеният експорт на данни е прикачен към този имейл.</p>
+
+        <p><strong>Файл:</strong> {{.FileName}}</p>
+
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Това е автоматично съобщение. Моля, не отговаряйте на този имейл.
         </p>
     </div>
 </body>

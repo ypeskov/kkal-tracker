@@ -12,6 +12,7 @@ import (
 	aihandler "ypeskov/kkal-tracker/internal/handlers/ai"
 	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
 	"ypeskov/kkal-tracker/internal/handlers/calories"
+	exporthandler "ypeskov/kkal-tracker/internal/handlers/export"
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
 	languageshandler "ypeskov/kkal-tracker/internal/handlers/languages"
 	metricshandler "ypeskov/kkal-tracker/internal/handlers/metrics"
@@ -25,6 +26,7 @@ import (
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	emailservice "ypeskov/kkal-tracker/internal/services/email"
+	exportservice "ypeskov/kkal-tracker/internal/services/export"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	metricsservice "ypeskov/kkal-tracker/internal/services/metrics"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
@@ -116,6 +118,7 @@ func (s *Server) Start() *http.Server {
 	metricsService := metricsservice.New(s.userRepo, s.weightRepo, s.logger)
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
 	aiSvc := aiservice.New(s.config, s.logger)
+	exportSvc := exportservice.New(calorieService, weightService, emailService, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
@@ -125,6 +128,7 @@ func (s *Server) Start() *http.Server {
 	metricsHandler := metricshandler.NewMetricsHandler(metricsService, s.logger)
 	reportsHandler := reportshandler.New(reportsService, s.logger)
 	aiHandler := aihandler.New(aiSvc, calorieService, weightService, s.userRepo, s.logger)
+	exportHandler := exporthandler.New(exportSvc, s.userRepo, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -165,6 +169,10 @@ func (s *Server) Start() *http.Server {
 	aiRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(2.0/60.0))
 	aiGroup := apiGroup.Group("/ai", authMiddleware.RequireAuth, aiRateLimiter)
 	aiHandler.RegisterRoutes(aiGroup)
+
+	// Export routes require authentication
+	exportGroup := apiGroup.Group("/export", authMiddleware.RequireAuth)
+	exportHandler.RegisterRoutes(exportGroup)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)

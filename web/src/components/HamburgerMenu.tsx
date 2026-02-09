@@ -113,6 +113,11 @@ export default function HamburgerMenu({ onLogout }: HamburgerMenuProps) {
               {t('nav.profile')}
             </Link>
           </li>
+          <li className="border-b border-gray-100">
+            <Link to="/settings" onClick={handleLinkClick} className="block py-4 px-6 no-underline text-gray-800 text-base font-medium transition-all duration-200 border-l-4 border-transparent hover:bg-gray-50 hover:border-l-blue-500 hover:text-blue-500">
+              {t('nav.settings')}
+            </Link>
+          </li>
           {onLogout && (
             <li className="border-b border-gray-100">
               <button

@@ -1,0 +1,26 @@
+{
+  "app": {
+    "name": "Kkal Tracker"
+  },
+  "email": {
+    "exportSubject": "Експорт на данни"
+  },
+  "export": {
+    "sheets": {
+      "weight": "История на теглото",
+      "food": "Записи за храна"
+    },
+    "columns": {
+      "date": "Дата",
+      "time": "Час",
+      "weight_kg": "Тегло (кг)",
+      "food": "Храна",
+      "weight_g": "Тегло (г)",
+      "calories": "Калории",
+      "kcal_per100": "Ккал/100г",
+      "fats": "Мазнини (г)",
+      "carbs": "Въглехидрати (г)",
+      "proteins": "Протеини (г)"
+    }
+  }
+}
