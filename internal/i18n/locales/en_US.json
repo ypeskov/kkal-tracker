@@ -3,6 +3,7 @@
     "name": "Kkal Tracker"
   },
   "email": {
+    "activationSubject": "Account Activation",
     "exportSubject": "Data Export"
   },
   "export": {

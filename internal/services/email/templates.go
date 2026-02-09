@@ -2,22 +2,10 @@ package email
 
 import "ypeskov/kkal-tracker/internal/i18n"
 
-// getSubject returns email subject based on language
-func (s *Service) getSubject(language string) string {
-	switch language {
-	case "uk_UA":
-		return "Активація облікового запису - Kkal Tracker"
-	case "ru_UA":
-		return "Активация учетной записи - Kkal Tracker"
-	default:
-		return "Account Activation - Kkal Tracker"
-	}
-}
-
-// getExportSubject returns export email subject based on language
-func (s *Service) getExportSubject(language string) string {
+// emailSubject builds a localized email subject: "{translated key} - {app name}"
+func (s *Service) emailSubject(language, key string) string {
 	t := i18n.GetTranslator()
-	return t.Get(language, "email.exportSubject") + " - " + t.Get(language, "app.name")
+	return t.Get(language, key) + " - " + t.Get(language, "app.name")
 }
 
 // Email templates for activation emails in different languages

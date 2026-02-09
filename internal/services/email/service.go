@@ -70,7 +70,7 @@ func (s *Service) SendActivationEmail(toEmail, token, language string) error {
 	}
 
 	// Prepare email headers
-	subject := s.getSubject(language)
+	subject := s.emailSubject(language, "email.activationSubject")
 	headers := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n",
 		s.config.SMTPFrom, toEmail, subject)
 
@@ -133,7 +133,7 @@ func (s *Service) SendEmailWithAttachment(toEmail, language string, attachment [
 
 	// Build MIME multipart message
 	boundary := "==KKAL_EXPORT_BOUNDARY=="
-	subject := s.getExportSubject(language)
+	subject := s.emailSubject(language, "email.exportSubject")
 
 	var message bytes.Buffer
 
