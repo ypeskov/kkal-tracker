@@ -1,4 +1,4 @@
-import { apiKeysService, APIKey, CreateAPIKeyResponse } from '@/api/apikeys';
+import { apiKeysService, CreateAPIKeyResponse } from '@/api/apikeys';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import NotificationPopup from '@/components/NotificationPopup';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ export default function ApiKeysTab() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [createdKey, setCreatedKey] = useState<CreateAPIKeyResponse | null>(null);
   const [copied, setCopied] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: 'revoke' | 'delete'; id: number } | null>(null);
+  const [deleteKeyId, setDeleteKeyId] = useState<number | null>(null);
 
   const { data: keys = [], isLoading } = useQuery({
     queryKey: ['apiKeys'],
@@ -46,29 +46,16 @@ export default function ApiKeysTab() {
     },
   });
 
-  const revokeMutation = useMutation({
-    mutationFn: (id: number) => apiKeysService.revokeKey(id),
-    onSuccess: () => {
-      setNotification({ type: 'success', message: t('settings.apiKeys.revokeSuccess') });
-      setConfirmAction(null);
-      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
-    },
-    onError: () => {
-      setNotification({ type: 'error', message: t('settings.apiKeys.error') });
-      setConfirmAction(null);
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiKeysService.deleteKey(id),
     onSuccess: () => {
       setNotification({ type: 'success', message: t('settings.apiKeys.deleteSuccess') });
-      setConfirmAction(null);
+      setDeleteKeyId(null);
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
     },
     onError: () => {
       setNotification({ type: 'error', message: t('settings.apiKeys.error') });
-      setConfirmAction(null);
+      setDeleteKeyId(null);
     },
   });
 
@@ -80,17 +67,6 @@ export default function ApiKeysTab() {
 
   const canCreate = name.trim() && (expiryOption !== 'custom' || (customDays && parseInt(customDays, 10) > 0));
 
-  const getKeyStatus = (key: APIKey): 'active' | 'revoked' | 'expired' => {
-    if (key.is_revoked) return 'revoked';
-    if (key.expires_at && new Date(key.expires_at) < new Date()) return 'expired';
-    return 'active';
-  };
-
-  const statusColors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    revoked: 'bg-red-100 text-red-800',
-    expired: 'bg-gray-100 text-gray-800',
-  };
 
   return (
     <div className="space-y-6">
@@ -173,14 +149,11 @@ export default function ApiKeysTab() {
                   <th className="pb-3 text-sm font-medium text-gray-600">{t('settings.apiKeys.columns.key')}</th>
                   <th className="pb-3 text-sm font-medium text-gray-600">{t('settings.apiKeys.columns.created')}</th>
                   <th className="pb-3 text-sm font-medium text-gray-600">{t('settings.apiKeys.columns.expires')}</th>
-                  <th className="pb-3 text-sm font-medium text-gray-600">{t('settings.apiKeys.columns.status')}</th>
                   <th className="pb-3 text-sm font-medium text-gray-600">{t('settings.apiKeys.columns.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {keys.map((key) => {
-                  const status = getKeyStatus(key);
-                  return (
+                {keys.map((key) => (
                     <tr key={key.id} className="border-b border-gray-100">
                       <td className="py-3 text-sm">{key.name}</td>
                       <td className="py-3 text-sm font-mono text-gray-500">{key.key_prefix}...</td>
@@ -193,31 +166,15 @@ export default function ApiKeysTab() {
                           : t('settings.apiKeys.never')}
                       </td>
                       <td className="py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusColors[status]}`}>
-                          {t(`settings.apiKeys.status.${status}`)}
-                        </span>
-                      </td>
-                      <td className="py-3">
-                        <div className="flex gap-2">
-                          {status === 'active' && (
-                            <button
-                              onClick={() => setConfirmAction({ type: 'revoke', id: key.id })}
-                              className="text-sm text-orange-600 hover:text-orange-700"
-                            >
-                              {t('settings.apiKeys.revoke')}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setConfirmAction({ type: 'delete', id: key.id })}
-                            className="text-sm text-red-600 hover:text-red-700"
-                          >
-                            {t('settings.apiKeys.delete')}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => setDeleteKeyId(key.id)}
+                          className="text-sm text-red-600 hover:text-red-700"
+                        >
+                          {t('settings.apiKeys.delete')}
+                        </button>
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>
@@ -249,14 +206,20 @@ export default function ApiKeysTab() {
 
       {/* Created Key Modal */}
       {createdKey && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-lg w-full max-w-lg p-6 shadow-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn px-4">
+          <div className="bg-white rounded-lg w-full md:w-[600px] lg:w-[700px] p-8 shadow-xl animate-slideUp">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('settings.apiKeys.created.title')}</h3>
             <p className="text-gray-600 mb-1">{t('settings.apiKeys.created.message')}</p>
             <p className="text-amber-600 text-sm mb-4">{t('settings.apiKeys.created.warning')}</p>
 
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
-              <code className="flex-1 text-sm font-mono break-all">{createdKey.key}</code>
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="text"
+                readOnly
+                value={createdKey.key}
+                className="flex-1 min-w-0 px-3 py-2 text-sm font-mono bg-gray-50 border border-gray-200 rounded-md"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
               <button
                 onClick={() => handleCopy(createdKey.key)}
                 className="flex-shrink-0 p-2 text-gray-500 hover:text-blue-600 transition-colors"
@@ -273,7 +236,7 @@ export default function ApiKeysTab() {
             <div className="flex justify-end">
               <button
                 onClick={() => setCreatedKey(null)}
-                className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                className="btn-primary px-4 py-2 text-sm font-medium"
               >
                 {t('settings.apiKeys.created.close')}
               </button>
@@ -283,23 +246,13 @@ export default function ApiKeysTab() {
       )}
 
       {/* Confirm Dialog */}
-      {confirmAction && (
+      {deleteKeyId !== null && (
         <DeleteConfirmationDialog
-          title={confirmAction.type === 'revoke'
-            ? t('settings.apiKeys.revoke')
-            : t('settings.apiKeys.delete')}
-          message={confirmAction.type === 'revoke'
-            ? t('settings.apiKeys.revokeConfirm')
-            : t('settings.apiKeys.deleteConfirm')}
-          onConfirm={() => {
-            if (confirmAction.type === 'revoke') {
-              revokeMutation.mutate(confirmAction.id);
-            } else {
-              deleteMutation.mutate(confirmAction.id);
-            }
-          }}
-          onCancel={() => setConfirmAction(null)}
-          isDeleting={revokeMutation.isPending || deleteMutation.isPending}
+          title={t('settings.apiKeys.delete')}
+          message={t('settings.apiKeys.deleteConfirm')}
+          onConfirm={() => deleteMutation.mutate(deleteKeyId)}
+          onCancel={() => setDeleteKeyId(null)}
+          isDeleting={deleteMutation.isPending}
         />
       )}
 

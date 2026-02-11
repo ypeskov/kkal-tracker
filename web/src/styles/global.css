@@ -153,6 +153,12 @@ th {
   background-color: var(--color-gray-50);
 }
 
+/* === BUTTONS === */
+
+button {
+  cursor: pointer;
+}
+
 /* === SPECIAL STATES === */
 
 /* Disable animations for users with vestibular disorders */
