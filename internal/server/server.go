@@ -10,6 +10,8 @@ import (
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/config"
 	aihandler "ypeskov/kkal-tracker/internal/handlers/ai"
+	apidatahandler "ypeskov/kkal-tracker/internal/handlers/apidata"
+	apikeyhandler "ypeskov/kkal-tracker/internal/handlers/apikey"
 	authhandler "ypeskov/kkal-tracker/internal/handlers/auth"
 	"ypeskov/kkal-tracker/internal/handlers/calories"
 	exporthandler "ypeskov/kkal-tracker/internal/handlers/export"
@@ -23,6 +25,7 @@ import (
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/repositories"
 	aiservice "ypeskov/kkal-tracker/internal/services/ai"
+	apikeyservice "ypeskov/kkal-tracker/internal/services/apikey"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	emailservice "ypeskov/kkal-tracker/internal/services/email"
@@ -48,6 +51,7 @@ type Server struct {
 	calorieRepo    repositories.CalorieEntryRepository
 	ingredientRepo repositories.IngredientRepository
 	weightRepo     repositories.WeightHistoryRepository
+	apiKeyRepo     repositories.APIKeyRepository
 }
 
 // setupRepositories configures repositories based on the database type
@@ -59,6 +63,7 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
+		s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectSQLite, s.logger)
 		s.logger.Debug("Configured SQLite repositories")
 	case "postgres":
 		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
@@ -66,6 +71,7 @@ func (s *Server) setupRepositories() error {
 		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
 		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
+		s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectPostgres, s.logger)
 		s.logger.Debug("Configured PostgreSQL repositories")
 	default:
 		return fmt.Errorf("unsupported database type: %s", s.config.DatabaseType)
@@ -119,6 +125,7 @@ func (s *Server) Start() *http.Server {
 	reportsService := reportsservice.New(calorieService, weightService, s.logger)
 	aiSvc := aiservice.New(s.config, s.logger)
 	exportSvc := exportservice.New(calorieService, weightService, emailService, s.logger)
+	apiKeySvc := apikeyservice.New(s.apiKeyRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
@@ -129,6 +136,9 @@ func (s *Server) Start() *http.Server {
 	reportsHandler := reportshandler.New(reportsService, s.logger)
 	aiHandler := aihandler.New(aiSvc, calorieService, weightService, s.userRepo, s.logger)
 	exportHandler := exporthandler.New(exportSvc, s.userRepo, s.logger)
+	apiKeyHandler := apikeyhandler.New(apiKeySvc, s.logger)
+	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeySvc, s.logger)
+	apiDataHandler := apidatahandler.New(calorieService, weightService, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -173,6 +183,15 @@ func (s *Server) Start() *http.Server {
 	// Export routes require authentication
 	exportGroup := apiGroup.Group("/export", authMiddleware.RequireAuth)
 	exportHandler.RegisterRoutes(exportGroup)
+
+	// API key management routes (JWT auth - user manages their keys)
+	apiKeysGroup := apiGroup.Group("/api-keys", authMiddleware.RequireAuth)
+	apiKeyHandler.RegisterRoutes(apiKeysGroup)
+
+	// External data API (API key auth, rate limited: 60 req/min)
+	v1RateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(1))
+	v1Group := apiGroup.Group("/v1", apiKeyMiddleware.RequireAPIKey, v1RateLimiter)
+	apiDataHandler.RegisterRoutes(v1Group)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)

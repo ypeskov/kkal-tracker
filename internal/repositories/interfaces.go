@@ -62,3 +62,12 @@ type IngredientRepository interface {
 		names map[string]string) (*models.GlobalIngredient, error)
 	GetGlobalIngredientByID(id int) (*models.GlobalIngredient, error)
 }
+
+// APIKeyRepository defines the contract for API key data access
+type APIKeyRepository interface {
+	Create(userID int, name, keyHash, keyPrefix string, expiresAt *time.Time) (*models.APIKey, error)
+	GetByKeyHash(keyHash string) (*models.APIKey, error)
+	GetByUserID(userID int) ([]*models.APIKey, error)
+	Revoke(id, userID int) error
+	Delete(id, userID int) error
+}

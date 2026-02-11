@@ -50,6 +50,13 @@ const (
 	QueryGetActivationTokenByToken     = "getActivationTokenByToken"
 	QueryDeleteActivationToken         = "deleteActivationToken"
 	QueryDeleteExpiredActivationTokens = "deleteExpiredActivationTokens"
+
+	// API Key queries
+	QueryCreateAPIKey       = "createAPIKey"
+	QueryGetAPIKeyByHash    = "getAPIKeyByHash"
+	QueryGetAPIKeysByUserID = "getAPIKeysByUserID"
+	QueryRevokeAPIKey       = "revokeAPIKey"
+	QueryDeleteAPIKey       = "deleteAPIKey"
 )
 
 // buildKey creates a query key by combining query name and dialect
@@ -494,6 +501,55 @@ func getQueries() map[string]string {
 	`,
 		buildKey(QueryDeleteExpiredActivationTokens, DialectPostgres): `
 		DELETE FROM activation_tokens WHERE expires_at < $1
+	`,
+
+		// API Key queries
+		buildKey(QueryCreateAPIKey, DialectSQLite): `
+		INSERT INTO api_keys (user_id, name, key_hash, key_prefix, expires_at)
+		VALUES (?, ?, ?, ?, ?)
+	`,
+		buildKey(QueryCreateAPIKey, DialectPostgres): `
+		INSERT INTO api_keys (user_id, name, key_hash, key_prefix, expires_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`,
+
+		buildKey(QueryGetAPIKeyByHash, DialectSQLite): `
+		SELECT id, user_id, name, key_hash, key_prefix, expires_at, is_revoked, created_at
+		FROM api_keys
+		WHERE key_hash = ?
+	`,
+		buildKey(QueryGetAPIKeyByHash, DialectPostgres): `
+		SELECT id, user_id, name, key_hash, key_prefix, expires_at, is_revoked, created_at
+		FROM api_keys
+		WHERE key_hash = $1
+	`,
+
+		buildKey(QueryGetAPIKeysByUserID, DialectSQLite): `
+		SELECT id, user_id, name, key_hash, key_prefix, expires_at, is_revoked, created_at
+		FROM api_keys
+		WHERE user_id = ?
+		ORDER BY created_at DESC
+	`,
+		buildKey(QueryGetAPIKeysByUserID, DialectPostgres): `
+		SELECT id, user_id, name, key_hash, key_prefix, expires_at, is_revoked, created_at
+		FROM api_keys
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`,
+
+		buildKey(QueryRevokeAPIKey, DialectSQLite): `
+		UPDATE api_keys SET is_revoked = 1 WHERE id = ? AND user_id = ?
+	`,
+		buildKey(QueryRevokeAPIKey, DialectPostgres): `
+		UPDATE api_keys SET is_revoked = true WHERE id = $1 AND user_id = $2
+	`,
+
+		buildKey(QueryDeleteAPIKey, DialectSQLite): `
+		DELETE FROM api_keys WHERE id = ? AND user_id = ?
+	`,
+		buildKey(QueryDeleteAPIKey, DialectPostgres): `
+		DELETE FROM api_keys WHERE id = $1 AND user_id = $2
 	`,
 	}
 }
