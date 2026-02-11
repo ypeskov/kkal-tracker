@@ -4,11 +4,11 @@
 A Go/Echo web application for calorie tracking with React/TanStack frontend. Built using `/Users/ypeskov/Projects/Go/qr-generator` as structural reference. Features calorie tracking, weight management, ingredient database, and reporting capabilities.
 
 ## Architecture
-- **Backend**: Go with Echo framework v4.13.4
-- **Frontend**: React 18 with TanStack Query & Router, TypeScript, Vite
-- **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.25.0
-- **Auth**: JWT (v5.3.0) with bcrypt password hashing, sessionStorage persistence
-- **I18n**: react-i18next with en_US, uk_UA, ru_UA locales
+- **Backend**: Go 1.25 with Echo framework v4.15.0
+- **Frontend**: React 19 with TanStack Query & Router, TypeScript, Vite
+- **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.26.0
+- **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation
+- **I18n**: react-i18next (frontend) + custom translator (backend) with en_US, uk_UA, ru_UA, bg_BG locales
 - **Logging**: Structured logging with slog
 - **Dev Tools**: Air for live reload
 - **Deployment**: Kubernetes-ready with backup integration
@@ -17,12 +17,14 @@ A Go/Echo web application for calorie tracking with React/TanStack frontend. Bui
 
 ### Development
 ```bash
-make dev          # Start development with Air live reload
-make watch        # Alternative to 'make dev' with Air auto-install prompt
-make build        # Build both frontend and backend
-make run          # Build and run the application
-make clean        # Clean build artifacts
-make init         # Install dependencies and initial setup
+make dev              # Start development with Air live reload
+make watch            # Alternative to 'make dev' with Air auto-install prompt
+make build            # Build both frontend and backend
+make build-frontend   # Build only the React frontend
+make run              # Build and run the application
+make clean            # Clean build artifacts
+make init             # Install dependencies and initial setup
+make install-deps     # Install Go and Node dependencies
 ```
 
 ### Database Migrations
@@ -48,123 +50,81 @@ go mod tidy       # Clean up dependencies
 ```
 
 ## Project Structure
+
+### Directory Layout
 ```
-├── cmd/
-│   ├── web/main.go              # Application entry point
-│   ├── migrate/main.go          # Migration runner
-│   └── seed/                    # Database seeding
-│       ├── main.go
-│       └── sql/                 # SQL seed files
-├── internal/
-│   ├── auth/jwt.go              # JWT token management
-│   ├── config/config.go         # Configuration management
-│   ├── database/database.go     # Database connection & migrations
-│   ├── handlers/                # HTTP handlers by domain
-│   │   ├── auth/                # Authentication endpoints
-│   │   ├── calories/            # Calorie tracking
-│   │   ├── ingredients/         # Ingredient management
-│   │   ├── profile/             # User profile
-│   │   ├── reports/             # Analytics & reports
-│   │   ├── static/              # Static file serving
-│   │   └── weight/              # Weight tracking
-│   ├── logger/logger.go         # Structured logging setup
-│   ├── middleware/              # Custom middleware
-│   │   ├── auth.go              # JWT authentication
-│   │   ├── logger.go            # Request logging
-│   │   └── validator.go         # Input validation
-│   ├── models/                  # Data models
-│   │   ├── user.go
-│   │   ├── calorie_entry.go
-│   │   ├── ingredient.go
-│   │   └── weight_history.go
-│   ├── repositories/            # Data access layer
-│   │   ├── interfaces.go        # Repository interfaces
-│   │   ├── queries.go           # Centralized SQL queries
-│   │   ├── errors.go            # Repository-level errors
-│   │   ├── SqlLoader.go         # SQL file loader utility
-│   │   ├── user.go
-│   │   ├── calorie_entry.go
-│   │   ├── ingredient.go
-│   │   └── weight_history.go
-│   ├── server/server.go         # Echo server setup
-│   └── services/                # Business logic by domain
-│       ├── auth/                # Authentication service
-│       ├── calorie/             # Calorie management
-│       ├── ingredient/          # Ingredient service
-│       ├── profile/             # Profile management
-│       ├── reports/             # Reporting service
-│       └── weight/              # Weight tracking
-├── kubernetes/                  # K8s deployment configs
-│   ├── base/                    # Base configurations
-│   │   ├── deployment.yaml
-│   │   ├── service.yaml
-│   │   ├── ingress.yaml
-│   │   ├── pv.yaml
-│   │   ├── pvc.yaml
-│   │   ├── configmap-backup.yaml
-│   │   ├── cronjob-backup.yaml
-│   │   └── kustomization.yaml
-│   └── overlays/                # Environment overlays
-│       ├── dev/
-│       └── prod/
-├── migrations/                  # Goose SQL migrations
-│   ├── 20250907200000_initial_schema.sql
-│   ├── 20250907200001_create_indexes.sql
-│   ├── 20250907200002_add_ingredients_table.sql
-│   ├── 20250907200003_add_unique_constraint_user_ingredients.sql
-│   ├── 20250907200004_add_user_profile_fields.sql
-│   ├── 20250907200005_add_weight_to_users.sql
-│   └── 20250919055016_remove_weight_from_users.sql
-├── scripts/                     # Utility scripts
-│   └── create_user.go           # User creation utility
-├── web/                         # React frontend
-│   ├── src/
-│   │   ├── api/                 # API service classes
-│   │   ├── components/          # React components
-│   │   │   ├── Calculator.tsx   # Calculator popup component
-│   │   │   ├── CalculatorInput.tsx  # Input with integrated calculator
-│   │   │   └── ...              # Other components
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── i18n/                # Internationalization
-│   │   ├── pages/               # Page components
-│   │   ├── styles/              # Global styles and CSS
-│   │   ├── utils/               # Utility functions
-│   │   │   ├── calculator.ts    # Math expression evaluation utilities
-│   │   │   ├── numericInput.ts  # Numeric input validation
-│   │   │   └── ...              # Other utilities
-│   │   ├── App.tsx              # Root application component
-│   │   ├── main.tsx             # Application entry point
-│   │   └── router.tsx           # Router configuration
-│   ├── public/                  # Static assets
-│   │   ├── favicon.ico
-│   │   ├── icon.png
-│   │   ├── icon.svg
-│   │   ├── steak-icon.png
-│   │   └── steak-icon.svg
-│   ├── dist/                    # Built frontend assets
-│   ├── embed.go                 # Go embedded filesystem
-│   ├── index.html               # HTML template
-│   ├── package.json             # Node dependencies
-│   ├── vite.config.ts           # Vite configuration
-│   ├── tailwind.config.js       # Tailwind CSS config
-│   ├── postcss.config.js        # PostCSS config
-│   └── tsconfig.json            # TypeScript config
-├── bin/                         # Compiled binaries
-├── data/                        # SQLite database files
-│   └── app.db
-├── tmp/                         # Air temporary files
-│   └── build-errors.log
-├── .air.toml                    # Air live reload config
-├── .env                         # Local environment variables (git-ignored)
-├── .env.sample                  # Environment variables template
-├── .gitignore                   # Git ignore patterns
-├── Dockerfile                   # Container image definition
-├── build-and-push.sh            # Docker build and push script
-├── version.txt                  # Application version
-├── Makefile                     # Build automation
-├── CLAUDE.md                    # Claude Code context (this file)
-└── README.md                    # Project documentation
+cmd/                    # Application entry points
+├── web/                # Main web server
+├── migrate/            # Migration runner CLI
+└── seed/               # Database seeding (with sql/ subdirectory for seed files)
+
+internal/               # Core application code (clean architecture)
+├── auth/               # JWT token management
+├── config/             # Configuration loading from env
+├── database/           # Database connection & dialect support (SQLite/PostgreSQL)
+├── handlers/           # HTTP handlers — one subdirectory per domain
+│   ├── ai/             # AI analysis endpoints (handler.go, dto.go)
+│   ├── auth/           # Authentication (login, register, activate)
+│   ├── calories/       # Calorie entry CRUD
+│   ├── export/         # Data export (Excel download/email)
+│   ├── ingredients/    # Ingredient management
+│   ├── languages/      # Supported languages endpoint
+│   ├── metrics/        # Health metrics (BMI, BMR, TDEE)
+│   ├── profile/        # User profile & weight goals
+│   ├── reports/        # Analytics & reporting
+│   ├── static/         # Static file serving (embedded frontend)
+│   └── weight/         # Weight history tracking
+├── i18n/               # Backend translator with embedded locale files
+├── logger/             # Structured logging setup (slog wrapper)
+├── middleware/          # Echo middleware (auth, logger, validator)
+├── models/             # Data models (user, calorie_entry, ingredient, weight_history, activation_token)
+├── repositories/       # Data access layer — repository pattern with interfaces
+│                       # Key files: interfaces.go, queries.go, errors.go, SqlLoader.go
+└── services/           # Business logic — one subdirectory per domain
+    ├── ai/             # Multi-provider AI integration (OpenAI, extensible)
+    ├── auth/           # Authentication & password hashing
+    ├── calorie/        # Calorie entry logic
+    ├── email/          # Email sending (activation, export delivery)
+    ├── export/         # Excel generation for weight/food data
+    ├── ingredient/     # Ingredient management with translations
+    ├── metrics/        # Health metrics calculation (BMI, BMR, TDEE)
+    ├── profile/        # User profile & preferences
+    ├── reports/        # Analytics & data aggregation
+    └── weight/         # Weight tracking
+
+kubernetes/             # K8s deployment configs
+├── base/               # Base resources (deployment, service, ingress, PV/PVC, backup CronJob)
+└── overlays/           # Environment-specific overlays (dev/, prod/)
+
+migrations/             # Goose SQL migration files (run with `make migrate-*`)
+
+scripts/                # Utility scripts (e.g., create_user.go)
+
+web/                    # React frontend (Vite + TypeScript)
+├── src/
+│   ├── api/            # API service classes (one per domain)
+│   ├── components/     # React components (flat + subdirs: ai/, reports/, settings/)
+│   ├── hooks/          # Custom React hooks
+│   ├── i18n/           # i18next config + locales/ (en_US, uk_UA, ru_UA, bg_BG)
+│   ├── pages/          # Page components (Dashboard, FoodList, Profile, Report, Settings, AIInsights, etc.)
+│   ├── styles/         # Global CSS styles
+│   ├── types/          # TypeScript type definitions
+│   └── utils/          # Utility functions (calculator, numericInput)
+├── public/             # Static assets (favicon, icons)
+├── dist/               # Built frontend assets (generated, git-ignored)
+└── embed.go            # Go embedded filesystem for serving dist/
+
+bin/                    # Compiled binaries (generated)
+data/                   # SQLite database files (app.db)
+tmp/                    # Air temporary files
 ```
+
+### Conventions
+- **Handlers**: Each domain has its own directory with `handler.go` and optionally `dto.go` for request/response types
+- **Services**: Each domain has `service.go`, optionally `types.go` for DTOs and `errors.go` for domain errors
+- **Repositories**: One file per entity, plus shared `interfaces.go`, `queries.go`, `errors.go`
+- **Frontend API**: One `.ts` file per backend domain (e.g., `calories.ts`, `weight.ts`, `ai.ts`)
+- **Locale files**: JSON, named by locale code (e.g., `bg_BG.json`), both in `web/src/i18n/locales/` and `internal/i18n/locales/`
 
 ## Environment Variables
 ```
@@ -196,7 +156,7 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Embedded assets**: Frontend dist files are embedded in Go binary via `web/embed.go`
 - **API routes**: All API endpoints under `/api` prefix
 - **Authentication**: JWT tokens stored in sessionStorage, persist across page reloads
-- **Internationalization**: Support for English (en_US), Ukrainian (uk_UA), and Russian in Ukraine (ru_UA)
+- **Internationalization**: Support for English (en_US), Ukrainian (uk_UA), Russian in Ukraine (ru_UA), and Bulgarian (bg_BG)
 - **Development**: Uses Air for live reload, excludes `web/dist` from watching
 - **Production**: JSON logging format, structured error handling
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
@@ -347,25 +307,27 @@ If you encounter old semantic CSS classes during refactoring:
 ## Dependencies
 
 ### Backend
-- Echo v4.13.4 (web framework)
-- modernc.org/sqlite v1.38.2 (SQLite driver)
-- Goose v3.25.0 (migrations)
-- JWT-Go v5.3.0 (authentication)
-- golang.org/x/crypto v0.41.0 (bcrypt)
-- go-playground/validator v10.27.0 (validation)
+- Echo v4.15.0 (web framework)
+- modernc.org/sqlite v1.44.3 (SQLite driver)
+- Goose v3.26.0 (migrations)
+- JWT-Go v5.3.1 (authentication)
+- golang.org/x/crypto v0.47.0 (bcrypt)
+- go-playground/validator v10.30.1 (validation)
+- sashabaranov/go-openai v1.41.2 (AI integration)
+- xuri/excelize v2.10.0 (Excel export)
 - Air (live reload - auto-installed via make watch)
 
 ### Frontend
-- React 18.3.1 + React DOM
-- TanStack Query v5.62.7 (server state)
-- TanStack Router v1.87.0 (routing)
-- Chart.js v4.5.0 + react-chartjs-2 v5.3.0 (charts)
+- React 19.2.4 + React DOM
+- TanStack Query v5.90.20 (server state)
+- TanStack Router v1.157.18 (routing)
+- Chart.js v4.5.1 + react-chartjs-2 v5.3.1 (charts)
 - date-fns v4.1.0 (date utilities)
-- react-i18next v15.7.3 (internationalization)
-- lucide-react v0.544.0 (icons)
-- Tailwind CSS v4.1.13 (styling)
-- Vite v6.0.5 (build tool)
-- TypeScript v5.6.2
+- react-i18next v16.5.4 (internationalization)
+- lucide-react v0.563.0 (icons)
+- Tailwind CSS v4.1.18 (styling)
+- Vite v7.3.1 (build tool)
+- TypeScript v5.9.3
 
 ## Build Process
 1. Frontend builds to `web/dist/` (via Vite)
@@ -374,15 +336,17 @@ If you encounter old semantic CSS classes during refactoring:
 4. Air watches Go, TS, TSX, JS, HTML, CSS files and triggers rebuilds
 5. Air excludes `web/dist`, `web/node_modules`, `tmp`, `bin`, `data` from watching
 6. Build errors logged to `tmp/build-errors.log`
-7. Docker images versioned via `version.txt` (current: v1.2.12)
+7. Docker images versioned via `version.txt` (current: v5.2.1)
 8. **IMPORTANT**: `build-and-push.sh` always builds without cache (`--no-cache`) and removes `web/dist/` before building
 
 ## Features
-- **User Authentication**: JWT-based login/logout with bcrypt password hashing
+- **User Authentication**: JWT-based login/register/activate with bcrypt password hashing and email activation
 - **Calorie Tracking**: Add food entries with name, weight, kcal/100g, auto-calculated totals
-- **Weight Management**: Track weight history over time with charts
+- **Weight Management**: Track weight history over time with charts and weight goals
+- **Weight Goals**: Set target weight with target date, track progress with visual indicators
+- **Health Metrics**: BMI, BMR, TDEE calculations based on user profile (age, gender, activity level)
 - **Ingredient Database**: Global ingredients with multilingual names and nutritional data
-- **User Profiles**: Personal settings and preference management
+- **User Profiles**: Personal settings, preferences, gender, activity level management
 - **Reports & Analytics**: Data visualization and calorie/weight trends
 - **AI Insights**: AI-powered nutrition and weight analysis with personalized recommendations
   - OpenAI integration (GPT-4o-mini by default)
@@ -390,8 +354,11 @@ If you encounter old semantic CSS classes during refactoring:
   - Customizable analysis periods (7, 14, 30, 90 days)
   - Optional specific questions for targeted advice
   - Multilingual responses based on user's language preference
+  - Rate limited: 2 requests per minute
+- **Data Export**: Export weight and food data as Excel files (download or email delivery)
+- **Email Service**: Activation emails and export delivery
 - **Dashboard**: View today's entries with total calorie count
-- **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA) with language switcher
+- **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA, bg_BG) with language switcher, both frontend and backend
 - **Persistent Sessions**: JWT tokens stored in sessionStorage
 - **Responsive UI**: Clean, modern interface with proper form validation
 - **Database Backup**: Automated backups to Google Drive via OAuth2
@@ -409,32 +376,44 @@ If you encounter old semantic CSS classes during refactoring:
 The application follows a clean architecture pattern with separation of concerns:
 
 ### Domain Services (`internal/services/`)
+- **ai**: Multi-provider AI integration (OpenAI, extensible for others)
 - **auth**: Authentication, JWT management, password hashing
 - **calorie**: Calorie entry business logic and calculations
+- **email**: Email sending (activation, export delivery)
+- **export**: Excel generation for weight/food data export
 - **ingredient**: Global ingredient management with translations
-- **weight**: Weight tracking and history management
-- **profile**: User profile and preferences
+- **metrics**: Health metrics calculation (BMI, BMR, TDEE)
+- **profile**: User profile, preferences, and weight goals
 - **reports**: Analytics, trends, and data aggregation
+- **weight**: Weight tracking and history management
 
 ### Data Layer (`internal/repositories/`)
 - Repository pattern for data access
 - Interface-based design for testability
-- Separate repositories for each domain entity
+- Separate repositories for each domain entity (user, calorie_entry, ingredient, weight_history, activation_token)
 - Centralized query management in `queries.go`
 - Custom error types in `errors.go` for consistent error handling
 - SQL file loader utility in `SqlLoader.go` for loading SQL from files
 
 ### API Endpoints
 All API routes are prefixed with `/api`:
-- `/api/auth/*` - Authentication (login, logout, refresh)
-- `/api/calories/*` - Calorie entry CRUD operations
-- `/api/ingredients/*` - Ingredient search and management
-- `/api/weight/*` - Weight history tracking
-- `/api/profile/*` - User profile management
-- `/api/reports/*` - Analytics and reporting
-- `/api/ai/*` - AI analysis endpoints
-  - `GET /api/ai/providers` - List available AI providers
+- `GET /api/languages` - Supported languages (public, no auth)
+- `/api/auth/*` - Authentication (rate limited: 5 req/sec)
+  - `POST /api/auth/login` - User login
+  - `POST /api/auth/register` - User registration
+  - `GET /api/auth/activate/:token` - Activate account via email link
+  - `GET /api/auth/me` - Get current user (requires auth)
+- `/api/calories/*` - Calorie entry CRUD (GET, POST, PUT /:id, DELETE /:id)
+- `/api/ingredients/*` - Ingredient management (GET, GET /:id, POST, PUT /:id, DELETE /:id)
+- `/api/weight/*` - Weight history (GET, POST, PUT /:id, DELETE /:id)
+- `/api/profile` - User profile (GET, PUT)
+- `/api/profile/goal` - Weight goal (GET progress, PUT set, DELETE clear)
+- `/api/metrics` - Health metrics (GET)
+- `/api/reports/data` - Aggregated report data (GET, with from/to query params)
+- `/api/ai/*` - AI analysis (rate limited: 2 req/min)
+  - `GET /api/ai/status` - AI service status
   - `POST /api/ai/analyze` - Perform AI analysis
+- `/api/export` - Data export (POST, weight/food as Excel or email)
 
 ## Deployment
 
