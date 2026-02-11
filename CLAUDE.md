@@ -7,7 +7,7 @@ A Go/Echo web application for calorie tracking with React/TanStack frontend. Bui
 - **Backend**: Go 1.25 with Echo framework v4.15.0
 - **Frontend**: React 19 with TanStack Query & Router, TypeScript, Vite
 - **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.26.0
-- **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation
+- **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation; API key auth for external data access
 - **I18n**: react-i18next (frontend) + custom translator (backend) with en_US, uk_UA, ru_UA, bg_BG locales
 - **Logging**: Structured logging with slog
 - **Dev Tools**: Air for live reload
@@ -64,6 +64,8 @@ internal/               # Core application code (clean architecture)
 ├── database/           # Database connection & dialect support (SQLite/PostgreSQL)
 ├── handlers/           # HTTP handlers — one subdirectory per domain
 │   ├── ai/             # AI analysis endpoints (handler.go, dto.go)
+│   ├── apidata/        # External data API (API key-protected)
+│   ├── apikey/         # API key management CRUD (JWT-protected)
 │   ├── auth/           # Authentication (login, register, activate)
 │   ├── calories/       # Calorie entry CRUD
 │   ├── export/         # Data export (Excel download/email)
@@ -76,12 +78,13 @@ internal/               # Core application code (clean architecture)
 │   └── weight/         # Weight history tracking
 ├── i18n/               # Backend translator with embedded locale files
 ├── logger/             # Structured logging setup (slog wrapper)
-├── middleware/          # Echo middleware (auth, logger, validator)
-├── models/             # Data models (user, calorie_entry, ingredient, weight_history, activation_token)
+├── middleware/          # Echo middleware (auth, apikey, logger, validator)
+├── models/             # Data models (user, calorie_entry, ingredient, weight_history, activation_token, api_key)
 ├── repositories/       # Data access layer — repository pattern with interfaces
 │                       # Key files: interfaces.go, queries.go, errors.go, SqlLoader.go
 └── services/           # Business logic — one subdirectory per domain
     ├── ai/             # Multi-provider AI integration (OpenAI, extensible)
+    ├── apikey/         # API key generation, validation, and management
     ├── auth/           # Authentication & password hashing
     ├── calorie/        # Calorie entry logic
     ├── email/          # Email sending (activation, export delivery)
@@ -102,7 +105,7 @@ scripts/                # Utility scripts (e.g., create_user.go)
 
 web/                    # React frontend (Vite + TypeScript)
 ├── src/
-│   ├── api/            # API service classes (one per domain)
+│   ├── api/            # API service classes (one per domain, e.g., apikeys.ts)
 │   ├── components/     # React components (flat + subdirs: ai/, reports/, settings/)
 │   ├── hooks/          # Custom React hooks
 │   ├── i18n/           # i18next config + locales/ (en_US, uk_UA, ru_UA, bg_BG)
@@ -356,6 +359,12 @@ If you encounter old semantic CSS classes during refactoring:
   - Multilingual responses based on user's language preference
   - Rate limited: 2 requests per minute
 - **Data Export**: Export weight and food data as Excel files (download or email delivery)
+- **API Key Data Access**: Programmatic access to weight/food data via API keys
+  - Key management UI in Settings (create, revoke, delete)
+  - SHA-256 hashed storage, full key shown only once at creation
+  - Time-limited (N days) or permanent keys
+  - `X-API-Key` header authentication for `GET /api/v1/data` endpoint
+  - JSON response with weight entries, food entries, or both
 - **Email Service**: Activation emails and export delivery
 - **Dashboard**: View today's entries with total calorie count
 - **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA, bg_BG) with language switcher, both frontend and backend
@@ -377,6 +386,7 @@ The application follows a clean architecture pattern with separation of concerns
 
 ### Domain Services (`internal/services/`)
 - **ai**: Multi-provider AI integration (OpenAI, extensible for others)
+- **apikey**: API key generation (crypto/rand), SHA-256 hashing, validation, CRUD
 - **auth**: Authentication, JWT management, password hashing
 - **calorie**: Calorie entry business logic and calculations
 - **email**: Email sending (activation, export delivery)
@@ -390,7 +400,7 @@ The application follows a clean architecture pattern with separation of concerns
 ### Data Layer (`internal/repositories/`)
 - Repository pattern for data access
 - Interface-based design for testability
-- Separate repositories for each domain entity (user, calorie_entry, ingredient, weight_history, activation_token)
+- Separate repositories for each domain entity (user, calorie_entry, ingredient, weight_history, activation_token, api_key)
 - Centralized query management in `queries.go`
 - Custom error types in `errors.go` for consistent error handling
 - SQL file loader utility in `SqlLoader.go` for loading SQL from files
@@ -414,6 +424,13 @@ All API routes are prefixed with `/api`:
   - `GET /api/ai/status` - AI service status
   - `POST /api/ai/analyze` - Perform AI analysis
 - `/api/export` - Data export (POST, weight/food as Excel or email)
+- `/api/api-keys/*` - API key management (JWT auth required)
+  - `POST /api/api-keys` - Create API key (returns full key once)
+  - `GET /api/api-keys` - List user's API keys (prefixes only)
+  - `POST /api/api-keys/:id/revoke` - Revoke a key
+  - `DELETE /api/api-keys/:id` - Delete a key
+- `/api/v1/data` - External data API (API key auth via `X-API-Key` header, rate limited: 60 req/min)
+  - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
 
 ## Deployment
 
