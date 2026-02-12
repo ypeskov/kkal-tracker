@@ -59,15 +59,18 @@ export default function WeightCaloriesChart({
   const sortedDates = Array.from(allDates).sort();
 
   // Extend dates to goal target date when projection is enabled
+  const MAX_PROJECTION_DAYS = 730;
   if (showGoalProjection && goalData?.targetDate && sortedDates.length > 0) {
     const lastDataDate = sortedDates[sortedDates.length - 1];
     const targetDateStr = goalData.targetDate.split('T')[0]; // Normalize to YYYY-MM-DD
     if (targetDateStr > lastDataDate) {
       let current = addDays(new Date(lastDataDate), 1);
       const target = new Date(targetDateStr);
-      while (current <= target) {
+      let daysAdded = 0;
+      while (current <= target && daysAdded < MAX_PROJECTION_DAYS) {
         sortedDates.push(format(current, 'yyyy-MM-dd'));
         current = addDays(current, 1);
+        daysAdded++;
       }
     }
   }
