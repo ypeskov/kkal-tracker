@@ -120,7 +120,8 @@
     "step_1_day": "1 ден",
     "step_5_days": "5 дни",
     "step_10_days": "10 дни",
-    "step_15_days": "15 дни"
+    "step_15_days": "15 дни",
+    "show_goal_projection": "Покажи прогноза към целта"
   },
   "profile": {
     "title": "Профил",

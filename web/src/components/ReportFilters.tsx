@@ -17,6 +17,9 @@ interface ReportFiltersProps {
   onShowWeightChange?: (show: boolean) => void;
   showCalories?: boolean;
   onShowCaloriesChange?: (show: boolean) => void;
+  showGoalProjection?: boolean;
+  onShowGoalProjectionChange?: (show: boolean) => void;
+  hasGoalWithDate?: boolean;
   weightStats?: { min: number; max: number; average: number };
 }
 
@@ -34,6 +37,9 @@ export default function ReportFilters({
   onShowWeightChange,
   showCalories,
   onShowCaloriesChange,
+  showGoalProjection,
+  onShowGoalProjectionChange,
+  hasGoalWithDate,
   weightStats,
 }: ReportFiltersProps) {
   const { t } = useTranslation();
@@ -131,6 +137,17 @@ export default function ReportFilters({
                   />
                   <span className="text-sm font-medium">{t('report.calories')}</span>
                 </div>
+                {hasGoalWithDate && showGoalProjection !== undefined && onShowGoalProjectionChange && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showGoalProjection}
+                      onChange={(e) => onShowGoalProjectionChange(e.target.checked)}
+                      className="w-4 h-4 text-orange-500 rounded"
+                    />
+                    <span className="text-sm font-medium">{t('report.show_goal_projection')}</span>
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -10,7 +10,7 @@ import {
   Tooltip,
   TooltipItem,
 } from 'chart.js';
-import { differenceInDays, format } from 'date-fns';
+import { addDays, differenceInDays, format } from 'date-fns';
 import { Line } from 'react-chartjs-2';
 import { useTranslation } from 'react-i18next';
 
@@ -39,6 +39,7 @@ interface WeightCaloriesChartProps {
   showWeight: boolean;
   showCalories: boolean;
   goalData?: GoalData; // Goal data for trajectory line
+  showGoalProjection?: boolean; // Extend chart to goal target date with trend projection
 }
 
 export default function WeightCaloriesChart({
@@ -47,6 +48,7 @@ export default function WeightCaloriesChart({
   showWeight,
   showCalories,
   goalData,
+  showGoalProjection = false,
 }: WeightCaloriesChartProps) {
   const { t } = useTranslation();
 
@@ -55,6 +57,20 @@ export default function WeightCaloriesChart({
   weightData.forEach(d => allDates.add(d.date));
   calorieData.forEach(d => allDates.add(d.date));
   const sortedDates = Array.from(allDates).sort();
+
+  // Extend dates to goal target date when projection is enabled
+  if (showGoalProjection && goalData?.targetDate && sortedDates.length > 0) {
+    const lastDataDate = sortedDates[sortedDates.length - 1];
+    const targetDateStr = goalData.targetDate.split('T')[0]; // Normalize to YYYY-MM-DD
+    if (targetDateStr > lastDataDate) {
+      let current = addDays(new Date(lastDataDate), 1);
+      const target = new Date(targetDateStr);
+      while (current <= target) {
+        sortedDates.push(format(current, 'yyyy-MM-dd'));
+        current = addDays(current, 1);
+      }
+    }
+  }
 
   // Create maps for quick lookup
   const weightMap = new Map(weightData.map(d => [d.date, d.weight]));

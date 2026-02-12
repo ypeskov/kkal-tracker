@@ -19,6 +19,7 @@ export default function Report() {
   const [activeTab, setActiveTab] = useState<'chart' | 'weight'>('chart');
   const [showWeight, setShowWeight] = useState(true);
   const [showCalories, setShowCalories] = useState(true);
+  const [showGoalProjection, setShowGoalProjection] = useState(true);
   const [period, setPeriod] = useState<Period>('daily');
   const [stepInterval, setStepInterval] = useState<StepInterval>('1');
 
@@ -237,6 +238,9 @@ export default function Report() {
         onShowWeightChange={setShowWeight}
         showCalories={showCalories}
         onShowCaloriesChange={setShowCalories}
+        showGoalProjection={showGoalProjection}
+        onShowGoalProjectionChange={setShowGoalProjection}
+        hasGoalWithDate={!!goalProgress?.target_date}
         weightStats={weightStats}
       />
 
@@ -274,6 +278,7 @@ export default function Report() {
                   calorieData={aggregatedData.calorieData}
                   showWeight={showWeight}
                   showCalories={showCalories}
+                  showGoalProjection={showGoalProjection}
                   goalData={goalProgress ? {
                     targetWeight: goalProgress.target_weight,
                     targetDate: goalProgress.target_date,

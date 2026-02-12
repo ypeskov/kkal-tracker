@@ -120,7 +120,8 @@
     "step_1_day": "1 day",
     "step_5_days": "5 days",
     "step_10_days": "10 days",
-    "step_15_days": "15 days"
+    "step_15_days": "15 days",
+    "show_goal_projection": "Show goal projection"
   },
   "profile": {
     "title": "Profile",
