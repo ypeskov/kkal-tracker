@@ -1,4 +1,5 @@
 import { AnalysisResult } from '@/api/ai';
+import DOMPurify from 'dompurify';
 import { Clock, Coins, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -58,7 +59,7 @@ export default function AIAnalysisPanel({
 
       <div
         className="prose prose-sm max-w-none mb-4 text-gray-700 leading-relaxed [&>h3]:text-lg [&>h3]:font-semibold [&>h3]:text-gray-800 [&>h3]:mt-4 [&>h3]:mb-2 [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-3 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-3"
-        dangerouslySetInnerHTML={{ __html: result.analysis }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(result.analysis) }}
       />
 
       <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100 text-sm text-gray-500">

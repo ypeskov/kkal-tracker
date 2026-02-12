@@ -23,7 +23,7 @@ type LoginRequest struct {
 
 type RegisterRequest struct {
 	Email        string `json:"email" validate:"required,email"`
-	Password     string `json:"password" validate:"required,min=6"`
+	Password     string `json:"password" validate:"required,min=6,max=72"`
 	LanguageCode string `json:"language_code" validate:"required"`
 }
 
@@ -130,11 +130,12 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 
 func (h *Handler) Activate(c echo.Context) error {
 	token := c.Param("token")
-	h.logger.Debug("Activate called", "token", token[:8]+"...")
 
-	if token == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Activation token is required")
+	if len(token) < 8 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid activation token")
 	}
+
+	h.logger.Debug("Activate called", "token", token[:8]+"...")
 
 	err := h.authService.ActivateUser(token)
 	if err != nil {

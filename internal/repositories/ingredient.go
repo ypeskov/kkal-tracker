@@ -103,12 +103,10 @@ func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name
 	_, err := r.GetUserIngredientByName(userID, name)
 	if err == nil {
 		// Ingredient exists, update it
-		// Note: This uses a special simplified update query
-		updateQuery := `
-			UPDATE user_ingredients
-			SET kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
-			WHERE user_id = ? AND name = ?
-		`
+		updateQuery, loadErr := r.sqlLoader.Load(QueryUpdateUserIngredientByName)
+		if loadErr != nil {
+			return nil, loadErr
+		}
 		_, updateErr := r.db.Exec(updateQuery, kcalPer100g, fats, carbs, proteins, userID, name)
 		if updateErr != nil {
 			return nil, updateErr

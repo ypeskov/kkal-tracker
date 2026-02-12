@@ -84,7 +84,11 @@ func (r *ActivationTokenRepositoryImpl) Create(userID int, expiresAt time.Time) 
 
 // GetByToken retrieves an activation token by its token string
 func (r *ActivationTokenRepositoryImpl) GetByToken(token string) (*models.ActivationToken, error) {
-	r.logger.Debug("Getting activation token", "token", token[:8]+"...")
+	tokenPreview := token
+	if len(token) >= 8 {
+		tokenPreview = token[:8] + "..."
+	}
+	r.logger.Debug("Getting activation token", "token", tokenPreview)
 
 	query, err := r.sqlLoader.Load(QueryGetActivationTokenByToken)
 	if err != nil {

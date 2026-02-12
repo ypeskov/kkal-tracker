@@ -182,9 +182,17 @@ func (r *CalorieEntryRepositoryImpl) Update(id, userID int, food string, calorie
 	}
 
 	now := time.Now().UTC()
-	_, err = r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
+	result, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
 	if err != nil {
 		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rowsAffected == 0 {
+		return nil, ErrNotFound
 	}
 
 	return r.GetByID(id)
@@ -200,6 +208,18 @@ func (r *CalorieEntryRepositoryImpl) Delete(id, userID int) error {
 		return err
 	}
 
-	_, err = r.db.Exec(query, id, userID)
-	return err
+	result, err := r.db.Exec(query, id, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }

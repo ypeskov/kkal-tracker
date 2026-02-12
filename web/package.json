@@ -12,8 +12,10 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-router": "^1.157.18",
+    "@types/dompurify": "^3.0.5",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
+    "dompurify": "^3.3.1",
     "i18next": "^25.8.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "lucide-react": "^0.563.0",

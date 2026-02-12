@@ -180,13 +180,17 @@ func (s *Service) Register(email, password, languageCode string, skipActivation 
 
 // ActivateUser activates a user account using an activation token
 func (s *Service) ActivateUser(token string) error {
-	s.logger.Debug("ActivateUser called", "token", token[:8]+"...")
+	tokenPreview := token
+	if len(token) >= 8 {
+		tokenPreview = token[:8] + "..."
+	}
+	s.logger.Debug("ActivateUser called", "token", tokenPreview)
 
 	// Get activation token from repository
 	activationToken, err := s.tokenRepo.GetByToken(token)
 	if err != nil {
 		if errors.Is(err, repositories.ErrNotFound) {
-			s.logger.Debug("Activation failed - token not found", "token", token[:8]+"...")
+			s.logger.Debug("Activation failed - token not found", "token", tokenPreview)
 			return ErrInvalidToken
 		}
 		s.logger.Error("Failed to get activation token", "error", err)

@@ -56,6 +56,9 @@ func (h *Handler) CreateEntry(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
 
 	// Parse the meal datetime
 	mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
@@ -114,6 +117,9 @@ func (h *Handler) UpdateEntry(c echo.Context) error {
 	var req CreateEntryRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	// Parse the meal datetime

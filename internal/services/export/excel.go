@@ -2,12 +2,27 @@ package export
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 
 	"ypeskov/kkal-tracker/internal/i18n"
 	"ypeskov/kkal-tracker/internal/models"
 )
+
+// sanitizeForExcel prevents formula injection by prefixing dangerous characters with a single quote
+func sanitizeForExcel(value string) string {
+	if len(value) > 0 {
+		first := value[0]
+		if first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r' {
+			return "'" + value
+		}
+		if strings.HasPrefix(value, "0x") {
+			return "'" + value
+		}
+	}
+	return value
+}
 
 // ExcelGenerator creates Excel files from export data
 type ExcelGenerator struct {
@@ -145,7 +160,7 @@ func (g *ExcelGenerator) writeFoodSheet(f *excelize.File, sheetName string, data
 		row := i + 2
 		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), entry.MealDatetime.Format("2006-01-02"))
 		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), entry.MealDatetime.Format("15:04"))
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), entry.Food)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), sanitizeForExcel(entry.Food))
 		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), entry.Weight)
 		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), entry.Calories)
 		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), entry.KcalPer100g)

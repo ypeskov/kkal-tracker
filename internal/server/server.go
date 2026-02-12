@@ -107,7 +107,17 @@ func (s *Server) Start() *http.Server {
 
 	//e.Use(middleware.Logger(s.logger))
 	e.Use(echomiddleware.Recover())
-	e.Use(echomiddleware.CORS())
+	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
+		AllowOrigins: []string{s.config.AppURL},
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAuthorization, "X-API-Key"},
+	}))
+	e.Use(echomiddleware.SecureWithConfig(echomiddleware.SecureConfig{
+		XSSProtection:      "1; mode=block",
+		ContentTypeNosniff: "nosniff",
+		XFrameOptions:      "DENY",
+		HSTSMaxAge:         31536000,
+	}))
 
 	jwtService := auth.NewJWTService(s.config.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
@@ -148,6 +158,8 @@ func (s *Server) Start() *http.Server {
 	languagesHandler.RegisterRoutes(languagesGroup)
 
 	// Auth routes with rate limiting (5 requests per second to prevent brute force)
+	// NOTE: In-memory rate limiter is per-instance. If scaling to multiple replicas,
+	// switch to a distributed store (e.g., Redis) for effective rate limiting.
 	authRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(5))
 	authGroup := apiGroup.Group("/auth", authRateLimiter)
 	authHandler.RegisterRoutes(authGroup, authMiddleware)

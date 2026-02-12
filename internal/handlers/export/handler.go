@@ -18,8 +18,8 @@ type Handler struct {
 }
 
 type Request struct {
-	DateFrom     string `json:"date_from" validate:"required"`
-	DateTo       string `json:"date_to" validate:"required"`
+	DateFrom     string `json:"date_from" validate:"required,datetime=2006-01-02"`
+	DateTo       string `json:"date_to" validate:"required,datetime=2006-01-02"`
 	DataType     string `json:"data_type" validate:"required,oneof=weight food both"`
 	DeliveryType string `json:"delivery_type" validate:"required,oneof=download email"`
 }

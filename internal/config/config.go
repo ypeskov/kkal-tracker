@@ -35,6 +35,8 @@ type Config struct {
 	AI AIConfig
 }
 
+const minJWTSecretLength = 32
+
 func New() *Config {
 	databasePath := getEnv("DATABASE_PATH", "./data/kkal_tracker.db")
 
@@ -45,14 +47,38 @@ func New() *Config {
 		}
 	}
 
+	environment := getEnv("ENVIRONMENT", "development")
+	jwtSecret := getEnv("JWT_SECRET", "")
+
+	knownInsecureDefaults := map[string]bool{
+		"":                                          true,
+		"default-secret-key":                        true,
+		"your-jwt-secret-key-change-this-in-production": true,
+		"a-very-secret-key":                         true,
+	}
+
+	if knownInsecureDefaults[jwtSecret] {
+		if environment == "production" {
+			log.Fatalf("FATAL: JWT_SECRET must be set to a strong, unique value in production (minimum %d characters)", minJWTSecretLength)
+		}
+		if jwtSecret == "" {
+			jwtSecret = "default-secret-key-dev-only"
+		}
+		log.Printf("WARNING: Using insecure JWT secret. Set JWT_SECRET environment variable for production use.")
+	}
+
+	if environment == "production" && len(jwtSecret) < minJWTSecretLength {
+		log.Fatalf("FATAL: JWT_SECRET must be at least %d characters long in production (current: %d)", minJWTSecretLength, len(jwtSecret))
+	}
+
 	return &Config{
 		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"), // sqlite is the default database type
 		DatabasePath: databasePath,
-		PostgresURL:  getEnv("POSTGRES_URL", ""), 
+		PostgresURL:  getEnv("POSTGRES_URL", ""),
 		Port:         getEnv("PORT", "8080"),
-		JWTSecret:    getEnv("JWT_SECRET", "default-secret-key"), // default-secret-key is a placeholder for the actual secret key
+		JWTSecret:    jwtSecret,
 		LogLevel:     getEnv("LOG_LEVEL", "info"), // info is the default log level
-		Environment:  getEnv("ENVIRONMENT", "development"), // development is the default environment
+		Environment:  environment,
 		// SMTP Configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"), // smtp.gmail.com is the default SMTP host
 		SMTPPort:     getEnvInt("SMTP_PORT", 587),

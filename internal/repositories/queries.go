@@ -36,6 +36,7 @@ const (
 	QueryGetUserIngredientByName     = "getUserIngredientByName"
 	QueryGetUserIngredientByID       = "getUserIngredientByID"
 	QueryUpdateUserIngredient        = "updateUserIngredient"
+	QueryUpdateUserIngredientByName  = "updateUserIngredientByName"
 	QueryInsertUserIngredient        = "insertUserIngredient"
 	QueryDeleteUserIngredient        = "deleteUserIngredient"
 	QueryCopyGlobalIngredientsToUser = "copyGlobalIngredientsToUser"
@@ -377,6 +378,17 @@ func getQueries() map[string]string {
 		UPDATE user_ingredients
 		SET name = $1, kcal_per_100g = $2, fats = $3, carbs = $4, proteins = $5, updated_at = CURRENT_TIMESTAMP
 		WHERE user_id = $6 AND id = $7
+	`,
+
+		buildKey(QueryUpdateUserIngredientByName, DialectSQLite): `
+		UPDATE user_ingredients
+		SET kcal_per_100g = ?, fats = ?, carbs = ?, proteins = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = ? AND name = ?
+	`,
+		buildKey(QueryUpdateUserIngredientByName, DialectPostgres): `
+		UPDATE user_ingredients
+		SET kcal_per_100g = $1, fats = $2, carbs = $3, proteins = $4, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = $5 AND name = $6
 	`,
 
 		buildKey(QueryInsertUserIngredient, DialectSQLite): `
