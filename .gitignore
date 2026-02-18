@@ -31,6 +31,7 @@ data/
 .env
 .env.local
 .env.production
+.deploy.env
 
 # Frontend
 web/node_modules/
