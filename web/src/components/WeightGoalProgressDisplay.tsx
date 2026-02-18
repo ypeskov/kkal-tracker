@@ -60,11 +60,21 @@ export default function WeightGoalProgressDisplay({
             )}
           </div>
         </div>
-        {goalProgress.progress_percent < 15 && (
-          <div className="text-right text-xs text-gray-600 mt-0.5">
-            {goalProgress.progress_percent.toFixed(0)}%
-          </div>
-        )}
+        <div className="flex justify-between items-center mt-1">
+          <span className="text-xs text-gray-500">
+            {format(new Date(goalProgress.goal_set_at), 'MMM d, yyyy')}
+          </span>
+          {goalProgress.progress_percent < 15 && (
+            <span className="text-xs text-gray-600">
+              {goalProgress.progress_percent.toFixed(0)}%
+            </span>
+          )}
+          <span className="text-xs text-gray-500">
+            {goalProgress.target_date
+              ? format(new Date(goalProgress.target_date), 'MMM d, yyyy')
+              : '—'}
+          </span>
+        </div>
       </div>
 
       {/* Stats Row */}
