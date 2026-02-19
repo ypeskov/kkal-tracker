@@ -11,11 +11,11 @@ import (
 )
 
 type Handler struct {
-	profileService *profileservice.Service
+	profileService profileservice.Servicer
 	logger         *slog.Logger
 }
 
-func NewProfileHandler(profileService *profileservice.Service, logger *slog.Logger) *Handler {
+func NewProfileHandler(profileService profileservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		profileService: profileService,
 		logger:         logger,

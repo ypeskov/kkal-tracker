@@ -13,8 +13,8 @@ import (
 )
 
 type Handler struct {
-	calorieService *calorieservice.Service
-	weightService  *weightservice.Service
+	calorieService calorieservice.Servicer
+	weightService  weightservice.Servicer
 	logger         *slog.Logger
 }
 
@@ -39,7 +39,7 @@ type FoodEntry struct {
 	MealDatetime time.Time `json:"meal_datetime"`
 }
 
-func New(calorieService *calorieservice.Service, weightService *weightservice.Service, logger *slog.Logger) *Handler {
+func New(calorieService calorieservice.Servicer, weightService weightservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		calorieService: calorieService,
 		weightService:  weightService,

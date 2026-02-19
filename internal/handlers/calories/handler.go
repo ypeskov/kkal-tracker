@@ -13,11 +13,11 @@ import (
 )
 
 type Handler struct {
-	calorieService *calorieservice.Service
+	calorieService calorieservice.Servicer
 	logger         *slog.Logger
 }
 
-func New(calorieService *calorieservice.Service, logger *slog.Logger) *Handler {
+func New(calorieService calorieservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		calorieService: calorieService,
 		logger:         logger.With("handler", "calories"),

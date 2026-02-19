@@ -12,7 +12,7 @@ import (
 )
 
 type Handler struct {
-	exportService *exportservice.Service
+	exportService exportservice.Servicer
 	userRepo      repositories.UserRepository
 	logger        *slog.Logger
 }
@@ -24,7 +24,7 @@ type Request struct {
 	DeliveryType string `json:"delivery_type" validate:"required,oneof=download email"`
 }
 
-func New(exportService *exportservice.Service, userRepo repositories.UserRepository, logger *slog.Logger) *Handler {
+func New(exportService exportservice.Servicer, userRepo repositories.UserRepository, logger *slog.Logger) *Handler {
 	return &Handler{
 		exportService: exportService,
 		userRepo:      userRepo,

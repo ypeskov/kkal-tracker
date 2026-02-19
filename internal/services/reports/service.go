@@ -12,12 +12,12 @@ import (
 const defaultPeriodDays = 30
 
 type Service struct {
-	calorieService *calorieservice.Service
-	weightService  *weightservice.Service
+	calorieService calorieservice.Servicer
+	weightService  weightservice.Servicer
 	logger         *slog.Logger
 }
 
-func New(calorieService *calorieservice.Service, weightService *weightservice.Service, logger *slog.Logger) *Service {
+func New(calorieService calorieservice.Servicer, weightService weightservice.Servicer, logger *slog.Logger) *Service {
 	return &Service{
 		calorieService: calorieService,
 		weightService:  weightService,

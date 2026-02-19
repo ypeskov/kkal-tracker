@@ -12,7 +12,7 @@ import (
 )
 
 type Handler struct {
-	authService *authservice.Service
+	authService authservice.Servicer
 	logger      *slog.Logger
 }
 
@@ -36,7 +36,7 @@ type LoginResponse struct {
 	User  ResponseUser `json:"user"`
 }
 
-func NewHandler(authService *authservice.Service, logger *slog.Logger) *Handler {
+func NewHandler(authService authservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		authService: authService,
 		logger:      logger,

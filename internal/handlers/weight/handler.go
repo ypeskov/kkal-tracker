@@ -12,7 +12,7 @@ import (
 )
 
 type Handler struct {
-	weightService *weightservice.Service
+	weightService weightservice.Servicer
 	logger        *slog.Logger
 }
 
@@ -26,7 +26,7 @@ type UpdateWeightRequest struct {
 	RecordedAt *string `json:"recorded_at,omitempty"`
 }
 
-func NewHandler(weightService *weightservice.Service, logger *slog.Logger) *Handler {
+func NewHandler(weightService weightservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		weightService: weightService,
 		logger:        logger.With("handler", "weight"),
