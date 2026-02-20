@@ -11,7 +11,7 @@ A Go/Echo web application for calorie tracking with React/TanStack frontend. Bui
 - **I18n**: react-i18next (frontend) + custom translator (backend) with en_US, uk_UA, ru_UA, bg_BG locales
 - **Logging**: Structured logging with slog
 - **Dev Tools**: Air for live reload
-- **Deployment**: Kubernetes-ready with backup integration
+- **Deployment**: Kubernetes-ready with Traefik ingress and backup integration
 
 ## Key Commands
 
@@ -95,7 +95,7 @@ internal/               # Core application code (clean architecture)
     ├── reports/        # Analytics & data aggregation
     └── weight/         # Weight tracking
 
-kubernetes/             # K8s deployment configs
+kubernetes/             # K8s deployment configs (Traefik ingress, deployed separately via k8s infra repo)
 ├── base/               # Base resources (deployment, service, ingress, PV/PVC, backup CronJob)
 └── overlays/           # Environment-specific overlays (dev/, prod/)
 
@@ -446,12 +446,17 @@ All API routes are prefixed with `/api`:
 
 ### Kubernetes
 Full Kubernetes deployment configuration in `kubernetes/` directory:
+- **Ingress controller**: Traefik v3.3 (cluster-level, deployed separately via k8s infra repo)
+  - Shared across all apps on the cluster (same Traefik used by Orgfin.run)
+  - IngressClass `traefik` with controller `traefik.io/ingress-controller`
 - **Base configurations**: `kubernetes/base/` - Common resources
-  - Deployment, Service, Ingress
+  - Deployment, Service, Ingress (base uses `ingressClassName: nginx` for local dev)
   - Persistent Volume & Persistent Volume Claim
   - ConfigMap for backup configuration
   - CronJob for automated backups
 - **Environment overlays**: `kubernetes/overlays/{dev,prod}/` - Environment-specific configs
+  - Production overlay patches ingress to use `ingressClassName: traefik` with TLS
+  - Traefik-specific annotation: `traefik.ingress.kubernetes.io/router.tls: "true"`
 - Includes CronJob for automated database backups to Google Drive
 
 ### Database Management
