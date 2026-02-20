@@ -12,8 +12,8 @@ import (
 
 // Service handles data export operations
 type Service struct {
-	calorieService *calorieservice.Service
-	weightService  *weightservice.Service
+	calorieService calorieservice.Servicer
+	weightService  weightservice.Servicer
 	emailService   *emailservice.Service
 	excelGenerator *ExcelGenerator
 	logger         *slog.Logger
@@ -21,8 +21,8 @@ type Service struct {
 
 // New creates a new export service
 func New(
-	calorieService *calorieservice.Service,
-	weightService *weightservice.Service,
+	calorieService calorieservice.Servicer,
+	weightService weightservice.Servicer,
 	emailService *emailservice.Service,
 	logger *slog.Logger,
 ) *Service {

@@ -10,11 +10,11 @@ import (
 )
 
 type Handler struct {
-	reportsService *reportsservice.Service
+	reportsService reportsservice.Servicer
 	logger         *slog.Logger
 }
 
-func New(reportsService *reportsservice.Service, logger *slog.Logger) *Handler {
+func New(reportsService reportsservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		reportsService: reportsService,
 		logger:         logger.With("handler", "reports"),

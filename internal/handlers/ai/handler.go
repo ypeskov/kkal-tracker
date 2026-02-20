@@ -17,17 +17,17 @@ import (
 )
 
 type Handler struct {
-	aiService      *aiservice.Service
-	calorieService *calorieservice.Service
-	weightService  *weightservice.Service
+	aiService      aiservice.Servicer
+	calorieService calorieservice.Servicer
+	weightService  weightservice.Servicer
 	userRepo       repositories.UserRepository
 	logger         *slog.Logger
 }
 
 func New(
-	aiService *aiservice.Service,
-	calorieService *calorieservice.Service,
-	weightService *weightservice.Service,
+	aiService aiservice.Servicer,
+	calorieService calorieservice.Servicer,
+	weightService weightservice.Servicer,
 	userRepo repositories.UserRepository,
 	logger *slog.Logger,
 ) *Handler {

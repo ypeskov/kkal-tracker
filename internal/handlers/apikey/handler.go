@@ -12,7 +12,7 @@ import (
 )
 
 type Handler struct {
-	apiKeyService *apikeyservice.Service
+	apiKeyService apikeyservice.Servicer
 	logger        *slog.Logger
 }
 
@@ -39,7 +39,7 @@ type APIKeyResponse struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
-func New(apiKeyService *apikeyservice.Service, logger *slog.Logger) *Handler {
+func New(apiKeyService apikeyservice.Servicer, logger *slog.Logger) *Handler {
 	return &Handler{
 		apiKeyService: apiKeyService,
 		logger:        logger.With("handler", "apikey"),

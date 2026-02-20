@@ -10,11 +10,11 @@ import (
 )
 
 type APIKeyMiddleware struct {
-	apiKeyService *apikeyservice.Service
+	apiKeyService apikeyservice.Servicer
 	logger        *slog.Logger
 }
 
-func NewAPIKeyMiddleware(apiKeyService *apikeyservice.Service, logger *slog.Logger) *APIKeyMiddleware {
+func NewAPIKeyMiddleware(apiKeyService apikeyservice.Servicer, logger *slog.Logger) *APIKeyMiddleware {
 	return &APIKeyMiddleware{
 		apiKeyService: apiKeyService,
 		logger:        logger,
