@@ -39,6 +39,9 @@ web/dist/
 web/.vite/
 *.tsbuildinfo
 
+# Claude Code
+.claude/settings.local.json
+
 # IDE
 .vscode/
 .idea/
