@@ -164,6 +164,7 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Production**: JSON logging format, structured error handling
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
 - **Comments**: ALWAYS write comments in English only. Never use Russian, Ukrainian, or any other language for code comments. This ensures international accessibility and consistency across the codebase
+- **Git commits**: NEVER add "Co-Authored-By" or any other AI/assistant attribution to commit messages. No mentions of AI tools in commits
 - **Server Management**:
   # ⚠️  CRITICAL WARNING - DO NOT START DEVELOPMENT SERVER ⚠️
   # NEVER RUN `make dev` OR ANY SERVER COMMANDS WITHOUT EXPLICIT USER APPROVAL
