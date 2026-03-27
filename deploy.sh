@@ -240,7 +240,7 @@ if [ "$SKIP_BUILD" = false ] || [ "$SKIP_K8S" = false ]; then
 fi
 
 # ─── Step 5: Merge develop → master ──────────────────────────────────────────
-if [ "$SKIP_BUILD" = false ]; then
+if [ "$SKIP_BUILD" = false ] || [ "$SKIP_K8S" = false ] || [ "$SKIP_DEPLOY" = false ]; then
     step "Merging develop → master"
     run git checkout master
     run git merge develop --no-edit
