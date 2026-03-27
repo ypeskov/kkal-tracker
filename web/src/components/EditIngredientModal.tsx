@@ -93,14 +93,14 @@ export default function EditIngredientModal({
             />
           </div>
 
-          {/* Mobile: Proteins+Carbs in 2 cols, Fats separate | Desktop: all 3 in one row */}
+          {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="mb-4">
-              <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
+              <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
               <CalculatorInput
-                id="proteins"
-                value={proteins}
-                onChange={setProteins}
+                id="fats"
+                value={fats}
+                onChange={setFats}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
@@ -117,11 +117,11 @@ export default function EditIngredientModal({
 
             {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
             <div className="mb-4 col-span-1 md:col-span-1">
-              <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
+              <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
               <CalculatorInput
-                id="fats"
-                value={fats}
-                onChange={setFats}
+                id="proteins"
+                value={proteins}
+                onChange={setProteins}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>

@@ -21,13 +21,13 @@ export default function IngredientsTable({ ingredients, onRowClick }: Ingredient
               {t('foodList.calories')}
             </th>
             <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">
-              {t('foodList.proteins')}
+              {t('foodList.fats')}
             </th>
             <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">
               {t('foodList.carbs')}
             </th>
             <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">
-              {t('foodList.fats')}
+              {t('foodList.proteins')}
             </th>
           </tr>
         </thead>
@@ -52,13 +52,13 @@ export default function IngredientsTable({ ingredients, onRowClick }: Ingredient
                   {ingredient.kcalPer100g}
                 </td>
                 <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">
-                  {ingredient.proteins ?? '-'}
+                  {ingredient.fats ?? '-'}
                 </td>
                 <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">
                   {ingredient.carbs ?? '-'}
                 </td>
                 <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">
-                  {ingredient.fats ?? '-'}
+                  {ingredient.proteins ?? '-'}
                 </td>
               </tr>
             ))
