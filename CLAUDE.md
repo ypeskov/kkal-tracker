@@ -165,6 +165,7 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
 - **Comments**: ALWAYS write comments in English only. Never use Russian, Ukrainian, or any other language for code comments. This ensures international accessibility and consistency across the codebase
 - **Git commits**: NEVER add "Co-Authored-By" or any other AI/assistant attribution to commit messages. No mentions of AI tools in commits
+- **Library usage**: When writing code that uses external libraries (Go modules, npm packages), ALWAYS use the Context7 MCP tool (`resolve-library-id` → `query-docs`) to fetch up-to-date documentation for the library version used in the project. Do NOT rely on memory — APIs change between versions. Check `go.mod` / `package.json` for actual versions before coding
 - **Server Management**:
   # ⚠️  CRITICAL WARNING - DO NOT START DEVELOPMENT SERVER ⚠️
   # NEVER RUN `make dev` OR ANY SERVER COMMANDS WITHOUT EXPLICIT USER APPROVAL
