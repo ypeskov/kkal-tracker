@@ -39,7 +39,7 @@ export default function WeightGoalProgressDisplay({
       {/* Current and Target Weight */}
       <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
         <span>
-          {t('weightGoal.current')}: <strong>{goalProgress.current_weight.toFixed(1)} kg</strong>
+          {t('weightGoal.current')}: <strong>{goalProgress.current_weight.toFixed(2)} kg</strong>
         </span>
         <span>
           {t('weightGoal.target')}: <strong>{goalProgress.target_weight} kg</strong>
@@ -81,7 +81,7 @@ export default function WeightGoalProgressDisplay({
       <div className="grid grid-cols-3 gap-2 text-center mb-3">
         <div className="p-2 bg-white/50 rounded-lg">
           <p className="text-xs text-gray-500">{t('weightGoal.started')}</p>
-          <p className="font-semibold text-gray-800">{goalProgress.initial_weight_at_goal.toFixed(1)}</p>
+          <p className="font-semibold text-gray-800">{goalProgress.initial_weight_at_goal.toFixed(2)}</p>
         </div>
         <div className="p-2 bg-white/50 rounded-lg">
           <p className="text-xs text-gray-500">
@@ -99,12 +99,12 @@ export default function WeightGoalProgressDisplay({
             ) : (
               <TrendingUp className="inline w-3 h-3 mr-1" />
             )}
-            {Math.abs(goalProgress.weight_lost).toFixed(1)}
+            {Math.abs(goalProgress.weight_lost).toFixed(2)}
           </p>
         </div>
         <div className="p-2 bg-white/50 rounded-lg">
           <p className="text-xs text-gray-500">{t('weightGoal.remaining')}</p>
-          <p className="font-semibold text-orange-600">{Math.abs(goalProgress.weight_to_go).toFixed(1)}</p>
+          <p className="font-semibold text-orange-600">{Math.abs(goalProgress.weight_to_go).toFixed(2)}</p>
         </div>
       </div>
 
