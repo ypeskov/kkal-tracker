@@ -19,7 +19,7 @@ A comprehensive calorie tracking and weight management web application built wit
 ### Technical Features
 - **Backend**: Go with Echo framework v4.13.4
 - **Frontend**: React 18 with TanStack Query & Router, TypeScript, Vite
-- **Database**: Dual support - SQLite (default) with PostgreSQL option
+- **Database**: SQLite
 - **Authentication**: JWT-based auth (v5.3.0) with bcrypt password hashing, sessionStorage persistence
 - **Logging**: Structured logging with slog
 - **Build System**: Single binary with embedded frontend assets
@@ -89,10 +89,8 @@ PORT=8080
 JWT_SECRET=your-jwt-secret-key-change-this-in-production
 LOG_LEVEL=debug
 
-# Database Configuration
-DATABASE_TYPE=sqlite                    # Options: sqlite, postgres
-DATABASE_PATH=./data/app.db            # For SQLite
-# POSTGRES_URL=postgres://user:password@localhost/kkal_tracker?sslmode=disable  # For PostgreSQL
+# Database Configuration (SQLite)
+DATABASE_PATH=./data/app.db
 
 # Google Drive Backup (Optional)
 # Use rclone to generate OAuth2 token: https://rclone.org/drive/
@@ -104,28 +102,18 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_TYPE` | `sqlite` | Database provider to use (`sqlite` or `postgres`) |
-| `DATABASE_PATH` | `./data/kkal_tracker.db` | Path to SQLite database file (used when `DATABASE_TYPE=sqlite`) |
-| `POSTGRES_URL` | _empty_ | PostgreSQL connection string (used when `DATABASE_TYPE=postgres`) |
+| `DATABASE_PATH` | `./data/kkal_tracker.db` | Path to SQLite database file |
 | `PORT` | `8080` | HTTP server port |
 | `JWT_SECRET` | `default-secret-key` | Secret key for JWT token signing (change in production!) |
 | `LOG_LEVEL` | `info` | Logging level (`debug`, `info`, `warn`, `error`) |
 | `ENVIRONMENT` | `development` | Application environment (`development`, `production`) |
 
-#### Database Provider Selection
+#### Database
 
-The application supports multiple database providers through the repository pattern:
+SQLite is the only supported database:
 
-**SQLite (default)**:
 ```env
-DATABASE_TYPE=sqlite
 DATABASE_PATH=./data/kkal_tracker.db
-```
-
-**PostgreSQL**:
-```env
-DATABASE_TYPE=postgres
-POSTGRES_URL=postgres://username:password@localhost/kkal_tracker?sslmode=disable
 ```
 
 ## API Endpoints
@@ -183,12 +171,7 @@ Air will:
 
 ### Database
 
-The application supports multiple database providers through a repository pattern with **Goose migrations**:
-
-- **SQLite**: Default provider, database file created at `DATABASE_PATH`
-- **PostgreSQL**: Alternative provider using connection string from `POSTGRES_URL`
-
-The active database provider is controlled by the `DATABASE_TYPE` environment variable.
+The application uses SQLite through a repository pattern with **Goose migrations**; the database file is created at `DATABASE_PATH`.
 
 #### Migration Management
 
@@ -273,9 +256,7 @@ When creating users with `scripts/create_user.go`:
 
 1. Set `ENVIRONMENT=production` in your environment
 2. Change `JWT_SECRET` to a secure random string
-3. Configure your database:
-   - For SQLite: Set `DATABASE_TYPE=sqlite` and `DATABASE_PATH`
-   - For PostgreSQL: Set `DATABASE_TYPE=postgres` and `POSTGRES_URL`
+3. Set `DATABASE_PATH` to the location of the SQLite database file
 4. Build with `make build`
 5. Deploy the binary and serve on your preferred port
 
@@ -495,7 +476,6 @@ configMapGenerator:
     literals:
       - ENVIRONMENT=development
       - LOG_LEVEL=debug
-      - DATABASE_TYPE=sqlite
 ```
 
 **For Production** (`kubernetes/overlays/prod/kustomization.yaml`):
@@ -505,13 +485,11 @@ configMapGenerator:
     literals:
       - ENVIRONMENT=production
       - LOG_LEVEL=info
-      - DATABASE_TYPE=postgres
 
 secretGenerator:
   - name: kkal-tracker-secrets
     literals:
       - JWT_SECRET=your-production-secret-here
-      - POSTGRES_URL=postgres://user:pass@postgres-service/kkal_tracker
 ```
 
 #### Automated Backups

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"mime/quotedprintable"
 	"net/smtp"
 
 	"ypeskov/kkal-tracker/internal/config"
@@ -131,26 +132,53 @@ func (s *Service) SendEmailWithAttachment(toEmail, language string, attachment [
 		return err
 	}
 
-	// Build MIME multipart message
-	boundary := "==KKAL_EXPORT_BOUNDARY=="
 	subject := s.emailSubject(language, "email.exportSubject")
+	message, err := buildAttachmentMessage(s.config.SMTPFrom, toEmail, subject, htmlBody.Bytes(), attachment, attachmentName)
+	if err != nil {
+		s.logger.Error("Failed to build export email", "error", err)
+		return err
+	}
+
+	// Send email via SMTP
+	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPassword, s.config.SMTPHost)
+	smtpAddr := fmt.Sprintf("%s:%d", s.config.SMTPHost, s.config.SMTPPort)
+
+	err = smtp.SendMail(smtpAddr, auth, s.config.SMTPFrom, []string{toEmail}, message)
+	if err != nil {
+		s.logger.Error("Failed to send email with attachment", "error", err, "to", toEmail)
+		return err
+	}
+
+	s.logger.Info("Export email sent", "to", toEmail, "attachment", attachmentName)
+	return nil
+}
+
+// buildAttachmentMessage builds a MIME multipart message with an HTML body and one XLSX attachment
+func buildAttachmentMessage(from, to, subject string, htmlBody, attachment []byte, attachmentName string) ([]byte, error) {
+	boundary := "==KKAL_EXPORT_BOUNDARY=="
 
 	var message bytes.Buffer
 
 	// Headers
-	message.WriteString(fmt.Sprintf("From: %s\r\n", s.config.SMTPFrom))
-	message.WriteString(fmt.Sprintf("To: %s\r\n", toEmail))
+	message.WriteString(fmt.Sprintf("From: %s\r\n", from))
+	message.WriteString(fmt.Sprintf("To: %s\r\n", to))
 	message.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
 	message.WriteString("MIME-Version: 1.0\r\n")
 	message.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
 	message.WriteString("\r\n")
 
-	// HTML part
+	// HTML part, quoted-printable encoded as declared in its header
 	message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
 	message.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
 	message.WriteString("Content-Transfer-Encoding: quoted-printable\r\n")
 	message.WriteString("\r\n")
-	message.WriteString(htmlBody.String())
+	bodyWriter := quotedprintable.NewWriter(&message)
+	if _, err := bodyWriter.Write(htmlBody); err != nil {
+		return nil, err
+	}
+	if err := bodyWriter.Close(); err != nil {
+		return nil, err
+	}
 	message.WriteString("\r\n")
 
 	// Attachment part
@@ -174,16 +202,5 @@ func (s *Service) SendEmailWithAttachment(toEmail, language string, attachment [
 	// End boundary
 	message.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
 
-	// Send email via SMTP
-	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPassword, s.config.SMTPHost)
-	smtpAddr := fmt.Sprintf("%s:%d", s.config.SMTPHost, s.config.SMTPPort)
-
-	err = smtp.SendMail(smtpAddr, auth, s.config.SMTPFrom, []string{toEmail}, message.Bytes())
-	if err != nil {
-		s.logger.Error("Failed to send email with attachment", "error", err, "to", toEmail)
-		return err
-	}
-
-	s.logger.Info("Export email sent", "to", toEmail, "attachment", attachmentName)
-	return nil
+	return message.Bytes(), nil
 }

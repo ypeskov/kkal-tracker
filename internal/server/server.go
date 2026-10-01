@@ -54,34 +54,19 @@ type Server struct {
 	apiKeyRepo     repositories.APIKeyRepository
 }
 
-// setupRepositories configures repositories based on the database type
-func (s *Server) setupRepositories() error {
-	switch s.config.DatabaseType {
-	case "sqlite":
-		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectSQLite)
-		s.tokenRepo = repositories.NewActivationTokenRepository(s.db, repositories.DialectSQLite, s.logger)
-		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
-		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
-		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
-		s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectSQLite, s.logger)
-		s.logger.Debug("Configured SQLite repositories")
-	case "postgres":
-		s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectPostgres)
-		s.tokenRepo = repositories.NewActivationTokenRepository(s.db, repositories.DialectPostgres, s.logger)
-		s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectPostgres)
-		s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectPostgres)
-		s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectPostgres)
-		s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectPostgres, s.logger)
-		s.logger.Debug("Configured PostgreSQL repositories")
-	default:
-		return fmt.Errorf("unsupported database type: %s", s.config.DatabaseType)
-	}
-
-	return nil
+// setupRepositories configures the repositories; SQLite is the only supported database
+func (s *Server) setupRepositories() {
+	s.userRepo = repositories.NewUserRepository(s.db, s.logger, repositories.DialectSQLite)
+	s.tokenRepo = repositories.NewActivationTokenRepository(s.db, repositories.DialectSQLite, s.logger)
+	s.calorieRepo = repositories.NewCalorieEntryRepository(s.db, s.logger, repositories.DialectSQLite)
+	s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
+	s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
+	s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectSQLite, s.logger)
+	s.logger.Debug("Configured SQLite repositories")
 }
 
 // New creates and configures a new server instance
-func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.FS) (*Server, error) {
+func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.FS) *Server {
 	server := &Server{
 		config:      cfg,
 		logger:      logger,
@@ -89,12 +74,9 @@ func New(cfg *config.Config, logger *slog.Logger, db *sql.DB, staticFiles embed.
 		staticFiles: staticFiles,
 	}
 
-	// Setup repositories based on config
-	if err := server.setupRepositories(); err != nil {
-		return nil, fmt.Errorf("failed to setup repositories: %w", err)
-	}
+	server.setupRepositories()
 
-	return server, nil
+	return server
 }
 
 // Start configures and starts the HTTP server
@@ -217,7 +199,7 @@ func (s *Server) Start() *http.Server {
 	staticHandler := static.New(s.staticFiles, s.logger)
 	staticHandler.RegisterRoutes(e)
 
-	s.logger.Info("Server configured", "port", s.config.Port, "database_type", s.config.DatabaseType)
+	s.logger.Info("Server configured", "port", s.config.Port)
 
 	return &http.Server{
 		Addr:              fmt.Sprintf(":%s", s.config.Port),

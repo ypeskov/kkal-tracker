@@ -132,7 +132,7 @@ Present your findings organized by severity level. Each finding must include:
 This project is a Go/Echo web application (Kkal-tracker) with these security-relevant characteristics:
 - JWT authentication with bcrypt password hashing
 - API key authentication (SHA-256 hashed, X-API-Key header) for external data access
-- Dual database support (SQLite/PostgreSQL) — watch for SQL dialect-specific injection vectors
+- SQLite database (PostgreSQL-dialect query variants exist in `queries.go` but are not wired up) — watch for SQL injection vectors
 - Email activation flow — check for token predictability and enumeration
 - AI integration with external APIs (OpenAI) — check for prompt injection and API key exposure
 - Excel export functionality — check for formula injection

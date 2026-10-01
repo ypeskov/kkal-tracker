@@ -98,16 +98,11 @@ func newTestServer(t *testing.T) *http.Server {
 	t.Helper()
 
 	cfg := &config.Config{
-		DatabaseType: "sqlite",
-		Port:         "0",
-		JWTSecret:    strings.Repeat("s", 32),
-		AppURL:       "http://localhost:8080",
+		Port:      "0",
+		JWTSecret: strings.Repeat("s", 32),
+		AppURL:    "http://localhost:8080",
 	}
-	s, err := New(cfg, discardLogger(), nil, embed.FS{})
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-	return s.Start()
+	return New(cfg, discardLogger(), nil, embed.FS{}).Start()
 }
 
 func serve(srv *http.Server, method, path, body string, headers map[string]string) int {

@@ -20,9 +20,7 @@ type AIConfig struct {
 }
 
 type Config struct {
-	DatabaseType string
 	DatabasePath string
-	PostgresURL  string
 	Port         string
 	JWTSecret    string
 	LogLevel     string
@@ -82,9 +80,7 @@ func New() *Config {
 	}
 
 	return &Config{
-		DatabaseType:   getEnv("DATABASE_TYPE", "sqlite"), // sqlite is the default database type
 		DatabasePath:   databasePath,
-		PostgresURL:    getEnv("POSTGRES_URL", ""),
 		Port:           getEnv("PORT", "8080"),
 		JWTSecret:      jwtSecret,
 		LogLevel:       getEnv("LOG_LEVEL", "info"), // info is the default log level

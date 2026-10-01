@@ -35,11 +35,7 @@ func main() {
 	}
 	defer db.Close()
 
-	s, err := server.New(cfg, log, db, web.StaticFiles)
-	if err != nil {
-		log.Error("failed to create server", "error", err)
-		os.Exit(1)
-	}
+	s := server.New(cfg, log, db, web.StaticFiles)
 
 	srv := s.Start()
 

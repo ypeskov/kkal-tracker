@@ -6,7 +6,7 @@ A Go/Echo web application for calorie tracking with React/TanStack frontend. Bui
 ## Architecture
 - **Backend**: Go 1.26+ (Docker builds with 1.27) with Echo framework v4.16.0
 - **Frontend**: React 19 with TanStack Query & Router, TypeScript, Vite
-- **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.28.0
+- **Database**: SQLite, Goose migrations v3.28.0
 - **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation; API key auth for external data access
 - **I18n**: react-i18next (frontend) + custom translator (backend) with en_US, uk_UA, ru_UA, bg_BG locales
 - **Logging**: Structured logging with slog
@@ -61,7 +61,7 @@ cmd/                    # Application entry points
 internal/               # Core application code (clean architecture)
 ├── auth/               # JWT token management
 ├── config/             # Configuration loading from env
-├── database/           # Database connection & dialect support (SQLite/PostgreSQL)
+├── database/           # Database connection (SQLite)
 ├── handlers/           # HTTP handlers — one subdirectory per domain
 │   ├── ai/             # AI analysis endpoints (handler.go, dto.go)
 │   ├── apidata/        # External data API (API key-protected)
@@ -138,10 +138,8 @@ LOG_LEVEL=debug
 ENVIRONMENT=development                 # Unset means production: a strong JWT_SECRET (32+ chars) is then required
 # TRUSTED_PROXIES=10.42.0.0/16          # CIDR ranges whose X-Forwarded-For is trusted (default: loopback and private networks)
 
-# Database Configuration
-DATABASE_TYPE=sqlite                    # Options: sqlite, postgres
-DATABASE_PATH=./data/app.db            # For SQLite
-# POSTGRES_URL=postgres://user:password@localhost/kkal_tracker?sslmode=disable  # For PostgreSQL
+# Database Configuration (SQLite is the only supported database)
+DATABASE_PATH=./data/app.db
 
 # AI Configuration (providers are activated when API keys are set)
 OPENAI_API_KEY=sk-...                  # OpenAI API key
@@ -466,7 +464,7 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
 
 ### Database Management
 - **Migrations**: Manual control for production safety
-- **Dual database support**: SQLite for development, PostgreSQL for production
+- **Database**: SQLite only. The repositories still keep PostgreSQL-dialect query variants (`queries.go`), but they are not wired up: there is no driver and no configuration option
 - **Seeding**: `cmd/seed/` for initial data (ingredients database)
 - **Backup strategy**: Automated backups to Google Drive
 
