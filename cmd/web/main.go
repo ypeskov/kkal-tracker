@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"ypeskov/kkal-tracker/internal/config"
@@ -22,7 +23,8 @@ func main() {
 	cfg := config.New()
 	log := logger.New(cfg)
 
-	if err != nil {
+	// A missing .env file is expected when configuration comes from the environment
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Warn("error loading .env file", "error", err)
 	}
 

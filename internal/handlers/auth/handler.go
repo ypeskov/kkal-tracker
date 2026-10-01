@@ -52,6 +52,11 @@ func (h *Handler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
 
+	if err := c.Validate(&req); err != nil {
+		h.logger.Debug("Login failed - validation error", "error", err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	h.logger.Debug("Login attempt", "email", req.Email)
 
 	user, token, err := h.authService.Login(req.Email, req.Password)
@@ -84,6 +89,11 @@ func (h *Handler) Register(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Debug("Register failed - invalid request body", "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := c.Validate(&req); err != nil {
+		h.logger.Debug("Register failed - validation error", "error", err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	h.logger.Debug("Registration attempt", "email", req.Email, "language", req.LanguageCode)

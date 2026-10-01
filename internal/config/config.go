@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,7 +36,22 @@ type Config struct {
 	AI AIConfig
 }
 
-const minJWTSecretLength = 32
+const (
+	minJWTSecretLength = 32
+
+	environmentDevelopment = "development"
+	environmentProduction  = "production"
+
+	devOnlyJWTSecret = "default-secret-key-dev-only"
+)
+
+// Placeholder secrets shipped in sample env files and docs
+var knownInsecureJWTSecrets = map[string]bool{
+	"":                   true,
+	"default-secret-key": true,
+	"your-jwt-secret-key-change-this-in-production": true,
+	"a-very-secret-key":                             true,
+}
 
 func New() *Config {
 	databasePath := getEnv("DATABASE_PATH", "./data/kkal_tracker.db")
@@ -47,28 +63,12 @@ func New() *Config {
 		}
 	}
 
-	environment := getEnv("ENVIRONMENT", "development")
-	jwtSecret := getEnv("JWT_SECRET", "")
+	// Fail closed: an unset ENVIRONMENT is treated as production
+	environment := getEnv("ENVIRONMENT", environmentProduction)
 
-	knownInsecureDefaults := map[string]bool{
-		"":                                          true,
-		"default-secret-key":                        true,
-		"your-jwt-secret-key-change-this-in-production": true,
-		"a-very-secret-key":                         true,
-	}
-
-	if knownInsecureDefaults[jwtSecret] {
-		if environment == "production" {
-			log.Fatalf("FATAL: JWT_SECRET must be set to a strong, unique value in production (minimum %d characters)", minJWTSecretLength)
-		}
-		if jwtSecret == "" {
-			jwtSecret = "default-secret-key-dev-only"
-		}
-		log.Printf("WARNING: Using insecure JWT secret. Set JWT_SECRET environment variable for production use.")
-	}
-
-	if environment == "production" && len(jwtSecret) < minJWTSecretLength {
-		log.Fatalf("FATAL: JWT_SECRET must be at least %d characters long in production (current: %d)", minJWTSecretLength, len(jwtSecret))
+	jwtSecret, err := resolveJWTSecret(environment, getEnv("JWT_SECRET", ""))
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
 
 	return &Config{
@@ -97,12 +97,35 @@ func New() *Config {
 	}
 }
 
+// resolveJWTSecret returns the JWT secret to use for the given environment.
+// A placeholder or short secret is accepted only when ENVIRONMENT=development
+// is set explicitly; every other environment requires a strong secret.
+func resolveJWTSecret(environment, jwtSecret string) (string, error) {
+	if environment == environmentDevelopment {
+		if knownInsecureJWTSecrets[jwtSecret] {
+			if jwtSecret == "" {
+				jwtSecret = devOnlyJWTSecret
+			}
+			log.Printf("WARNING: Using insecure JWT secret. Set JWT_SECRET environment variable for production use.")
+		}
+		return jwtSecret, nil
+	}
+
+	if knownInsecureJWTSecrets[jwtSecret] {
+		return "", fmt.Errorf("JWT_SECRET must be set to a strong, unique value (minimum %d characters) unless ENVIRONMENT=%s", minJWTSecretLength, environmentDevelopment)
+	}
+	if len(jwtSecret) < minJWTSecretLength {
+		return "", fmt.Errorf("JWT_SECRET must be at least %d characters long unless ENVIRONMENT=%s (current: %d)", minJWTSecretLength, environmentDevelopment, len(jwtSecret))
+	}
+	return jwtSecret, nil
+}
+
 func (c *Config) IsDevelopment() bool {
-	return c.Environment == "development"
+	return c.Environment == environmentDevelopment
 }
 
 func (c *Config) IsProduction() bool {
-	return c.Environment == "production"
+	return c.Environment == environmentProduction
 }
 
 func getEnv(key, defaultValue string) string {

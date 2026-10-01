@@ -32,14 +32,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM gcr.io/distroless/static-debian13:nonroot AS prod
 WORKDIR /app
 
-# Copy the Go binary, migrations, and env file
+# Copy the Go binary and migrations (configuration comes from the environment, no .env file in the image)
 COPY --from=builder /out/kkal-tracker /usr/local/bin/kkal-tracker
 COPY migrations ./migrations
-COPY .env.sample .env
 
 # Default port; can be overridden by SERVER_PORT env var
 EXPOSE 8080
 ENV SERVER_PORT=8080
+ENV ENVIRONMENT=production
 
 # Run as non-root user provided by the base image
 USER nonroot:nonroot

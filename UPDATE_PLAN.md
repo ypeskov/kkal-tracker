@@ -12,8 +12,8 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 
 | Stage | Done | Total |
 |-------|------|-------|
-| 1. Dependency & toolchain refresh | 13 | 14 |
-| 2. High-priority code fixes | 0 | 4 |
+| 1. Dependency & toolchain refresh | 14 | 14 |
+| 2. High-priority code fixes | 4 | 4 |
 | 3. Server hardening (`server.go`) | 0 | 6 |
 | 4. Kubernetes & backup | 0 | 8 |
 | 5. Low-priority code fixes | 0 | 7 |
@@ -41,22 +41,24 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 - [x] 1.10 `Dockerfile`: `node:22-alpine` → `node:24-alpine`
 - [x] 1.11 `Dockerfile`: `distroless/base-debian12` → `distroless/static-debian13` (image 49.7 MB → 21.8 MB)
 - [x] 1.12 `build-and-push.sh`: add `--pull`
-- [~] 1.13 Add `.dockerignore`: added with `web/node_modules` and `web/dist`. Still to exclude: `.git`, `data/`, local `.env` (they are sent into the builder stage by `COPY . .`; the final image is not affected by these). Correction to the original note: `web/node_modules` did affect the image, because `COPY web/ ./` overwrote the `npm ci` result with the host's `node_modules`, so the frontend was bundled with whatever was installed locally instead of the lockfile versions
+- [x] 1.13 Add `.dockerignore`: `web/node_modules`, `web/dist`, `.git`, `data`, `.env` files and `.deploy.env` are excluded (the last four were sent into the builder stage by `COPY . .`; the final image was not affected by these). Correction to the original note: `web/node_modules` did affect the image, because `COPY web/ ./` overwrote the `npm ci` result with the host's `node_modules`, so the frontend was bundled with whatever was installed locally instead of the lockfile versions
 - [x] 1.14 `Dockerfile`: frontend and Go builder stages run on `$BUILDPLATFORM` (Go cross-compiles via `GOARCH=$TARGETARCH`), so building `linux/arm64` on the x86_64 host no longer runs npm/Go under QEMU
 
 Manual (developer machine, not in repo):
-- [ ] Update local Go 1.26.2 → latest 1.26.x/1.27.x (15 stdlib advisories are reachable when building locally with 1.26.2)
+- [x] Update local Go 1.26.2 → latest 1.26.x/1.27.x (15 stdlib advisories are reachable when building locally with 1.26.2): the new dev host runs Go 1.27.1
 
 Runtime verification: v5.6.0 is deployed to production; the pod starts cleanly and `/` and `/api/languages` return 200. There are still no automated tests, and the manual smoke test under a user account (login, add entry, weight, export, AI) has not been done.
 
-## Stage 2 — High-priority code fixes
+## Stage 2 — High-priority code fixes — code done, not released yet
 
-- [ ] 2.1 Call `c.Validate(&req)` in `Login` and `Register` (`internal/handlers/auth/handler.go:50,85`) [H2]
-- [ ] 2.2 Remove `COPY .env.sample .env` from `Dockerfile:38` [H3]
-- [ ] 2.3 Set `ENVIRONMENT=production` for the production image/deployment [H3]
-- [ ] 2.4 Make config fail closed: refuse placeholder/short `JWT_SECRET` unless `ENVIRONMENT=development` is set explicitly (`internal/config/config.go:50-72`) [H3]
+- [x] 2.1 Call `c.Validate(&req)` in `Login` and `Register` (`internal/handlers/auth/handler.go:50,85`) [H2]
+- [x] 2.2 Remove `COPY .env.sample .env` from `Dockerfile:38` [H3]
+- [x] 2.3 Set `ENVIRONMENT=production` for the production image/deployment [H3]: the image sets it via `ENV`, `kubernetes/overlays/prod/.env.sample` documents it, and the real prod `.env` on the server has it (applied on 2026-10-01)
+- [x] 2.4 Make config fail closed: refuse placeholder/short `JWT_SECRET` unless `ENVIRONMENT=development` is set explicitly; an unset `ENVIRONMENT` now means production (`internal/config/config.go`) [H3]
 
 Before deploying 2.2–2.4: confirm the prod ConfigMap provides `JWT_SECRET` (≥32 chars), `ENVIRONMENT`, `LOG_LEVEL`, `PORT`, `DATABASE_PATH`.
+
+Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=8080`, `DATABASE_PATH=/data/app.db`, but `JWT_SECRET` is only 20 characters long and `ENVIRONMENT` is missing. Fixed the same day: `kubernetes/overlays/prod/.env` on the server got a new 64-character `JWT_SECRET` and `ENVIRONMENT=production`, applied with `kubectl apply -k kubernetes/overlays/prod` on image 5.6.0 (all sessions were reset). The pod started cleanly with JSON logs, `/` and `/api/languages` return 200, `/api/auth/me` without a token returns 401. The previous `.env` is kept on the server as `~/kkal-tracker-prod.env.bak-20261001`.
 
 ## Stage 3 — Server hardening (`internal/server/server.go`)
 
@@ -121,3 +123,11 @@ Before deploying 2.2–2.4: confirm the prod ConfigMap provides `JWT_SECRET` (�
 - Released: image `ypeskov/kcal-tracker:5.6.0` (`linux/arm64`) pushed to Docker Hub, `develop` merged into `master`, deployed to production with `kubectl apply -k kubernetes/overlays/prod`.
 - Checks passed: image builds and is `linux/arm64` in the registry; rollout succeeded, pod runs the pushed digest with 0 restarts; `https://kcal.peskov.info/` and `/api/languages` return 200.
 - Not checked: any authenticated flow (login, entries, weight, export, AI).
+
+### 2026-10-01 — Stage 2 code (items 1.13, 2.1–2.4), not released
+- Files changed: `internal/handlers/auth/handler.go` (validation in `Login`/`Register`), `internal/config/config.go` (fail-closed JWT secret check, unset `ENVIRONMENT` means production), `cmd/web/main.go` (no warning when `.env` is absent), `Dockerfile` (no `.env` in the image, `ENV ENVIRONMENT=production`), `.dockerignore`, `kubernetes/overlays/prod/.env.sample`.
+- Tests added (first Go tests in the repo): `internal/config/config_test.go`, `internal/handlers/auth/handler_test.go`.
+- Checks passed: `go build ./...`, `go vet ./...`, `go test ./...`, local `docker build` (image is `arm64`, contains no `/app/.env`, has `ENVIRONMENT=production`).
+- Behaviour change for local runs: `ENVIRONMENT=development` must be set (the root `.env.sample` already has it), otherwise the app, `cmd/migrate`, `cmd/seed` and `scripts/create_user.go` demand a strong `JWT_SECRET`.
+- Not checked: running the server or the container; login of existing users whose stored email would not pass the `email` validator (registration did not validate before).
+- Not done: version bump, image push, deploy of the Stage 2 image.
