@@ -17,7 +17,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 2. High-priority code fixes | 4 | 4 |
 | 3. Server hardening (`server.go`) | 5 | 7 |
 | 4. Kubernetes & backup | 5 | 5 |
-| 5. Low-priority code fixes | 0 | 7 |
+| 5. Low-priority code fixes | 0 | 0 |
 | 6. Non-security defects | 0 | 3 |
 | 7. Major upgrades & long-term | 0 | 9 |
 
@@ -83,15 +83,15 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [-] 4.8 Deployment resource requests/limits and liveness/readiness probes [L1]: dropped on 2026-10-01
 - [x] 4.9 Backups were broken: the nightly job had been failing since 2026-09-14 (last success 2026-09-13). The local snapshot was created, the upload to Google Drive failed with `invalid_grant`: the OAuth token was re-issued for Orgfin around 2026-09-15, which revoked the old one still used here. Fixed on 2026-10-01 by copying the working token from the Orgfin prod ConfigMap into the prod `.env`; a manual run uploaded the snapshot to Google Drive and cleaned up local snapshots older than 7 days. Both projects now share one token, so re-issuing it for one of them breaks the other until it is copied over. Side effect: the job exits before its cleanup step, so local snapshots pile up in `/data/backups` (4 per night: the run plus three retries)
 
-## Stage 5 — Low-priority code fixes
+## Stage 5 — Low-priority code fixes — dropped entirely on 2026-10-01 by the owner's decision
 
-- [ ] 5.1 Nil-pointer panic on weight update without `recorded_at` (`internal/repositories/weight_history.go:172`) [L5]
-- [ ] 5.2 Enable SQLite `foreign_keys` and `busy_timeout` pragmas (`internal/database/database.go:19`); check existing data for orphans first [L6]
-- [ ] 5.3 Return 404 instead of 500 for unknown API key on revoke/delete (`internal/handlers/apikey/handler.go:115,131`) [L7]
-- [ ] 5.4 Max-length validation for `food`, ingredient `name`, `first_name`, `last_name` [L9]
-- [ ] 5.5 Constant-time login for unknown emails; decide on register 409 behaviour [L3]
-- [ ] 5.6 Hash activation tokens at rest [L8]
-- [ ] 5.7 JWT: recheck user `is_active` per request or shorten lifetime; add `iss` [L2]
+- [-] 5.1 Nil-pointer panic on weight update without `recorded_at` (`internal/repositories/weight_history.go:172`) [L5]
+- [-] 5.2 Enable SQLite `foreign_keys` and `busy_timeout` pragmas (`internal/database/database.go:19`); check existing data for orphans first [L6]
+- [-] 5.3 Return 404 instead of 500 for unknown API key on revoke/delete (`internal/handlers/apikey/handler.go:115,131`) [L7]
+- [-] 5.4 Max-length validation for `food`, ingredient `name`, `first_name`, `last_name` [L9]
+- [-] 5.5 Constant-time login for unknown emails; decide on register 409 behaviour [L3]
+- [-] 5.6 Hash activation tokens at rest [L8]
+- [-] 5.7 JWT: recheck user `is_active` per request or shorten lifetime; add `iss` [L2]
 
 ## Stage 6 — Non-security defects
 
