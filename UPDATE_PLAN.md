@@ -16,7 +16,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 1. Dependency & toolchain refresh | 14 | 14 |
 | 2. High-priority code fixes | 4 | 4 |
 | 3. Server hardening (`server.go`) | 5 | 7 |
-| 4. Kubernetes & backup | 5 | 8 |
+| 4. Kubernetes & backup | 5 | 5 |
 | 5. Low-priority code fixes | 0 | 7 |
 | 6. Non-security defects | 0 | 3 |
 | 7. Major upgrades & long-term | 0 | 9 |
@@ -71,16 +71,16 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
 - [ ] 3.7 Infrastructure (outside this repo): make the real client address reach the app. `kcal.peskov.info` resolves to `95.217.168.25`, a load balancer (TCP pass-through) in front of the cluster node (same TLS certificate as on the node), so Traefik and the app see every visitor as `95.217.168.25` and all per-IP limiters (register, AI, `/api/v1`, the auth group limit) are shared by all users. Options: PROXY protocol on the front proxy plus `proxyProtocol.trustedIPs` on the Traefik entry points (affects every app on the cluster, both sides must be switched together), or point DNS straight at the node
 
-## Stage 4 — Kubernetes & backup — items 4.1–4.4 and 4.9 applied to production
+## Stage 4 — Kubernetes & backup — closed: items 4.1–4.4 and 4.9 applied to production, 4.5–4.8 dropped
 
 - [x] 4.1 Move `JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN` from ConfigMap to Secret (`secretGenerator` + `secretRef`) [M3]: prod overlay generates Secret `kkal-tracker-secrets` from `.env.secret`; on the server the four keys were moved from `.env` to `.env.secret` (mode 600)
 - [x] 4.2 Backup CronJob: pass only `GDRIVE_*` instead of the whole app env [M4]
 - [x] 4.3 Pin `rclone/rclone` image by version/digest [M4]: `rclone/rclone:1.75.1@sha256:45401ad7…` is the base of the own backup image
 - [x] 4.4 Stop installing `sqlite` from the network on every backup run [M4]: own image `ypeskov/kkal-tracker-backup:1.75.1` (`kubernetes/backup/Dockerfile`) has sqlite3 preinstalled
 - [-] 4.5 rclone `scope = drive` → `drive.file` (needs a new OAuth token) [M4]: dropped on 2026-10-01. The token stays with full Drive access and is shared with Orgfin; a narrower scope would need a new browser authorization by the owner, would have to be copied into both projects, and would hide the existing backup folder from rclone
-- [ ] 4.6 Encrypt backups (rclone `crypt` remote) [M4]
-- [ ] 4.7 Deployment `securityContext`: read-only root FS, drop capabilities, no privilege escalation, seccomp [L1]
-- [ ] 4.8 Deployment resource requests/limits and liveness/readiness probes [L1]
+- [-] 4.6 Encrypt backups (rclone `crypt` remote) [M4]: dropped on 2026-10-01, backups stay unencrypted on Google Drive
+- [-] 4.7 Deployment `securityContext`: read-only root FS, drop capabilities, no privilege escalation, seccomp [L1]: dropped on 2026-10-01
+- [-] 4.8 Deployment resource requests/limits and liveness/readiness probes [L1]: dropped on 2026-10-01
 - [x] 4.9 Backups were broken: the nightly job had been failing since 2026-09-14 (last success 2026-09-13). The local snapshot was created, the upload to Google Drive failed with `invalid_grant`: the OAuth token was re-issued for Orgfin around 2026-09-15, which revoked the old one still used here. Fixed on 2026-10-01 by copying the working token from the Orgfin prod ConfigMap into the prod `.env`; a manual run uploaded the snapshot to Google Drive and cleaned up local snapshots older than 7 days. Both projects now share one token, so re-issuing it for one of them breaks the other until it is copied over. Side effect: the job exits before its cleanup step, so local snapshots pile up in `/data/backups` (4 per night: the run plus three retries)
 
 ## Stage 5 — Low-priority code fixes
