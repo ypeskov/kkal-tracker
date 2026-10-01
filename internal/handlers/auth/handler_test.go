@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -10,6 +13,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/middleware"
 	"ypeskov/kkal-tracker/internal/models"
+	authservice "ypeskov/kkal-tracker/internal/services/auth"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,10 +22,14 @@ import (
 type fakeAuthService struct {
 	loginCalls    int
 	registerCalls int
+	loginErr      error
 }
 
 func (f *fakeAuthService) Login(email, password string) (*models.User, string, error) {
 	f.loginCalls++
+	if f.loginErr != nil {
+		return nil, "", f.loginErr
+	}
 	return &models.User{Email: email}, "token", nil
 }
 
@@ -116,6 +124,55 @@ func TestRegisterValidation(t *testing.T) {
 			}
 			if service.registerCalls != tt.wantCalls {
 				t.Errorf("service.Register calls = %d, want %d", service.registerCalls, tt.wantCalls)
+			}
+		})
+	}
+}
+
+func TestLoginFailureIsLoggedAtWarnLevel(t *testing.T) {
+	tests := []struct {
+		name     string
+		loginErr error
+		wantCode int
+		wantLogs int
+	}{
+		{"invalid credentials", authservice.ErrInvalidCredentials, http.StatusUnauthorized, 1},
+		{"account not activated", authservice.ErrUserNotActivated, http.StatusForbidden, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logs, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
+			e := echo.New()
+			e.Validator = middleware.NewValidator()
+			h := NewHandler(&fakeAuthService{loginErr: tt.loginErr}, logger)
+
+			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"email":"user@example.com","password":"wrong"}`))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.RemoteAddr = "203.0.113.7:1234"
+
+			err := h.Login(e.NewContext(req, httptest.NewRecorder()))
+
+			var httpErr *echo.HTTPError
+			if !errors.As(err, &httpErr) || httpErr.Code != tt.wantCode {
+				t.Fatalf("Login() error = %v, want HTTP %d", err, tt.wantCode)
+			}
+
+			lines := strings.Split(strings.TrimSpace(logs.String()), "\n")
+			if len(lines) != tt.wantLogs || lines[0] == "" {
+				t.Fatalf("log lines = %q, want %d line(s)", logs.String(), tt.wantLogs)
+			}
+			var entry map[string]any
+			if err := json.Unmarshal([]byte(lines[0]), &entry); err != nil {
+				t.Fatalf("log entry is not JSON: %v", err)
+			}
+			if entry["level"] != "WARN" || entry["email"] != "user@example.com" || entry["remote_ip"] != "203.0.113.7" {
+				t.Errorf("log entry = %v, want WARN with email and remote_ip", entry)
+			}
+			if strings.Contains(logs.String(), "wrong") {
+				t.Errorf("log must not contain the password: %s", logs.String())
 			}
 		})
 	}

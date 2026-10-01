@@ -14,7 +14,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 |-------|------|-------|
 | 1. Dependency & toolchain refresh | 14 | 14 |
 | 2. High-priority code fixes | 4 | 4 |
-| 3. Server hardening (`server.go`) | 0 | 6 |
+| 3. Server hardening (`server.go`) | 6 | 6 |
 | 4. Kubernetes & backup | 0 | 8 |
 | 5. Low-priority code fixes | 0 | 7 |
 | 6. Non-security defects | 0 | 3 |
@@ -60,14 +60,14 @@ Before deploying 2.2–2.4: confirm the prod ConfigMap provides `JWT_SECRET` (�
 
 Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=8080`, `DATABASE_PATH=/data/app.db`, but `JWT_SECRET` is only 20 characters long and `ENVIRONMENT` is missing. Fixed the same day: `kubernetes/overlays/prod/.env` on the server got a new 64-character `JWT_SECRET` and `ENVIRONMENT=production`, applied with `kubectl apply -k kubernetes/overlays/prod` on image 5.6.0 (all sessions were reset). The pod started cleanly with JSON logs, `/` and `/api/languages` return 200, `/api/auth/me` without a token returns 401. The previous `.env` is kept on the server as `~/kkal-tracker-prod.env.bak-20261001`.
 
-## Stage 3 — Server hardening (`internal/server/server.go`)
+## Stage 3 — Server hardening (`internal/server/server.go`) — code done, not released yet
 
-- [ ] 3.1 Separate strict rate limiters for `/auth/login` and `/auth/register` [M1]
-- [ ] 3.2 Log failed logins at warn level [M1]
-- [ ] 3.3 Configure `e.IPExtractor` to trust `X-Forwarded-For` only from the cluster network [M2]
-- [ ] 3.4 `http.Server` timeouts: `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`, `IdleTimeout` [M5]
-- [ ] 3.5 `BodyLimit` middleware [M5]
-- [ ] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
+- [x] 3.1 Separate strict rate limiters for `/auth/login` and `/auth/register` [M1]: per IP, login 5 attempts then 1 per 20 s, register 3 attempts then 1 per 20 min; the group-wide 5 req/s limit stays. Per-email throttling is deliberately not added (it would let anyone lock a known account out)
+- [x] 3.2 Log failed logins at warn level [M1]: email and client IP, never the password; denied rate-limited requests are logged at warn too
+- [x] 3.3 Configure `e.IPExtractor` to trust `X-Forwarded-For` only from the cluster network [M2]: new `TRUSTED_PROXIES` env (CIDR list); unset means loopback, link-local and private networks. Prod should set `TRUSTED_PROXIES=10.42.0.0/16` (k3s pod network, Traefik runs there)
+- [x] 3.4 `http.Server` timeouts: `ReadHeaderTimeout` 10 s, `ReadTimeout` 30 s, `WriteTimeout` 60 s, `IdleTimeout` 120 s [M5]
+- [x] 3.5 `BodyLimit` middleware, 1 MB [M5]
+- [x] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
 
 ## Stage 4 — Kubernetes & backup
 
@@ -133,3 +133,11 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Released: image `ypeskov/kcal-tracker:5.6.1` (`linux/arm64`, built natively on the arm64 host) pushed to Docker Hub, `develop` merged into `master`, deployed to production with `kubectl apply -k kubernetes/overlays/prod` after a `kubectl diff` preview (the only change was the image tag).
 - Production checks passed: rollout succeeded, pod runs the pushed digest with 0 restarts; `/` and `/api/languages` return 200; `/api/auth/me` without a token returns 401; login with a malformed email returns 400, with unknown credentials 401.
 - Still not checked: any authenticated flow (login of a real user, entries, weight, export, AI).
+
+### 2026-10-01 — Stage 3 code (items 3.1–3.6), not released
+- Files changed: `internal/server/server.go`, `internal/server/security.go` (new: IP extractor, rate limiter helper, limits), `internal/handlers/auth/handler.go` (warn logs, per-route limiters), `internal/config/config.go` (`TRUSTED_PROXIES`, file run through `gofmt`), `go.mod` (`golang.org/x/time` became a direct dependency, same version), `.env.sample`, `kubernetes/overlays/prod/.env.sample`, `CLAUDE.md`.
+- Tests added: `internal/server/security_test.go` (IP extraction, rate limits, body limit, timeouts, `/api/v1` limiter order, spoofed `X-Forwarded-For`), more cases in the config and auth handler tests.
+- Checks passed: `go build ./...`, `go vet ./...`, `go test -race ./...`, local `docker build`.
+- Not checked: running the server; that Traefik passes the real client address in `X-Forwarded-For` (Traefik has no access log, so this has to be confirmed after deploy from the `remote_ip` of a failed-login warning). If Traefik saw every client as one cluster address, the login limit would be shared by all users.
+- Not covered (outside the plan items): `smtp.SendMail` still has no timeout (M5 detail); the frontend shows the generic "Login failed" for HTTP 429.
+- Not done: `TRUSTED_PROXIES` in the prod `.env`, version bump, image push, deploy.

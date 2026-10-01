@@ -135,6 +135,8 @@ tmp/                    # Air temporary files
 PORT=8080
 JWT_SECRET=your-jwt-secret-key-change-this-in-production
 LOG_LEVEL=debug
+ENVIRONMENT=development                 # Unset means production: a strong JWT_SECRET (32+ chars) is then required
+# TRUSTED_PROXIES=10.42.0.0/16          # CIDR ranges whose X-Forwarded-For is trusted (default: loopback and private networks)
 
 # Database Configuration
 DATABASE_TYPE=sqlite                    # Options: sqlite, postgres
@@ -410,9 +412,9 @@ The application follows a clean architecture pattern with separation of concerns
 ### API Endpoints
 All API routes are prefixed with `/api`:
 - `GET /api/languages` - Supported languages (public, no auth)
-- `/api/auth/*` - Authentication (rate limited: 5 req/sec)
-  - `POST /api/auth/login` - User login
-  - `POST /api/auth/register` - User registration
+- `/api/auth/*` - Authentication (rate limited: 5 req/sec per IP)
+  - `POST /api/auth/login` - User login (additionally: 5 attempts, then 1 per 20 sec per IP)
+  - `POST /api/auth/register` - User registration (additionally: 3 attempts, then 1 per 20 min per IP)
   - `GET /api/auth/activate/:token` - Activate account via email link
   - `GET /api/auth/me` - Get current user (requires auth)
 - `/api/calories/*` - Calorie entry CRUD (GET, POST, PUT /:id, DELETE /:id)

@@ -105,8 +105,12 @@ func (s *Server) Start() *http.Server {
 	// Register custom validator
 	e.Validator = middleware.NewValidator()
 
+	// Client IP for rate limiting: trust X-Forwarded-For only from the reverse proxy
+	e.IPExtractor = newIPExtractor(s.config.TrustedProxies)
+
 	//e.Use(middleware.Logger(s.logger))
 	e.Use(echomiddleware.Recover())
+	e.Use(echomiddleware.BodyLimit(maxRequestBodySize))
 	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
 		AllowOrigins: []string{s.config.AppURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
@@ -157,12 +161,15 @@ func (s *Server) Start() *http.Server {
 	languagesGroup := apiGroup.Group("/languages")
 	languagesHandler.RegisterRoutes(languagesGroup)
 
-	// Auth routes with rate limiting (5 requests per second to prevent brute force)
+	// Auth routes with rate limiting: 5 requests per second for the whole group,
+	// plus strict per-route limits for login (brute force) and register (sends an email)
 	// NOTE: In-memory rate limiter is per-instance. If scaling to multiple replicas,
 	// switch to a distributed store (e.g., Redis) for effective rate limiting.
 	authRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(5))
+	loginRateLimiter := newRateLimiter(s.logger, "login", loginRateBurst, loginRateInterval)
+	registerRateLimiter := newRateLimiter(s.logger, "register", registerRateBurst, registerRateInterval)
 	authGroup := apiGroup.Group("/auth", authRateLimiter)
-	authHandler.RegisterRoutes(authGroup, authMiddleware)
+	authHandler.RegisterRoutes(authGroup, authMiddleware, loginRateLimiter, registerRateLimiter)
 
 	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
 	calorieHandler.RegisterRoutes(caloriesGroup)
@@ -201,8 +208,9 @@ func (s *Server) Start() *http.Server {
 	apiKeyHandler.RegisterRoutes(apiKeysGroup)
 
 	// External data API (API key auth, rate limited: 60 req/min)
+	// The limiter runs before the API key check so that requests with invalid keys are limited too
 	v1RateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(1))
-	v1Group := apiGroup.Group("/v1", apiKeyMiddleware.RequireAPIKey, v1RateLimiter)
+	v1Group := apiGroup.Group("/v1", v1RateLimiter, apiKeyMiddleware.RequireAPIKey)
 	apiDataHandler.RegisterRoutes(v1Group)
 
 	staticHandler := static.New(s.staticFiles, s.logger)
@@ -211,7 +219,11 @@ func (s *Server) Start() *http.Server {
 	s.logger.Info("Server configured", "port", s.config.Port, "database_type", s.config.DatabaseType)
 
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%s", s.config.Port),
-		Handler: e,
+		Addr:              fmt.Sprintf(":%s", s.config.Port),
+		Handler:           e,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 }

@@ -42,6 +42,38 @@ func TestResolveJWTSecret(t *testing.T) {
 	}
 }
 
+func TestParseTrustedProxies(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		want    []string
+		wantErr bool
+	}{
+		{"empty value", "", nil, false},
+		{"single range", "10.42.0.0/16", []string{"10.42.0.0/16"}, false},
+		{"several ranges with spaces", " 10.42.0.0/16 , 127.0.0.1/32,", []string{"10.42.0.0/16", "127.0.0.1/32"}, false},
+		{"ipv6 range", "fd00::/8", []string{"fd00::/8"}, false},
+		{"bare address is rejected", "10.42.0.1", nil, true},
+		{"garbage is rejected", "10.42.0.0/16,proxy", nil, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ranges, err := parseTrustedProxies(tt.value)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseTrustedProxies() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			got := make([]string, 0, len(ranges))
+			for _, ipRange := range ranges {
+				got = append(got, ipRange.String())
+			}
+			if strings.Join(got, ",") != strings.Join(tt.want, ",") {
+				t.Errorf("parseTrustedProxies() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNewDefaultsToProductionEnvironment(t *testing.T) {
 	t.Setenv("ENVIRONMENT", "")
 	t.Setenv("JWT_SECRET", strings.Repeat("s", minJWTSecretLength))

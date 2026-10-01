@@ -62,9 +62,11 @@ func (h *Handler) Login(c echo.Context) error {
 	user, token, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, authservice.ErrInvalidCredentials) {
+			h.logger.Warn("Login failed - invalid credentials", "email", req.Email, "remote_ip", c.RealIP())
 			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 		}
 		if errors.Is(err, authservice.ErrUserNotActivated) {
+			h.logger.Warn("Login failed - account not activated", "email", req.Email, "remote_ip", c.RealIP())
 			return echo.NewHTTPError(http.StatusForbidden, "Account not activated. Please check your email.")
 		}
 		h.logger.Error("Login failed", "error", err)
@@ -162,9 +164,9 @@ func (h *Handler) Activate(c echo.Context) error {
 	})
 }
 
-func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware) {
-	g.POST("/login", h.Login)
-	g.POST("/register", h.Register)
+func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware, loginRateLimiter, registerRateLimiter echo.MiddlewareFunc) {
+	g.POST("/login", h.Login, loginRateLimiter)
+	g.POST("/register", h.Register, registerRateLimiter)
 	g.GET("/activate/:token", h.Activate)
 	g.GET("/me", h.GetCurrentUser, authMiddleware.RequireAuth)
 }

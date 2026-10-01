@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // AIConfig holds configuration for AI
@@ -25,6 +27,9 @@ type Config struct {
 	JWTSecret    string
 	LogLevel     string
 	Environment  string
+	// TrustedProxies lists the networks whose X-Forwarded-For header is trusted.
+	// Empty means the default: loopback, link-local and private networks.
+	TrustedProxies []*net.IPNet
 	// SMTP Configuration
 	SMTPHost     string
 	SMTPPort     int
@@ -71,28 +76,34 @@ func New() *Config {
 		log.Fatalf("FATAL: %v", err)
 	}
 
+	trustedProxies, err := parseTrustedProxies(getEnv("TRUSTED_PROXIES", ""))
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
+	}
+
 	return &Config{
-		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"), // sqlite is the default database type
-		DatabasePath: databasePath,
-		PostgresURL:  getEnv("POSTGRES_URL", ""),
-		Port:         getEnv("PORT", "8080"),
-		JWTSecret:    jwtSecret,
-		LogLevel:     getEnv("LOG_LEVEL", "info"), // info is the default log level
-		Environment:  environment,
+		DatabaseType:   getEnv("DATABASE_TYPE", "sqlite"), // sqlite is the default database type
+		DatabasePath:   databasePath,
+		PostgresURL:    getEnv("POSTGRES_URL", ""),
+		Port:           getEnv("PORT", "8080"),
+		JWTSecret:      jwtSecret,
+		LogLevel:       getEnv("LOG_LEVEL", "info"), // info is the default log level
+		Environment:    environment,
+		TrustedProxies: trustedProxies,
 		// SMTP Configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"), // smtp.gmail.com is the default SMTP host
 		SMTPPort:     getEnvInt("SMTP_PORT", 587),
-		SMTPUser:     getEnv("SMTP_USER", ""), // SMTP_USER is the default SMTP user
+		SMTPUser:     getEnv("SMTP_USER", ""),     // SMTP_USER is the default SMTP user
 		SMTPPassword: getEnv("SMTP_PASSWORD", ""), // SMTP_PASSWORD is the default SMTP password
 		SMTPFrom:     getEnv("SMTP_FROM", "noreply@kkal-tracker.com"),
 		AppURL:       getEnv("APP_URL", "http://localhost:8080"), // http://localhost:8080 is the default app URL
 		// AI Configuration
 		AI: AIConfig{
-			APIKey:       getEnv("OPENAI_API_KEY", ""), // OPENAI_API_KEY is the default OpenAI API key
-			BaseURL:      getEnv("OPENAI_BASE_URL", ""), // OPENAI_BASE_URL is the default OpenAI base URL
-			Model:        getEnv("OPENAI_MODEL", "gpt-5.2"), // gpt-5.2 is the default OpenAI model
+			APIKey:       getEnv("OPENAI_API_KEY", ""),           // OPENAI_API_KEY is the default OpenAI API key
+			BaseURL:      getEnv("OPENAI_BASE_URL", ""),          // OPENAI_BASE_URL is the default OpenAI base URL
+			Model:        getEnv("OPENAI_MODEL", "gpt-5.2"),      // gpt-5.2 is the default OpenAI model
 			UseMaxTokens: getEnvBool("AI_USE_MAX_TOKENS", false), // AI_USE_MAX_TOKENS is the default AI use max tokens
-			MaxTokens:    getEnvInt("AI_MAX_TOKENS", 2000), // AI_MAX_TOKENS is the default AI max tokens
+			MaxTokens:    getEnvInt("AI_MAX_TOKENS", 2000),       // AI_MAX_TOKENS is the default AI max tokens
 		},
 	}
 }
@@ -118,6 +129,23 @@ func resolveJWTSecret(environment, jwtSecret string) (string, error) {
 		return "", fmt.Errorf("JWT_SECRET must be at least %d characters long unless ENVIRONMENT=%s (current: %d)", minJWTSecretLength, environmentDevelopment, len(jwtSecret))
 	}
 	return jwtSecret, nil
+}
+
+// parseTrustedProxies parses a comma-separated list of CIDR ranges
+func parseTrustedProxies(value string) ([]*net.IPNet, error) {
+	var ranges []*net.IPNet
+	for _, item := range strings.Split(value, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		_, ipNet, err := net.ParseCIDR(item)
+		if err != nil {
+			return nil, fmt.Errorf("TRUSTED_PROXIES must be a comma-separated list of CIDR ranges, got %q", item)
+		}
+		ranges = append(ranges, ipNet)
+	}
+	return ranges, nil
 }
 
 func (c *Config) IsDevelopment() bool {
