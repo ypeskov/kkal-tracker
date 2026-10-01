@@ -12,7 +12,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 
 | Stage | Done | Total |
 |-------|------|-------|
-| 1. Dependency & toolchain refresh | 12 | 13 |
+| 1. Dependency & toolchain refresh | 13 | 14 |
 | 2. High-priority code fixes | 0 | 4 |
 | 3. Server hardening (`server.go`) | 0 | 6 |
 | 4. Kubernetes & backup | 0 | 8 |
@@ -22,7 +22,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 
 ---
 
-## Stage 1 — Dependency & toolchain refresh (no code changes)
+## Stage 1 — Dependency & toolchain refresh (no code changes) — released as v5.6.0
 
 ### Go
 - [x] 1.1 Bump direct modules: echo 4.15.0 → 4.16.0, excelize 2.10.0 → 2.11.0, x/crypto 0.47.0 → 0.57.0, modernc sqlite 1.44.3 → 1.60.1, goose 3.26.0 → 3.28.0, validator 10.30.1 → 10.30.5, go-openai 1.41.2 → 1.43.0 [H1]
@@ -41,12 +41,13 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 - [x] 1.10 `Dockerfile`: `node:22-alpine` → `node:24-alpine`
 - [x] 1.11 `Dockerfile`: `distroless/base-debian12` → `distroless/static-debian13` (image 49.7 MB → 21.8 MB)
 - [x] 1.12 `build-and-push.sh`: add `--pull`
-- [ ] 1.13 Add `.dockerignore` (found during stage 1: there is none, so `COPY . .` sends `.git`, `data/`, local `.env`, `web/node_modules` into the builder stage; the final image is not affected)
+- [~] 1.13 Add `.dockerignore`: added with `web/node_modules` and `web/dist`. Still to exclude: `.git`, `data/`, local `.env` (they are sent into the builder stage by `COPY . .`; the final image is not affected by these). Correction to the original note: `web/node_modules` did affect the image, because `COPY web/ ./` overwrote the `npm ci` result with the host's `node_modules`, so the frontend was bundled with whatever was installed locally instead of the lockfile versions
+- [x] 1.14 `Dockerfile`: frontend and Go builder stages run on `$BUILDPLATFORM` (Go cross-compiles via `GOARCH=$TARGETARCH`), so building `linux/arm64` on the x86_64 host no longer runs npm/Go under QEMU
 
 Manual (developer machine, not in repo):
 - [ ] Update local Go 1.26.2 → latest 1.26.x/1.27.x (15 stdlib advisories are reachable when building locally with 1.26.2)
 
-Not verified in stage 1: runtime behaviour. There are no automated tests and the server was not started (project rule). Do a manual smoke test (login, add entry, weight, export, AI) before deploying.
+Runtime verification: v5.6.0 is deployed to production; the pod starts cleanly and `/` and `/api/languages` return 200. There are still no automated tests, and the manual smoke test under a user account (login, add entry, weight, export, AI) has not been done.
 
 ## Stage 2 — High-priority code fixes
 
@@ -113,3 +114,10 @@ Before deploying 2.2–2.4: confirm the prod ConfigMap provides `JWT_SECRET` (�
 - Files changed: `go.mod`, `go.sum`, `web/package.json`, `web/package-lock.json`, `Dockerfile`, `build-and-push.sh`, `CLAUDE.md` (version list only). No application code touched.
 - Checks passed: `go build ./...` and `go vet ./...` (Go 1.26.2 and 1.27.1), `govulncheck` (0 reachable with 1.27.1, was 18), `npm audit` (0, was 16), `npm run build`, `docker build --pull` of the full image; resulting binary is statically linked and built with go1.27.1.
 - Not checked: running the server or the container.
+
+### 2026-10-01 — v5.6.0 release (items 1.13 partly, 1.14)
+- Files changed: `Dockerfile` (build stages on `$BUILDPLATFORM`), `.dockerignore` (new), `version.txt`, `kubernetes/base/deployment.yaml`.
+- Why: the first `linux/arm64` build on the x86_64 host failed in `npm run build` with an esbuild host/binary version mismatch (0.27.2 vs 0.28.2), caused by the host's stale `web/node_modules` overwriting the `npm ci` result; the build stages also ran under QEMU for no reason.
+- Released: image `ypeskov/kcal-tracker:5.6.0` (`linux/arm64`) pushed to Docker Hub, `develop` merged into `master`, deployed to production with `kubectl apply -k kubernetes/overlays/prod`.
+- Checks passed: image builds and is `linux/arm64` in the registry; rollout succeeded, pod runs the pushed digest with 0 restarts; `https://kcal.peskov.info/` and `/api/languages` return 200.
+- Not checked: any authenticated flow (login, entries, weight, export, AI).
