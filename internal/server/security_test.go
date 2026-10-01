@@ -13,7 +13,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/config"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func discardLogger() *slog.Logger {
@@ -67,7 +67,7 @@ func TestNewIPExtractor(t *testing.T) {
 func TestNewRateLimiter(t *testing.T) {
 	e := echo.New()
 	e.IPExtractor = echo.ExtractIPDirect()
-	e.GET("/", func(c echo.Context) error {
+	e.GET("/", func(c *echo.Context) error {
 		return c.NoContent(http.StatusOK)
 	}, newRateLimiter(discardLogger(), "test", 2, time.Hour))
 

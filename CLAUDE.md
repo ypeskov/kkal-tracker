@@ -4,7 +4,7 @@
 A Go/Echo web application for calorie tracking with React/TanStack frontend. Built using `/Users/ypeskov/Projects/Go/qr-generator` as structural reference. Features calorie tracking, weight management, ingredient database, and reporting capabilities.
 
 ## Architecture
-- **Backend**: Go 1.26+ (Docker builds with 1.27) with Echo framework v4.16.0
+- **Backend**: Go 1.26+ (Docker builds with 1.27) with Echo framework v5.4.0
 - **Frontend**: React 19 with TanStack Query & Router, TypeScript, Vite
 - **Database**: SQLite, Goose migrations v3.28.0
 - **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation; API key auth for external data access
@@ -318,7 +318,7 @@ If you encounter old semantic CSS classes during refactoring:
 ## Dependencies
 
 ### Backend
-- Echo v4.16.0 (web framework)
+- Echo v5.4.0 (web framework; handlers take `*echo.Context`)
 - modernc.org/sqlite v1.60.1 (SQLite driver)
 - Goose v3.28.0 (migrations)
 - JWT-Go v5.3.1 (authentication)

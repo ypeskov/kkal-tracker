@@ -8,7 +8,7 @@ import (
 
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -40,7 +40,7 @@ type UpdateRequest struct {
 }
 
 // GetAllIngredients Get all user ingredients for session storage caching
-func (h *Handler) GetAllIngredients(c echo.Context) error {
+func (h *Handler) GetAllIngredients(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetAllIngredients called", "user_id", userID)
 
@@ -55,7 +55,7 @@ func (h *Handler) GetAllIngredients(c echo.Context) error {
 }
 
 // GetIngredientByID Get a single user ingredient by ID
-func (h *Handler) GetIngredientByID(c echo.Context) error {
+func (h *Handler) GetIngredientByID(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -78,7 +78,7 @@ func (h *Handler) GetIngredientByID(c echo.Context) error {
 }
 
 // CreateIngredient Create a new user ingredient
-func (h *Handler) CreateIngredient(c echo.Context) error {
+func (h *Handler) CreateIngredient(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("CreateIngredient called", "user_id", userID)
 
@@ -113,7 +113,7 @@ func (h *Handler) CreateIngredient(c echo.Context) error {
 }
 
 // UpdateIngredient Update an existing user ingredient
-func (h *Handler) UpdateIngredient(c echo.Context) error {
+func (h *Handler) UpdateIngredient(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -157,7 +157,7 @@ func (h *Handler) UpdateIngredient(c echo.Context) error {
 }
 
 // DeleteIngredient Delete a user ingredient
-func (h *Handler) DeleteIngredient(c echo.Context) error {
+func (h *Handler) DeleteIngredient(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	ingredientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

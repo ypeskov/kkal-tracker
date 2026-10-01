@@ -7,7 +7,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/auth"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type AuthMiddleware struct {
@@ -23,7 +23,7 @@ func NewAuthMiddleware(jwtService *auth.JWTService, logger *slog.Logger) *AuthMi
 }
 
 func (m *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
 		if authHeader == "" {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Authorization header required")

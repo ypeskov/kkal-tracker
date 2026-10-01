@@ -6,7 +6,7 @@ import (
 
 	metricsservice "ypeskov/kkal-tracker/internal/services/metrics"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -22,7 +22,7 @@ func NewMetricsHandler(metricsService metricsservice.Servicer, logger *slog.Logg
 }
 
 // GetHealthMetrics returns calculated health metrics for the current user
-func (h *Handler) GetHealthMetrics(c echo.Context) error {
+func (h *Handler) GetHealthMetrics(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetHealthMetrics called", "user_id", userID)
 

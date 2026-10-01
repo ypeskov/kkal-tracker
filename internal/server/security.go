@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
-	"golang.org/x/time/rate"
+	"github.com/labstack/echo/v5"
+	echomiddleware "github.com/labstack/echo/v5/middleware"
 )
 
 const (
@@ -18,8 +17,8 @@ const (
 	writeTimeout = 60 * time.Second
 	idleTimeout  = 120 * time.Second
 
-	// No endpoint accepts uploads, JSON payloads are small
-	maxRequestBodySize = "1M"
+	// No endpoint accepts uploads, JSON payloads are small: 1 MB
+	maxRequestBodySize int64 = 1 << 20
 
 	// Register sends an email: 3 attempts at once, then one attempt every 20 minutes per IP
 	registerRateBurst    = 3
@@ -72,11 +71,11 @@ func newRateLimiter(logger *slog.Logger, name string, burst int, interval time.D
 
 	return echomiddleware.RateLimiterWithConfig(echomiddleware.RateLimiterConfig{
 		Store: echomiddleware.NewRateLimiterMemoryStoreWithConfig(echomiddleware.RateLimiterMemoryStoreConfig{
-			Rate:      rate.Every(interval),
+			Rate:      1 / interval.Seconds(),
 			Burst:     burst,
 			ExpiresIn: expiresIn,
 		}),
-		DenyHandler: func(c echo.Context, identifier string, err error) error {
+		DenyHandler: func(c *echo.Context, identifier string, err error) error {
 			logger.Warn("Rate limit exceeded", "limiter", name, "remote_ip", identifier, "path", c.Path())
 			return echo.NewHTTPError(http.StatusTooManyRequests, "Too many requests, please try again later")
 		},

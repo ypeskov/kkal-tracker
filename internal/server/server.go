@@ -36,8 +36,8 @@ import (
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
-	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	echomiddleware "github.com/labstack/echo/v5/middleware"
 )
 
 // Server holds all the dependencies and repositories

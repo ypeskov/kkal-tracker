@@ -6,7 +6,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/config"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // LanguageResponse represents a language in the API response
@@ -28,7 +28,7 @@ func NewHandler(logger *slog.Logger) *Handler {
 }
 
 // GetLanguages returns the list of supported languages
-func (h *Handler) GetLanguages(c echo.Context) error {
+func (h *Handler) GetLanguages(c *echo.Context) error {
 	h.logger.Debug("GetLanguages called")
 	languages := make([]LanguageResponse, 0, len(config.SupportedLanguages))
 	for _, lang := range config.SupportedLanguages {

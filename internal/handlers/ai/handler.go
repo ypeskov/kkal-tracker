@@ -13,7 +13,7 @@ import (
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -41,7 +41,7 @@ func New(
 }
 
 // GetStatus returns the AI service status
-func (h *Handler) GetStatus(c echo.Context) error {
+func (h *Handler) GetStatus(c *echo.Context) error {
 	return c.JSON(http.StatusOK, StatusResponse{
 		Available: h.aiService.IsAvailable(),
 		Model:     h.aiService.GetModel(),
@@ -49,7 +49,7 @@ func (h *Handler) GetStatus(c echo.Context) error {
 }
 
 // Analyze performs AI analysis on user's nutrition and weight data
-func (h *Handler) Analyze(c echo.Context) error {
+func (h *Handler) Analyze(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	// Get user profile for context

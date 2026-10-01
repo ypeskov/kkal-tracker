@@ -9,7 +9,7 @@ import (
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -51,7 +51,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/data", h.GetData)
 }
 
-func (h *Handler) GetData(c echo.Context) error {
+func (h *Handler) GetData(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	dataType := c.QueryParam("type")
 	dateFrom := c.QueryParam("from")

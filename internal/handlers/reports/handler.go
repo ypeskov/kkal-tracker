@@ -6,7 +6,7 @@ import (
 
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -22,7 +22,7 @@ func New(reportsService reportsservice.Servicer, logger *slog.Logger) *Handler {
 }
 
 // GetReportData returns combined weight and calorie data for the specified date range
-func (h *Handler) GetReportData(c echo.Context) error {
+func (h *Handler) GetReportData(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	dateFrom := c.QueryParam("from")
 	dateTo := c.QueryParam("to")

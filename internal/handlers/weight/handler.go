@@ -8,7 +8,7 @@ import (
 
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -34,7 +34,7 @@ func NewHandler(weightService weightservice.Servicer, logger *slog.Logger) *Hand
 }
 
 // GetWeightHistory returns all weight entries for the authenticated user
-func (h *Handler) GetWeightHistory(c echo.Context) error {
+func (h *Handler) GetWeightHistory(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetWeightHistory called", "user_id", userID)
 
@@ -48,7 +48,7 @@ func (h *Handler) GetWeightHistory(c echo.Context) error {
 }
 
 // GetWeightHistoryByDateRange returns weight entries within a date range
-func (h *Handler) GetWeightHistoryByDateRange(c echo.Context) error {
+func (h *Handler) GetWeightHistoryByDateRange(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	dateFrom := c.QueryParam("from")
 	dateTo := c.QueryParam("to")
@@ -68,7 +68,7 @@ func (h *Handler) GetWeightHistoryByDateRange(c echo.Context) error {
 }
 
 // CreateWeightEntry creates a new weight entry
-func (h *Handler) CreateWeightEntry(c echo.Context) error {
+func (h *Handler) CreateWeightEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	var req CreateWeightRequest
@@ -107,7 +107,7 @@ func (h *Handler) CreateWeightEntry(c echo.Context) error {
 }
 
 // UpdateWeightEntry updates an existing weight entry
-func (h *Handler) UpdateWeightEntry(c echo.Context) error {
+func (h *Handler) UpdateWeightEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -151,7 +151,7 @@ func (h *Handler) UpdateWeightEntry(c echo.Context) error {
 }
 
 // DeleteWeightEntry deletes a weight entry
-func (h *Handler) DeleteWeightEntry(c echo.Context) error {
+func (h *Handler) DeleteWeightEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

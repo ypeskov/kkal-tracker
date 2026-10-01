@@ -9,7 +9,7 @@ import (
 	"ypeskov/kkal-tracker/internal/models"
 	calorieservice "ypeskov/kkal-tracker/internal/services/calorie"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -24,7 +24,7 @@ func New(calorieService calorieservice.Servicer, logger *slog.Logger) *Handler {
 	}
 }
 
-func (h *Handler) GetEntries(c echo.Context) error {
+func (h *Handler) GetEntries(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	dateFrom := c.QueryParam("dateFrom")
 	dateTo := c.QueryParam("dateTo")
@@ -49,7 +49,7 @@ func (h *Handler) GetEntries(c echo.Context) error {
 	return c.JSON(http.StatusOK, entries)
 }
 
-func (h *Handler) CreateEntry(c echo.Context) error {
+func (h *Handler) CreateEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	var req CreateEntryRequest
@@ -87,7 +87,7 @@ func (h *Handler) CreateEntry(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-func (h *Handler) DeleteEntry(c echo.Context) error {
+func (h *Handler) DeleteEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	idParam := c.Param("id")
@@ -105,7 +105,7 @@ func (h *Handler) DeleteEntry(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) UpdateEntry(c echo.Context) error {
+func (h *Handler) UpdateEntry(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	idParam := c.Param("id")

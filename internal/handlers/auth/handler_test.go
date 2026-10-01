@@ -15,7 +15,7 @@ import (
 	"ypeskov/kkal-tracker/internal/models"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // fakeAuthService records whether the handler reached the service layer

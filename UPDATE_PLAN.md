@@ -20,6 +20,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 5. Low-priority code fixes | 0 | 0 |
 | 6. Non-security defects | 2 | 2 |
 | 7. Major upgrades & long-term | 8 | 9 |
+| 8. Echo v5 (branch `feature/echo-v5`) | 1 | 1 |
 
 ---
 
@@ -111,6 +112,12 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 7.8 Content-Security-Policy (requires replacing `new Function` in `web/src/utils/calculator.ts:24`) [M6]: the calculator uses a small recursive descent parser, the server sends an enforcing CSP without `unsafe-eval` and without inline scripts
 - [x] 7.9 Remove empty root `package-lock.json`
 
+## Stage 8 — Echo v4 → v5 — done in branch `feature/echo-v5`, not merged, not released
+
+Echo v4 gets security and bug fixes only until 2026-12-31 (per the Echo README), so the backend moves to v5.
+
+- [x] 8.1 Migrate to `github.com/labstack/echo/v5` v5.4.0: handlers and middleware take `*echo.Context`, rate limiter and body limit use the v5 signatures, the request logger reads the status through `echo.UnwrapResponse`, the static handler relies on the static middleware alone
+
 ---
 
 ## Change log
@@ -184,3 +191,13 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Production browser check (headless Chromium, no login): the login and register pages render with styles, a failed login submitted through the form reaches the API and shows the error message; 0 CSP violations, 0 page errors, 0 failed requests.
 - Still not checked on production: everything behind the login (dashboard, calculator keypad, reports chart, export, AI analysis) — it was exercised only against mock API responses before the release.
 - Rollback if the CSP breaks something in the UI: set the image back to `ypeskov/kcal-tracker:5.6.4` in `kubernetes/base/deployment.yaml` and apply.
+
+### 2026-10-01 — Stage 8: Echo v5 (branch `feature/echo-v5`), not merged, not released
+- Files changed: `go.mod`/`go.sum` (echo v5.4.0; `gommon`, `fasttemplate`, `bytebufferpool`, `go-colorable` dropped, `golang.org/x/time` is indirect again), every handler and middleware (`*echo.Context`), `internal/server/security.go`, `internal/handlers/static/handler.go`, `internal/middleware/logger.go`, `CLAUDE.md`.
+- Regression found and fixed during the migration: in v5 the static middleware serves the SPA index page only for router-level 404s, so the old catch-all `e.StaticFS("/")` route made every client-side route (`/reports`, `/activate/...`) return 404. The catch-all route is removed; the middleware serves both the files and the fallback.
+- Behaviour comparison: the same 89 requests (static files, SPA routes, errors, CORS, auth, rate limits, body limit, a panic path and the whole user journey) were sent to the v4 build (`develop`) and the v5 build. 64 responses are identical, 24 differ only by the new `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `Retry-After` headers that the v5 rate limiter adds, 1 differs on purpose (below).
+- Behaviour change (a v4 bug that is gone): a handler-level 404 from the API, e.g. `GET /api/ingredients/<missing id>`, used to be replaced by the SPA index page with status 200; it now reaches the client as JSON with status 404, which is what `web/src/api/ingredients.ts` expects.
+- Tests added: `internal/server/static_test.go` (index page, SPA fallback, real assets, API errors stay JSON; needs `web/dist`), an API 404 check in the smoke test.
+- Checks passed: `go build ./...`, `go vet ./...`, `go test -race ./...`, `govulncheck` (0 reachable), full `docker build`.
+- Not checked: the application running as a real server process, a browser session against the v5 build.
+- Not done: merge into `develop`, version bump, image push, deploy.

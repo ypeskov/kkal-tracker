@@ -8,7 +8,7 @@ import (
 
 	apikeyservice "ypeskov/kkal-tracker/internal/services/apikey"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -53,7 +53,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.DELETE("/:id", h.DeleteAPIKey)
 }
 
-func (h *Handler) CreateAPIKey(c echo.Context) error {
+func (h *Handler) CreateAPIKey(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	var req CreateRequest
@@ -80,7 +80,7 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 	})
 }
 
-func (h *Handler) ListAPIKeys(c echo.Context) error {
+func (h *Handler) ListAPIKeys(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	keys, err := h.apiKeyService.GetUserKeys(userID)
@@ -104,7 +104,7 @@ func (h *Handler) ListAPIKeys(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) RevokeAPIKey(c echo.Context) error {
+func (h *Handler) RevokeAPIKey(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -120,7 +120,7 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "API key revoked"})
 }
 
-func (h *Handler) DeleteAPIKey(c echo.Context) error {
+func (h *Handler) DeleteAPIKey(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
 	id, err := strconv.Atoi(c.Param("id"))

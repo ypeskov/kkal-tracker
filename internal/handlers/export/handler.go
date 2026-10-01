@@ -8,7 +8,7 @@ import (
 	"ypeskov/kkal-tracker/internal/repositories"
 	exportservice "ypeskov/kkal-tracker/internal/services/export"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -33,7 +33,7 @@ func New(exportService exportservice.Servicer, userRepo repositories.UserReposit
 }
 
 // Export handles data export requests
-func (h *Handler) Export(c echo.Context) error {
+func (h *Handler) Export(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("Export called", "user_id", userID)
 

@@ -7,7 +7,7 @@ import (
 
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -23,7 +23,7 @@ func NewProfileHandler(profileService profileservice.Servicer, logger *slog.Logg
 }
 
 // GetProfile returns the current user's profile
-func (h *Handler) GetProfile(c echo.Context) error {
+func (h *Handler) GetProfile(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetProfile called", "user_id", userID)
 
@@ -39,7 +39,7 @@ func (h *Handler) GetProfile(c echo.Context) error {
 }
 
 // UpdateProfile updates the current user's profile
-func (h *Handler) UpdateProfile(c echo.Context) error {
+func (h *Handler) UpdateProfile(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("UpdateProfile called", "user_id", userID)
 
@@ -81,7 +81,7 @@ func (h *Handler) UpdateProfile(c echo.Context) error {
 }
 
 // SetWeightGoal sets a weight goal for the current user
-func (h *Handler) SetWeightGoal(c echo.Context) error {
+func (h *Handler) SetWeightGoal(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("SetWeightGoal called", "user_id", userID)
 
@@ -117,7 +117,7 @@ func (h *Handler) SetWeightGoal(c echo.Context) error {
 }
 
 // ClearWeightGoal clears the weight goal for the current user
-func (h *Handler) ClearWeightGoal(c echo.Context) error {
+func (h *Handler) ClearWeightGoal(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("ClearWeightGoal called", "user_id", userID)
 
@@ -130,7 +130,7 @@ func (h *Handler) ClearWeightGoal(c echo.Context) error {
 }
 
 // GetWeightGoalProgress returns the current weight goal progress
-func (h *Handler) GetWeightGoalProgress(c echo.Context) error {
+func (h *Handler) GetWeightGoalProgress(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetWeightGoalProgress called", "user_id", userID)
 

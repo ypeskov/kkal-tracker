@@ -4,10 +4,9 @@ import (
 	"embed"
 	"io/fs"
 	"log/slog"
-	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 type Handler struct {
@@ -32,12 +31,12 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 		panic(err)
 	}
 
-	// Serve built frontend files from embedded filesystem
-	e.StaticFS("/", distFS)
-
-	// SPA fallback - serve index.html for any unmatched routes
+	// Serve built frontend files from the embedded filesystem, with SPA fallback:
+	// index.html is served for any path that matches neither a file nor a route.
+	// There must be no catch-all static route next to this middleware: the fallback
+	// is applied only to router-level 404s, so that API 404 responses stay untouched.
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Filesystem: http.FS(distFS),
+		Filesystem: distFS,
 		HTML5:      true,
 		Browse:     false,
 	}))

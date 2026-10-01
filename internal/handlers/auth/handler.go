@@ -8,7 +8,7 @@ import (
 	"ypeskov/kkal-tracker/internal/middleware"
 	authservice "ypeskov/kkal-tracker/internal/services/auth"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Handler struct {
@@ -43,7 +43,7 @@ func NewHandler(authService authservice.Servicer, logger *slog.Logger) *Handler 
 	}
 }
 
-func (h *Handler) Login(c echo.Context) error {
+func (h *Handler) Login(c *echo.Context) error {
 	h.logger.Debug("Login called")
 
 	var req LoginRequest
@@ -84,7 +84,7 @@ func (h *Handler) Login(c echo.Context) error {
 	})
 }
 
-func (h *Handler) Register(c echo.Context) error {
+func (h *Handler) Register(c *echo.Context) error {
 	h.logger.Debug("Register called")
 
 	var req RegisterRequest
@@ -123,7 +123,7 @@ func (h *Handler) Register(c echo.Context) error {
 	})
 }
 
-func (h *Handler) GetCurrentUser(c echo.Context) error {
+func (h *Handler) GetCurrentUser(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	h.logger.Debug("GetCurrentUser called", "user_id", userID)
 
@@ -140,7 +140,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-func (h *Handler) Activate(c echo.Context) error {
+func (h *Handler) Activate(c *echo.Context) error {
 	token := c.Param("token")
 
 	if len(token) < 8 {

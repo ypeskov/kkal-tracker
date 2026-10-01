@@ -4,23 +4,28 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func Logger(logger *slog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			start := time.Now()
 
 			err := next(c)
 
 			req := c.Request()
-			res := c.Response()
+
+			// The status is known only when the writer is Echo's own response wrapper
+			status := 0
+			if res, unwrapErr := echo.UnwrapResponse(c.Response()); unwrapErr == nil {
+				status = res.Status
+			}
 
 			logger.Info("Request",
 				slog.String("method", req.Method),
 				slog.String("uri", req.RequestURI),
-				slog.Int("status", res.Status),
+				slog.Int("status", status),
 				slog.Duration("latency", time.Since(start)),
 				slog.String("remote_ip", c.RealIP()),
 				slog.String("user_agent", req.UserAgent()),

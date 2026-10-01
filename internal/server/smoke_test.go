@@ -293,6 +293,12 @@ func TestSmokeUserJourney(t *testing.T) {
 
 	client.expect(http.StatusBadRequest, http.MethodPost, "/api/calories", map[string]any{"food": "No calories"}, nil)
 
+	// A handler-level 404 must reach the client as JSON, not as the SPA index page
+	notFound := client.expect(http.StatusNotFound, http.MethodGet, "/api/ingredients/999999", nil, nil)
+	if contentType := notFound.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "application/json") {
+		t.Errorf("API 404 Content-Type = %q, want application/json", contentType)
+	}
+
 	// --- Weight: create, list, update
 	type weightEntry struct {
 		ID     int     `json:"id"`

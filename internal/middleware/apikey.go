@@ -6,7 +6,7 @@ import (
 
 	apikeyservice "ypeskov/kkal-tracker/internal/services/apikey"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type APIKeyMiddleware struct {
@@ -22,7 +22,7 @@ func NewAPIKeyMiddleware(apiKeyService apikeyservice.Servicer, logger *slog.Logg
 }
 
 func (m *APIKeyMiddleware) RequireAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		rawKey := c.Request().Header.Get("X-API-Key")
 		if rawKey == "" {
 			return echo.NewHTTPError(http.StatusUnauthorized, "API key required")
