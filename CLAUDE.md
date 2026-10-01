@@ -457,9 +457,10 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
   - Deployment, Service, Ingress (base uses `ingressClassName: nginx` for local dev)
   - Persistent Volume & Persistent Volume Claim
   - ConfigMap for backup configuration
-  - CronJob for automated backups
+  - CronJob for automated backups (image `ypeskov/kkal-tracker-backup`, built from `kubernetes/backup/Dockerfile`: pinned rclone + sqlite3; receives only the `GDRIVE_*` settings)
 - **Environment overlays**: `kubernetes/overlays/{dev,prod}/` - Environment-specific configs
   - Production overlay patches ingress to use `ingressClassName: traefik` with TLS
+  - Production overlay generates ConfigMap `kkal-tracker-env` from `.env` (non-sensitive settings) and Secret `kkal-tracker-secrets` from `.env.secret` (`JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN`); both files exist only on the server, see the `*.sample` files
   - Traefik-specific annotation: `traefik.ingress.kubernetes.io/router.tls: "true"`
 - Includes CronJob for automated database backups to Google Drive
 

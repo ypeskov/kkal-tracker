@@ -15,7 +15,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 1. Dependency & toolchain refresh | 14 | 14 |
 | 2. High-priority code fixes | 4 | 4 |
 | 3. Server hardening (`server.go`) | 5 | 7 |
-| 4. Kubernetes & backup | 0 | 8 |
+| 4. Kubernetes & backup | 5 | 9 |
 | 5. Low-priority code fixes | 0 | 7 |
 | 6. Non-security defects | 0 | 3 |
 | 7. Major upgrades & long-term | 0 | 9 |
@@ -70,16 +70,17 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
 - [ ] 3.7 Infrastructure (outside this repo): make the real client address reach the app. `kcal.peskov.info` resolves to `95.217.168.25`, a load balancer (TCP pass-through) in front of the cluster node (same TLS certificate as on the node), so Traefik and the app see every visitor as `95.217.168.25` and all per-IP limiters (register, AI, `/api/v1`, the auth group limit) are shared by all users. Options: PROXY protocol on the front proxy plus `proxyProtocol.trustedIPs` on the Traefik entry points (affects every app on the cluster, both sides must be switched together), or point DNS straight at the node
 
-## Stage 4 — Kubernetes & backup
+## Stage 4 — Kubernetes & backup — items 4.1–4.4 done in the repo, not applied to production yet
 
-- [ ] 4.1 Move `JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN` from ConfigMap to Secret (`secretGenerator` + `secretRef`) [M3]
-- [ ] 4.2 Backup CronJob: pass only `GDRIVE_*` instead of the whole app env [M4]
-- [ ] 4.3 Pin `rclone/rclone` image by version/digest [M4]
-- [ ] 4.4 Stop installing `sqlite` from the network on every backup run [M4]
+- [x] 4.1 Move `JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN` from ConfigMap to Secret (`secretGenerator` + `secretRef`) [M3]: prod overlay generates Secret `kkal-tracker-secrets` from `.env.secret`; on the server the four keys have to be moved from `.env` to `.env.secret`
+- [x] 4.2 Backup CronJob: pass only `GDRIVE_*` instead of the whole app env [M4]
+- [x] 4.3 Pin `rclone/rclone` image by version/digest [M4]: `rclone/rclone:1.75.1@sha256:45401ad7…` is the base of the own backup image
+- [x] 4.4 Stop installing `sqlite` from the network on every backup run [M4]: own image `ypeskov/kkal-tracker-backup:1.75.1` (`kubernetes/backup/Dockerfile`) has sqlite3 preinstalled
 - [ ] 4.5 rclone `scope = drive` → `drive.file` (needs a new OAuth token) [M4]
 - [ ] 4.6 Encrypt backups (rclone `crypt` remote) [M4]
 - [ ] 4.7 Deployment `securityContext`: read-only root FS, drop capabilities, no privilege escalation, seccomp [L1]
 - [ ] 4.8 Deployment resource requests/limits and liveness/readiness probes [L1]
+- [x] 4.9 Backups were broken: the nightly job had been failing since 2026-09-14 (last success 2026-09-13). The local snapshot was created, the upload to Google Drive failed with `invalid_grant`: the OAuth token was re-issued for Orgfin around 2026-09-15, which revoked the old one still used here. Fixed on 2026-10-01 by copying the working token from the Orgfin prod ConfigMap into the prod `.env`; a manual run uploaded the snapshot to Google Drive and cleaned up local snapshots older than 7 days. Both projects now share one token, so re-issuing it for one of them breaks the other until it is copied over. Side effect: the job exits before its cleanup step, so local snapshots pile up in `/data/backups` (4 per night: the run plus three retries)
 
 ## Stage 5 — Low-priority code fixes
 
@@ -150,3 +151,9 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Why: the load balancer hides client addresses (item 3.7), so the per-IP login limit was one bucket for all users. The owner decided to remove it; the register limit, warn logging of failed logins and the rest of Stage 3 stay.
 - Files changed: `internal/server/server.go`, `internal/server/security.go`, `internal/handlers/auth/handler.go`, `internal/server/security_test.go`, `CLAUDE.md`.
 - Checks passed: `go build ./...`, `go vet ./...`, `go test -race ./...`.
+
+### 2026-10-01 — Stage 4, items 4.1–4.4 (repo only, not applied)
+- Files changed: `kubernetes/base/deployment.yaml` (`secretRef`), `kubernetes/base/cronjob-backup.yaml` (own pinned image, explicit `GDRIVE_*` env instead of the whole ConfigMap), `kubernetes/base/configmap-backup.yaml` (no `apk add`), `kubernetes/overlays/prod/kustomization.yaml` (`secretGenerator`), `kubernetes/overlays/prod/.env.sample` and new `.env.secret.sample`, new `kubernetes/backup/Dockerfile`, `.gitignore`, `.dockerignore`, `CLAUDE.md`.
+- Checks passed: `kustomize build` (v5.6.0, same as on the server) of the prod overlay with the sample env files — ConfigMap holds only non-sensitive keys, Secret holds the four secrets, name references in the Deployment and CronJob are rewritten; the backup image builds for `arm64` (rclone 1.75.1, sqlite 3.53.4); the backup script run in that image against a throwaway database produced a snapshot that restores and passes `integrity_check`.
+- Found and fixed on the way: production backups had been failing since 2026-09-14, see item 4.9.
+- Not done: push of `ypeskov/kkal-tracker-backup:1.75.1` (creates a new public Docker Hub repository), split of the prod `.env`, apply, manual backup run on production, removal of old generated ConfigMaps that still hold previous secret values.

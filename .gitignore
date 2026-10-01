@@ -31,6 +31,7 @@ data/
 .env
 .env.local
 .env.production
+.env.secret
 .deploy.env
 
 # Frontend

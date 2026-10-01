@@ -3,5 +3,6 @@ web/dist
 .git
 data
 **/.env
+**/.env.secret
 .env.*
 .deploy.env

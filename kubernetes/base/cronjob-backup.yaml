@@ -26,17 +26,34 @@ spec:
                 defaultMode: 0755
           containers:
             - name: backup
-              image: rclone/rclone:latest
+              # Built from kubernetes/backup/Dockerfile (pinned rclone + sqlite3)
+              image: ypeskov/kkal-tracker-backup:1.75.1
               command: ["/bin/sh", "/scripts/backup.sh"]
               volumeMounts:
                 - name: data
                   mountPath: /data
                 - name: backup-script
                   mountPath: /scripts
-              envFrom:
-                - configMapRef:
-                    name: kkal-tracker-env
+              # Only the settings the backup script needs, not the whole application environment
               env:
+                - name: GDRIVE_OAUTH_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: kkal-tracker-secrets
+                      key: GDRIVE_OAUTH_TOKEN
+                      optional: true
+                - name: GDRIVE_FOLDER_PATH
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kkal-tracker-env
+                      key: GDRIVE_FOLDER_PATH
+                      optional: true
+                - name: GDRIVE_CLEANUP
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kkal-tracker-env
+                      key: GDRIVE_CLEANUP
+                      optional: true
                 - name: DATABASE_PATH
                   value: "/data/app.db"
                 - name: BACKUP_PATH

@@ -27,10 +27,7 @@ data:
     echo "Starting backup of database: ${DB_PATH}"
     echo "Backup timestamp: ${TIMESTAMP}"
 
-    # Install sqlite3
-    apk add --no-cache sqlite
-
-    # Create backup using SQLite's backup command
+    # Create backup using SQLite's backup command (sqlite3 is preinstalled in the backup image)
     echo "Creating SQLite backup..."
     sqlite3 "${DB_PATH}" ".backup '${BACKUP_DIR}/${BACKUP_FILE}'"
 
@@ -94,7 +91,7 @@ data:
         echo "Upload completed to your personal Google Drive"
     else
         echo "Google Drive OAuth token not found, skipping upload"
-        echo "To set up: run 'rclone config' locally, then add token to .env"
+        echo "To set up: run 'rclone config' locally, then add token to .env.secret"
     fi
 
     # Clean up old local backups

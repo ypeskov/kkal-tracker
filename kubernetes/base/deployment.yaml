@@ -24,6 +24,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: kkal-tracker-env
+            - secretRef:
+                name: kkal-tracker-secrets
           volumeMounts:
             - name: data
               mountPath: /data

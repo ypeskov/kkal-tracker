@@ -1,10 +1,17 @@
 resources:
   - ../../base
 
+# Non-sensitive settings
 configMapGenerator:
   - name: kkal-tracker-env
     envs:
       - .env
+
+# JWT_SECRET, SMTP_PASSWORD, OPENAI_API_KEY, GDRIVE_OAUTH_TOKEN
+secretGenerator:
+  - name: kkal-tracker-secrets
+    envs:
+      - .env.secret
 
 patches:
   - path: ingress-patch.yaml
