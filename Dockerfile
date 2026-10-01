@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1
 
-# Stage 1: Build the frontend
-FROM node:24-alpine AS frontend
+# Stage 1: Build the frontend (runs on the build host: the output is platform-independent)
+FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend
 WORKDIR /app/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./ 
 RUN npm run build
 
-# Stage 2: Build the Go backend
-FROM golang:1.27 AS builder
+# Stage 2: Build the Go backend (runs on the build host, cross-compiles for the target platform)
+FROM --platform=$BUILDPLATFORM golang:1.27 AS builder
 WORKDIR /src
 
 # Enable Go build and module caches for faster incremental builds
