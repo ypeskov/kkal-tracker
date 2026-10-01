@@ -14,7 +14,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 |-------|------|-------|
 | 1. Dependency & toolchain refresh | 14 | 14 |
 | 2. High-priority code fixes | 4 | 4 |
-| 3. Server hardening (`server.go`) | 6 | 7 |
+| 3. Server hardening (`server.go`) | 5 | 7 |
 | 4. Kubernetes & backup | 0 | 8 |
 | 5. Low-priority code fixes | 0 | 7 |
 | 6. Non-security defects | 0 | 3 |
@@ -60,15 +60,15 @@ Before deploying 2.2–2.4: confirm the prod ConfigMap provides `JWT_SECRET` (�
 
 Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=8080`, `DATABASE_PATH=/data/app.db`, but `JWT_SECRET` is only 20 characters long and `ENVIRONMENT` is missing. Fixed the same day: `kubernetes/overlays/prod/.env` on the server got a new 64-character `JWT_SECRET` and `ENVIRONMENT=production`, applied with `kubectl apply -k kubernetes/overlays/prod` on image 5.6.0 (all sessions were reset). The pod started cleanly with JSON logs, `/` and `/api/languages` return 200, `/api/auth/me` without a token returns 401. The previous `.env` is kept on the server as `~/kkal-tracker-prod.env.bak-20261001`.
 
-## Stage 3 — Server hardening (`internal/server/server.go`) — released as v5.6.2
+## Stage 3 — Server hardening (`internal/server/server.go`) — released as v5.6.2, login limit removed in v5.6.3
 
-- [x] 3.1 Separate strict rate limiters for `/auth/login` and `/auth/register` [M1]: per IP, login 5 attempts then 1 per 20 s, register 3 attempts then 1 per 20 min; the group-wide 5 req/s limit stays. Per-email throttling is deliberately not added (it would let anyone lock a known account out)
+- [~] 3.1 Separate strict rate limiters for `/auth/login` and `/auth/register` [M1]: register is limited to 3 attempts then 1 per 20 min; the group-wide 5 req/s limit stays. The strict login limit (5 attempts then 1 per 20 s) shipped in v5.6.2 and was removed in v5.6.3 by the owner's decision: behind the load balancer it was shared by all users (see 3.7), so anyone could block logins for everybody. Brute-force protection for login is therefore still open until 3.7 is solved. Per-email throttling is deliberately not added (it would let anyone lock a known account out)
 - [x] 3.2 Log failed logins at warn level [M1]: email and client IP, never the password; denied rate-limited requests are logged at warn too
 - [x] 3.3 Configure `e.IPExtractor` to trust `X-Forwarded-For` only from the cluster network [M2]: new `TRUSTED_PROXIES` env (CIDR list); unset means loopback, link-local and private networks. Prod should set `TRUSTED_PROXIES=10.42.0.0/16` (k3s pod network, Traefik runs there)
 - [x] 3.4 `http.Server` timeouts: `ReadHeaderTimeout` 10 s, `ReadTimeout` 30 s, `WriteTimeout` 60 s, `IdleTimeout` 120 s [M5]
 - [x] 3.5 `BodyLimit` middleware, 1 MB [M5]
 - [x] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
-- [ ] 3.7 Infrastructure (outside this repo): make the real client address reach the app. `kcal.peskov.info` resolves to `95.217.168.25`, a TCP pass-through in front of the cluster node (same TLS certificate as on the node), so Traefik and the app see every visitor as `95.217.168.25` and all per-IP limiters (login, register, AI, `/api/v1`) are shared by all users. Options: PROXY protocol on the front proxy plus `proxyProtocol.trustedIPs` on the Traefik entry points (affects every app on the cluster, both sides must be switched together), or point DNS straight at the node
+- [ ] 3.7 Infrastructure (outside this repo): make the real client address reach the app. `kcal.peskov.info` resolves to `95.217.168.25`, a load balancer (TCP pass-through) in front of the cluster node (same TLS certificate as on the node), so Traefik and the app see every visitor as `95.217.168.25` and all per-IP limiters (register, AI, `/api/v1`, the auth group limit) are shared by all users. Options: PROXY protocol on the front proxy plus `proxyProtocol.trustedIPs` on the Traefik entry points (affects every app on the cluster, both sides must be switched together), or point DNS straight at the node
 
 ## Stage 4 — Kubernetes & backup
 
@@ -145,3 +145,8 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Production checks passed: rollout succeeded, pod runs the pushed digest with 0 restarts; `/` and `/api/languages` return 200; `/api/auth/me` without a token 401; failed login 401 and logged at warn; second `/api/v1/data` request without a key 429; 2 MB body 413; a spoofed `X-Forwarded-For: 1.2.3.4` did not end up in the logged `remote_ip`.
 - Client address check: a request sent straight to the node is logged with the real client address, so Traefik and the extractor work as intended. A request through the public DNS name is logged as `95.217.168.25` (the front proxy) — see item 3.7.
 - Still not checked: any authenticated flow (login of a real user, entries, weight, export, AI).
+
+### 2026-10-01 — v5.6.3: strict login rate limit removed
+- Why: the load balancer hides client addresses (item 3.7), so the per-IP login limit was one bucket for all users. The owner decided to remove it; the register limit, warn logging of failed logins and the rest of Stage 3 stay.
+- Files changed: `internal/server/server.go`, `internal/server/security.go`, `internal/handlers/auth/handler.go`, `internal/server/security_test.go`, `CLAUDE.md`.
+- Checks passed: `go build ./...`, `go vet ./...`, `go test -race ./...`.
