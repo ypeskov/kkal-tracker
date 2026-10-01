@@ -413,7 +413,7 @@ The application follows a clean architecture pattern with separation of concerns
 All API routes are prefixed with `/api`:
 - `GET /api/languages` - Supported languages (public, no auth)
 - `/api/auth/*` - Authentication (rate limited: 5 req/sec per IP)
-  - `POST /api/auth/login` - User login (additionally: 5 attempts, then 1 per 20 sec per IP)
+  - `POST /api/auth/login` - User login
   - `POST /api/auth/register` - User registration (additionally: 3 attempts, then 1 per 20 min per IP)
   - `GET /api/auth/activate/:token` - Activate account via email link
   - `GET /api/auth/me` - Get current user (requires auth)

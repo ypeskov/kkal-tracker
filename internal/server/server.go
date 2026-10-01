@@ -162,14 +162,15 @@ func (s *Server) Start() *http.Server {
 	languagesHandler.RegisterRoutes(languagesGroup)
 
 	// Auth routes with rate limiting: 5 requests per second for the whole group,
-	// plus strict per-route limits for login (brute force) and register (sends an email)
+	// plus a strict limit for register (sends an email).
+	// Login has no strict per-IP limit: the load balancer in front of the cluster hides
+	// client addresses, so such a limit would be shared by all users.
 	// NOTE: In-memory rate limiter is per-instance. If scaling to multiple replicas,
 	// switch to a distributed store (e.g., Redis) for effective rate limiting.
 	authRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(5))
-	loginRateLimiter := newRateLimiter(s.logger, "login", loginRateBurst, loginRateInterval)
 	registerRateLimiter := newRateLimiter(s.logger, "register", registerRateBurst, registerRateInterval)
 	authGroup := apiGroup.Group("/auth", authRateLimiter)
-	authHandler.RegisterRoutes(authGroup, authMiddleware, loginRateLimiter, registerRateLimiter)
+	authHandler.RegisterRoutes(authGroup, authMiddleware, registerRateLimiter)
 
 	caloriesGroup := apiGroup.Group("/calories", authMiddleware.RequireAuth)
 	calorieHandler.RegisterRoutes(caloriesGroup)

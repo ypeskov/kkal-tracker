@@ -142,23 +142,21 @@ func TestServerBodyLimit(t *testing.T) {
 	}
 }
 
-func TestServerLoginRateLimit(t *testing.T) {
+func TestServerLoginHasNoStrictRateLimit(t *testing.T) {
 	srv := newTestServer(t)
 
-	// Invalid payloads are rejected by validation, before the auth service is reached
-	for i := 1; i <= loginRateBurst; i++ {
+	// Stays below the group-wide limit of 5 requests per second
+	for i := 1; i <= 5; i++ {
 		if code := serve(srv, http.MethodPost, "/api/auth/login", `{}`, nil); code != http.StatusBadRequest {
-			t.Fatalf("attempt %d within burst: status = %d, want %d", i, code, http.StatusBadRequest)
+			t.Fatalf("attempt %d: status = %d, want %d", i, code, http.StatusBadRequest)
 		}
-	}
-	if code := serve(srv, http.MethodPost, "/api/auth/login", `{}`, nil); code != http.StatusTooManyRequests {
-		t.Errorf("attempt over burst: status = %d, want %d", code, http.StatusTooManyRequests)
 	}
 }
 
 func TestServerRegisterRateLimit(t *testing.T) {
 	srv := newTestServer(t)
 
+	// Invalid payloads are rejected by validation, before the auth service is reached
 	for i := 1; i <= registerRateBurst; i++ {
 		if code := serve(srv, http.MethodPost, "/api/auth/register", `{}`, nil); code != http.StatusBadRequest {
 			t.Fatalf("attempt %d within burst: status = %d, want %d", i, code, http.StatusBadRequest)
@@ -173,10 +171,10 @@ func TestServerRateLimitIgnoresSpoofedForwardedFor(t *testing.T) {
 	srv := newTestServer(t)
 
 	// The client is not a trusted proxy, so rotating X-Forwarded-For must not give it a fresh bucket
-	codes := make([]int, 0, loginRateBurst+1)
-	for i := 0; i <= loginRateBurst; i++ {
+	codes := make([]int, 0, registerRateBurst+1)
+	for i := 0; i <= registerRateBurst; i++ {
 		headers := map[string]string{echo.HeaderXForwardedFor: "198.51.100." + string(rune('1'+i))}
-		codes = append(codes, serve(srv, http.MethodPost, "/api/auth/login", `{}`, headers))
+		codes = append(codes, serve(srv, http.MethodPost, "/api/auth/register", `{}`, headers))
 	}
 	if last := codes[len(codes)-1]; last != http.StatusTooManyRequests {
 		t.Errorf("statuses = %v, want the last one to be %d", codes, http.StatusTooManyRequests)

@@ -21,10 +21,6 @@ const (
 	// No endpoint accepts uploads, JSON payloads are small
 	maxRequestBodySize = "1M"
 
-	// Login: 5 attempts at once, then one attempt every 20 seconds per IP
-	loginRateBurst    = 5
-	loginRateInterval = 20 * time.Second
-
 	// Register sends an email: 3 attempts at once, then one attempt every 20 minutes per IP
 	registerRateBurst    = 3
 	registerRateInterval = 20 * time.Minute

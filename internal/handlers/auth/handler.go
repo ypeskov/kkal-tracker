@@ -164,8 +164,8 @@ func (h *Handler) Activate(c echo.Context) error {
 	})
 }
 
-func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware, loginRateLimiter, registerRateLimiter echo.MiddlewareFunc) {
-	g.POST("/login", h.Login, loginRateLimiter)
+func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware *middleware.AuthMiddleware, registerRateLimiter echo.MiddlewareFunc) {
+	g.POST("/login", h.Login)
 	g.POST("/register", h.Register, registerRateLimiter)
 	g.GET("/activate/:token", h.Activate)
 	g.GET("/me", h.GetCurrentUser, authMiddleware.RequireAuth)
