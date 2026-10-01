@@ -70,9 +70,9 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 3.6 Rate-limit `/api/v1` before the API-key check [L4]
 - [ ] 3.7 Infrastructure (outside this repo): make the real client address reach the app. `kcal.peskov.info` resolves to `95.217.168.25`, a load balancer (TCP pass-through) in front of the cluster node (same TLS certificate as on the node), so Traefik and the app see every visitor as `95.217.168.25` and all per-IP limiters (register, AI, `/api/v1`, the auth group limit) are shared by all users. Options: PROXY protocol on the front proxy plus `proxyProtocol.trustedIPs` on the Traefik entry points (affects every app on the cluster, both sides must be switched together), or point DNS straight at the node
 
-## Stage 4 — Kubernetes & backup — items 4.1–4.4 done in the repo, not applied to production yet
+## Stage 4 — Kubernetes & backup — items 4.1–4.4 and 4.9 applied to production
 
-- [x] 4.1 Move `JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN` from ConfigMap to Secret (`secretGenerator` + `secretRef`) [M3]: prod overlay generates Secret `kkal-tracker-secrets` from `.env.secret`; on the server the four keys have to be moved from `.env` to `.env.secret`
+- [x] 4.1 Move `JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN` from ConfigMap to Secret (`secretGenerator` + `secretRef`) [M3]: prod overlay generates Secret `kkal-tracker-secrets` from `.env.secret`; on the server the four keys were moved from `.env` to `.env.secret` (mode 600)
 - [x] 4.2 Backup CronJob: pass only `GDRIVE_*` instead of the whole app env [M4]
 - [x] 4.3 Pin `rclone/rclone` image by version/digest [M4]: `rclone/rclone:1.75.1@sha256:45401ad7…` is the base of the own backup image
 - [x] 4.4 Stop installing `sqlite` from the network on every backup run [M4]: own image `ypeskov/kkal-tracker-backup:1.75.1` (`kubernetes/backup/Dockerfile`) has sqlite3 preinstalled
@@ -152,8 +152,11 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Files changed: `internal/server/server.go`, `internal/server/security.go`, `internal/handlers/auth/handler.go`, `internal/server/security_test.go`, `CLAUDE.md`.
 - Checks passed: `go build ./...`, `go vet ./...`, `go test -race ./...`.
 
-### 2026-10-01 — Stage 4, items 4.1–4.4 (repo only, not applied)
+### 2026-10-01 — Stage 4, items 4.1–4.4 and 4.9
 - Files changed: `kubernetes/base/deployment.yaml` (`secretRef`), `kubernetes/base/cronjob-backup.yaml` (own pinned image, explicit `GDRIVE_*` env instead of the whole ConfigMap), `kubernetes/base/configmap-backup.yaml` (no `apk add`), `kubernetes/overlays/prod/kustomization.yaml` (`secretGenerator`), `kubernetes/overlays/prod/.env.sample` and new `.env.secret.sample`, new `kubernetes/backup/Dockerfile`, `.gitignore`, `.dockerignore`, `CLAUDE.md`.
 - Checks passed: `kustomize build` (v5.6.0, same as on the server) of the prod overlay with the sample env files — ConfigMap holds only non-sensitive keys, Secret holds the four secrets, name references in the Deployment and CronJob are rewritten; the backup image builds for `arm64` (rclone 1.75.1, sqlite 3.53.4); the backup script run in that image against a throwaway database produced a snapshot that restores and passes `integrity_check`.
 - Found and fixed on the way: production backups had been failing since 2026-09-14, see item 4.9.
-- Not done: push of `ypeskov/kkal-tracker-backup:1.75.1` (creates a new public Docker Hub repository), split of the prod `.env`, apply, manual backup run on production, removal of old generated ConfigMaps that still hold previous secret values.
+- Applied to production: `ypeskov/kkal-tracker-backup:1.75.1` pushed to Docker Hub (new repository), the prod `.env` split into `.env` and `.env.secret`, `kubectl apply -k kubernetes/overlays/prod` after a `kubectl diff` preview. The app image is unchanged (5.6.3), `JWT_SECRET` is unchanged, sessions were kept.
+- Production checks passed: the app pod restarted cleanly with both env sources; `/` and `/api/languages` return 200, `/api/auth/me` without a token and a failed login return 401; a manual backup run on the new image received only the `GDRIVE_*`, `DATABASE_PATH`, `BACKUP_PATH` and `RETENTION_DAYS` variables, installed nothing from the network, and uploaded the snapshot to Google Drive.
+- Not checked: the scheduled nightly run (02:00 Europe/Sofia) on the new setup.
+- Not done: removal of the old generated `kkal-tracker-env-*` ConfigMaps, which still hold previous secret values (kustomize does not prune them).
