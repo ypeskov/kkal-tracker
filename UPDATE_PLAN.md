@@ -206,3 +206,4 @@ Echo v4 gets security and bug fixes only until 2026-12-31 (per the Echo README),
 - Production browser check (headless Chromium, no login): login, register and deep-linked pages render, a failed login through the form reaches the API; 0 CSP violations, 0 page errors, 0 failed requests.
 - Still not checked on production: everything behind the login.
 - Rollback: set the image back to `ypeskov/kcal-tracker:5.7.0` in `kubernetes/base/deployment.yaml` and apply; the code before the migration is at tag `pre-echo-v5`.
+- Lessons for other projects: the pitfalls of this migration and the v4/v5 response comparison technique are written up in the `go-budget` repository, `backend/docs/echo-v5-migration.md`.
