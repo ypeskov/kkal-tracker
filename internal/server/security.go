@@ -26,6 +26,20 @@ const (
 	registerRateInterval = 20 * time.Minute
 
 	minRateLimiterExpiry = 3 * time.Minute
+
+	// The frontend is a single bundle served from this origin and talks only to /api.
+	// Scripts: no inline code and no eval. Styles: inline style attributes are allowed
+	// (sanitized AI markup, chart canvases). Images: data: and blob: for generated content.
+	contentSecurityPolicy = "default-src 'self'; " +
+		"script-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
+		"img-src 'self' data: blob:; " +
+		"font-src 'self'; " +
+		"connect-src 'self'; " +
+		"object-src 'none'; " +
+		"base-uri 'self'; " +
+		"form-action 'self'; " +
+		"frame-ancestors 'none'"
 )
 
 // newIPExtractor returns the extractor used by c.RealIP(), which keys the rate limiters.

@@ -99,10 +99,11 @@ func (s *Server) Start() *http.Server {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAuthorization, "X-API-Key"},
 	}))
 	e.Use(echomiddleware.SecureWithConfig(echomiddleware.SecureConfig{
-		XSSProtection:      "1; mode=block",
-		ContentTypeNosniff: "nosniff",
-		XFrameOptions:      "DENY",
-		HSTSMaxAge:         31536000,
+		XSSProtection:         "1; mode=block",
+		ContentTypeNosniff:    "nosniff",
+		XFrameOptions:         "DENY",
+		HSTSMaxAge:            31536000,
+		ContentSecurityPolicy: contentSecurityPolicy,
 	}))
 
 	jwtService := auth.NewJWTService(s.config.JWTSecret)

@@ -25,10 +25,10 @@ export default function Report() {
 
   // Default date range: last 30 days
   const [dateFrom, setDateFrom] = useState(
-    format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    () => format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
   );
   const [dateTo, setDateTo] = useState(
-    format(new Date(), 'yyyy-MM-dd')
+    () => format(new Date(), 'yyyy-MM-dd')
   );
 
   // Fetch report data
@@ -114,8 +114,7 @@ export default function Report() {
 
       switch (period) {
         case 'weekly':
-          const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday start
-          key = format(weekStart, 'yyyy-MM-dd');
+          key = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'); // Monday start
           break;
         case 'monthly':
           key = format(startOfMonth(date), 'yyyy-MM-dd');
@@ -138,8 +137,7 @@ export default function Report() {
 
       switch (period) {
         case 'weekly':
-          const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday start
-          key = format(weekStart, 'yyyy-MM-dd');
+          key = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'); // Monday start
           break;
         case 'monthly':
           key = format(startOfMonth(date), 'yyyy-MM-dd');
@@ -188,7 +186,7 @@ export default function Report() {
       max: Number(max.toFixed(2)),
       average: Number(average.toFixed(2)),
     };
-  }, [reportData?.weight_history]);
+  }, [reportData]);
 
   // Calculate average calories per day
   const avgCaloriesPerDay = useMemo(() => {

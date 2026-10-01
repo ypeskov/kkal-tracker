@@ -19,7 +19,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 4. Kubernetes & backup | 5 | 5 |
 | 5. Low-priority code fixes | 0 | 0 |
 | 6. Non-security defects | 2 | 2 |
-| 7. Major upgrades & long-term | 0 | 9 |
+| 7. Major upgrades & long-term | 8 | 9 |
 
 ---
 
@@ -99,17 +99,17 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 6.2 Export email: body declared `quoted-printable` but sent unencoded (`internal/services/email/service.go`): the HTML part is now really quoted-printable encoded
 - [x] 6.3 PostgreSQL mode: implement (driver + `database.New`) or remove the option and docs: the option is removed (`DATABASE_TYPE`, `POSTGRES_URL` are no longer read), docs updated. The PostgreSQL-dialect query variants in `internal/repositories/queries.go` are left in place as unused code
 
-## Stage 7 — Major upgrades & long-term (separate tasks)
+## Stage 7 — Major upgrades & long-term — code done, not released yet
 
-- [ ] 7.1 Smoke tests for auth, calories, weight, export (prerequisite for the rest)
-- [ ] 7.2 Add ESLint config so `npm run lint` works
-- [ ] 7.3 vite 7 → 8, @vitejs/plugin-react 5 → 6
-- [ ] 7.4 TypeScript 5.9 → 7.0
-- [ ] 7.5 eslint 9 → 10 (npm now marks the 9.x line as no longer supported)
-- [ ] 7.6 i18next 25 → 26, react-i18next 16 → 17
-- [ ] 7.7 lucide-react 0.563 → 1.x
-- [ ] 7.8 Content-Security-Policy (requires replacing `new Function` in `web/src/utils/calculator.ts:24`) [M6]
-- [ ] 7.9 Remove empty root `package-lock.json`
+- [x] 7.1 Smoke tests for auth, calories, weight, export (prerequisite for the rest): `internal/server/smoke_test.go` drives the fully wired server on a temporary migrated SQLite database with a fake SMTP server
+- [x] 7.2 Add ESLint config so `npm run lint` works: `web/eslint.config.js`; the run passes with 27 warnings (20 `no-explicit-any`, 7 `react-hooks/set-state-in-effect`) that need component refactoring with UI testing
+- [x] 7.3 vite 7 → 8, @vitejs/plugin-react 5 → 6
+- [~] 7.4 TypeScript 5.9 → 7.0: upgraded to 6.0.3 only. `typescript-eslint` 8.71.0 (needed by ESLint to parse TypeScript) supports TypeScript `<6.1.0`, so 7.0 has to wait for its support
+- [x] 7.5 eslint 9 → 10 (npm now marks the 9.x line as no longer supported)
+- [x] 7.6 i18next 25 → 26, react-i18next 16 → 17
+- [x] 7.7 lucide-react 0.563 → 1.x
+- [x] 7.8 Content-Security-Policy (requires replacing `new Function` in `web/src/utils/calculator.ts:24`) [M6]: the calculator uses a small recursive descent parser, the server sends an enforcing CSP without `unsafe-eval` and without inline scripts
+- [x] 7.9 Remove empty root `package-lock.json`
 
 ---
 
@@ -171,3 +171,12 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Production checks passed: rollout succeeded, pod runs the pushed digest with 0 restarts; `/` and `/api/languages` return 200; `/api/auth/me` and `/api/export` without a token and a failed login return 401.
 - Still not checked: any authenticated flow, including sending a real export email.
 - `DATABASE_TYPE=sqlite` is still in the prod `.env`; it is unused now and harmless.
+
+### 2026-10-01 — Stage 7 code, not released
+- Backend: `internal/server/smoke_test.go` (new), CSP header in `internal/server/security.go` / `server.go` with a test.
+- Frontend: `web/package.json` and lockfile (vite 8.3.2, @vitejs/plugin-react 6.1.1, typescript 6.0.3, eslint 10.11.0, @eslint/js 10.0.1, typescript-eslint 8.71.0 (new), eslint-plugin-react-refresh 0.5.7, i18next 26.4.2, react-i18next 17.0.15, lucide-react 1.49.0), `web/eslint.config.js` (new), `web/src/vite-env.d.ts` (new, TypeScript 6 checks side-effect imports of CSS), `web/tsconfig.app.json` (deprecated `baseUrl` removed), `web/vite.config.ts` (`import.meta.dirname`), `web/src/utils/calculator.ts` (parser instead of `new Function`), lint fixes in `DashboardPage.tsx`, `Report.tsx`, `api/ingredients.ts`. Root `package-lock.json` removed.
+- Checks passed: `go build`, `go vet`, `go test -race ./...`; `npm run build` (`tsc -b` + vite), `npm run lint` (0 errors), `npm audit` (0 vulnerabilities); full `docker build`.
+- Calculator: 33 fixed cases plus a differential run of 300,000 random expressions against the old implementation — no unexpected differences. Intentional differences: JS-only syntax that the old version accepted by accident is now rejected or read as plain decimal (`**`, `//` and `/*` comments, `--`/`++`, leading-zero octal numbers).
+- Browser check (headless Chromium, the built bundle served by a throwaway static server with the same CSP header and a mock API): login, register, dashboard, reports, food, profile, settings and AI insights all render with 0 CSP violations and 0 page errors; styles, icons, translations and the chart are in place.
+- Not checked: the real application in a browser with real data (the check above uses mock API responses), interactive flows such as the calculator keypad, forms, export download and the AI analysis markup.
+- Not done: version bump, image push, deploy.

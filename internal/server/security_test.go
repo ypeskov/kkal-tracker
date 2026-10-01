@@ -187,3 +187,24 @@ func TestServerAPIv1RateLimitRunsBeforeKeyCheck(t *testing.T) {
 		t.Errorf("second request: status = %d, want %d", code, http.StatusTooManyRequests)
 	}
 }
+
+func TestServerContentSecurityPolicy(t *testing.T) {
+	srv := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/languages", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler.ServeHTTP(rec, req)
+
+	policy := rec.Header().Get(echo.HeaderContentSecurityPolicy)
+	if policy != contentSecurityPolicy {
+		t.Fatalf("Content-Security-Policy = %q, want %q", policy, contentSecurityPolicy)
+	}
+	if !strings.Contains(policy, "script-src 'self';") {
+		t.Errorf("policy must restrict scripts to the own origin: %q", policy)
+	}
+	for _, forbidden := range []string{"'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "*"} {
+		if strings.Contains(policy, forbidden) {
+			t.Errorf("policy must not contain %s: %q", forbidden, policy)
+		}
+	}
+}

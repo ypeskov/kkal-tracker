@@ -42,25 +42,28 @@ export default function DashboardPage() {
     switch (filterType) {
       case 'today':
         return { dateFrom: today, dateTo: today };
-      case 'yesterday':
+      case 'yesterday': {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         return { dateFrom: yesterdayStr, dateTo: yesterdayStr };
-      case 'lastWeek':
+      }
+      case 'lastWeek': {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return { 
           dateFrom: weekAgo.toISOString().split('T')[0], 
           dateTo: today 
         };
-      case 'lastMonth':
+      }
+      case 'lastMonth': {
         const monthAgo = new Date();
         monthAgo.setDate(monthAgo.getDate() - 30);
         return { 
           dateFrom: monthAgo.toISOString().split('T')[0], 
           dateTo: today 
         };
+      }
       case 'customRange':
         if (customDateFrom && customDateTo) {
           return { dateFrom: customDateFrom, dateTo: customDateTo };

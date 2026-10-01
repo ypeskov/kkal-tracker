@@ -125,7 +125,7 @@ class IngredientService {
       if (!cached) return false
       const parsed = JSON.parse(cached)
       return Array.isArray(parsed) && parsed.length > 0
-    } catch (error) {
+    } catch {
       return false
     }
   }

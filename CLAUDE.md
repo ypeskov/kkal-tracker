@@ -44,10 +44,15 @@ make seed-clean   # Clean and re-seed database (dev only)
 ### Testing & Quality
 ```bash
 make test         # Run all Go tests
-go test ./...     # Run Go tests (alternative)
+go test ./...     # Run Go tests (alternative); needs web/dist, run `make build-frontend` first
 go vet ./...      # Go static analysis
 go mod tidy       # Clean up dependencies
+cd web && npm run lint   # ESLint (flat config in web/eslint.config.js)
 ```
+
+Go tests include an end-to-end smoke test (`internal/server/smoke_test.go`): it runs the fully wired
+server on a temporary migrated SQLite database with a fake SMTP server and walks through
+register → activation email → login → calories → weight → export (download and email).
 
 ## Project Structure
 
@@ -162,6 +167,7 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Internationalization**: Support for English (en_US), Ukrainian (uk_UA), Russian in Ukraine (ru_UA), and Bulgarian (bg_BG)
 - **Development**: Uses Air for live reload, excludes `web/dist` from watching
 - **Production**: JSON logging format, structured error handling
+- **Content-Security-Policy**: the server sends a strict CSP (`internal/server/security.go`): scripts only from the own origin, no inline scripts, no `eval`/`new Function`. Do not add inline `<script>` tags, external script/style/font hosts or eval-based code to the frontend without updating the policy
 - **Logging**: NEVER import `log/slog` directly - use the centralized logger passed from main.go through dependency injection
 - **Comments**: ALWAYS write comments in English only. Never use Russian, Ukrainian, or any other language for code comments. This ensures international accessibility and consistency across the codebase
 - **Git commits**: NEVER add "Co-Authored-By" or any other AI/assistant attribution to commit messages. No mentions of AI tools in commits
@@ -328,11 +334,12 @@ If you encounter old semantic CSS classes during refactoring:
 - TanStack Router v1.170.41 (routing)
 - Chart.js v4.5.1 + react-chartjs-2 v5.3.1 (charts)
 - date-fns v4.4.0 (date utilities)
-- react-i18next v16.6.6 (internationalization)
-- lucide-react v0.563.0 (icons)
+- i18next v26.4.2 + react-i18next v17.0.15 (internationalization)
+- lucide-react v1.49.0 (icons)
 - Tailwind CSS v4.3.3 (styling)
-- Vite v7.3.6 (build tool)
-- TypeScript v5.9.3
+- Vite v8.3.2 (build tool)
+- TypeScript v6.0.3 (v7 is blocked: typescript-eslint supports TypeScript < 6.1 only)
+- ESLint v10.11.0 with typescript-eslint v8.71.0
 
 ## Build Process
 1. Frontend builds to `web/dist/` (via Vite)
