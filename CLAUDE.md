@@ -4,9 +4,9 @@
 A Go/Echo web application for calorie tracking with React/TanStack frontend. Built using `/Users/ypeskov/Projects/Go/qr-generator` as structural reference. Features calorie tracking, weight management, ingredient database, and reporting capabilities.
 
 ## Architecture
-- **Backend**: Go 1.25 with Echo framework v4.15.0
+- **Backend**: Go 1.26+ (Docker builds with 1.27) with Echo framework v4.16.0
 - **Frontend**: React 19 with TanStack Query & Router, TypeScript, Vite
-- **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.26.0
+- **Database**: Dual support - SQLite (default) with PostgreSQL option, Goose migrations v3.28.0
 - **Auth**: JWT (v5.3.1) with bcrypt password hashing, sessionStorage persistence, email activation; API key auth for external data access
 - **I18n**: react-i18next (frontend) + custom translator (backend) with en_US, uk_UA, ru_UA, bg_BG locales
 - **Logging**: Structured logging with slog
@@ -312,26 +312,26 @@ If you encounter old semantic CSS classes during refactoring:
 ## Dependencies
 
 ### Backend
-- Echo v4.15.0 (web framework)
-- modernc.org/sqlite v1.44.3 (SQLite driver)
-- Goose v3.26.0 (migrations)
+- Echo v4.16.0 (web framework)
+- modernc.org/sqlite v1.60.1 (SQLite driver)
+- Goose v3.28.0 (migrations)
 - JWT-Go v5.3.1 (authentication)
-- golang.org/x/crypto v0.47.0 (bcrypt)
-- go-playground/validator v10.30.1 (validation)
-- sashabaranov/go-openai v1.41.2 (AI integration)
-- xuri/excelize v2.10.0 (Excel export)
+- golang.org/x/crypto v0.57.0 (bcrypt)
+- go-playground/validator v10.30.5 (validation)
+- sashabaranov/go-openai v1.43.0 (AI integration)
+- xuri/excelize v2.11.0 (Excel export)
 - Air (live reload - auto-installed via make watch)
 
 ### Frontend
-- React 19.2.4 + React DOM
-- TanStack Query v5.90.20 (server state)
-- TanStack Router v1.157.18 (routing)
+- React 19.3.0 + React DOM
+- TanStack Query v5.104.0 (server state)
+- TanStack Router v1.170.41 (routing)
 - Chart.js v4.5.1 + react-chartjs-2 v5.3.1 (charts)
-- date-fns v4.1.0 (date utilities)
-- react-i18next v16.5.4 (internationalization)
+- date-fns v4.4.0 (date utilities)
+- react-i18next v16.6.6 (internationalization)
 - lucide-react v0.563.0 (icons)
-- Tailwind CSS v4.1.18 (styling)
-- Vite v7.3.1 (build tool)
+- Tailwind CSS v4.3.3 (styling)
+- Vite v7.3.6 (build tool)
 - TypeScript v5.9.3
 
 ## Build Process

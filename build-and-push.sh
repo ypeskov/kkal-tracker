@@ -73,7 +73,7 @@ rm -rf web/dist
 
 # Build the image without cache (always fresh build)
 echo "Building ${IMAGE_NAME}:${TAG} (no cache)..."
-docker build --no-cache $PLATFORM_ARG -t "${IMAGE_NAME}:${TAG}" -t "${IMAGE_NAME}:latest" .
+docker build --no-cache --pull $PLATFORM_ARG -t "${IMAGE_NAME}:${TAG}" -t "${IMAGE_NAME}:latest" .
 
 # Push the image if requested
 if [ "$PUSH" == true ]; then

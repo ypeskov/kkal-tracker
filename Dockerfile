@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Build the frontend
-FROM node:22-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /app/web
-COPY web/package.json web/package-lock.json ./ 
-RUN npm install
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
 COPY web/ ./ 
 RUN npm run build
 
 # Stage 2: Build the Go backend
-FROM golang:1.25 AS builder
+FROM golang:1.27 AS builder
 WORKDIR /src
 
 # Enable Go build and module caches for faster incremental builds
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/kkal-tracker ./cmd/web/main.go
 
 # Stage 3: Create the final image
-FROM gcr.io/distroless/base-debian12:nonroot AS prod
+FROM gcr.io/distroless/static-debian13:nonroot AS prod
 WORKDIR /app
 
 # Copy the Go binary, migrations, and env file
