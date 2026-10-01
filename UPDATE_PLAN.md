@@ -49,7 +49,7 @@ Manual (developer machine, not in repo):
 
 Runtime verification: v5.6.0 is deployed to production; the pod starts cleanly and `/` and `/api/languages` return 200. There are still no automated tests, and the manual smoke test under a user account (login, add entry, weight, export, AI) has not been done.
 
-## Stage 2 — High-priority code fixes — code done, not released yet
+## Stage 2 — High-priority code fixes — released as v5.6.1
 
 - [x] 2.1 Call `c.Validate(&req)` in `Login` and `Register` (`internal/handlers/auth/handler.go:50,85`) [H2]
 - [x] 2.2 Remove `COPY .env.sample .env` from `Dockerfile:38` [H3]
@@ -124,10 +124,12 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - Checks passed: image builds and is `linux/arm64` in the registry; rollout succeeded, pod runs the pushed digest with 0 restarts; `https://kcal.peskov.info/` and `/api/languages` return 200.
 - Not checked: any authenticated flow (login, entries, weight, export, AI).
 
-### 2026-10-01 — Stage 2 code (items 1.13, 2.1–2.4), not released
+### 2026-10-01 — Stage 2 (items 1.13, 2.1–2.4), released as v5.6.1
 - Files changed: `internal/handlers/auth/handler.go` (validation in `Login`/`Register`), `internal/config/config.go` (fail-closed JWT secret check, unset `ENVIRONMENT` means production), `cmd/web/main.go` (no warning when `.env` is absent), `Dockerfile` (no `.env` in the image, `ENV ENVIRONMENT=production`), `.dockerignore`, `kubernetes/overlays/prod/.env.sample`.
 - Tests added (first Go tests in the repo): `internal/config/config_test.go`, `internal/handlers/auth/handler_test.go`.
 - Checks passed: `go build ./...`, `go vet ./...`, `go test ./...`, local `docker build` (image is `arm64`, contains no `/app/.env`, has `ENVIRONMENT=production`).
 - Behaviour change for local runs: `ENVIRONMENT=development` must be set (the root `.env.sample` already has it), otherwise the app, `cmd/migrate`, `cmd/seed` and `scripts/create_user.go` demand a strong `JWT_SECRET`.
 - Not checked: running the server or the container; login of existing users whose stored email would not pass the `email` validator (registration did not validate before).
-- Not done: version bump, image push, deploy of the Stage 2 image.
+- Released: image `ypeskov/kcal-tracker:5.6.1` (`linux/arm64`, built natively on the arm64 host) pushed to Docker Hub, `develop` merged into `master`, deployed to production with `kubectl apply -k kubernetes/overlays/prod` after a `kubectl diff` preview (the only change was the image tag).
+- Production checks passed: rollout succeeded, pod runs the pushed digest with 0 restarts; `/` and `/api/languages` return 200; `/api/auth/me` without a token returns 401; login with a malformed email returns 400, with unknown credentials 401.
+- Still not checked: any authenticated flow (login of a real user, entries, weight, export, AI).
