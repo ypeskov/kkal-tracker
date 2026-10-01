@@ -7,6 +7,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 - [ ] Pending
 - [x] Done
 - [~] Partly done / done but not fully verified (see note)
+- [-] Dropped by the owner's decision (not counted in the totals)
 
 ## Progress
 
@@ -15,7 +16,7 @@ IDs in brackets (H1, M3, L5, ...) refer to findings in that report.
 | 1. Dependency & toolchain refresh | 14 | 14 |
 | 2. High-priority code fixes | 4 | 4 |
 | 3. Server hardening (`server.go`) | 5 | 7 |
-| 4. Kubernetes & backup | 5 | 9 |
+| 4. Kubernetes & backup | 5 | 8 |
 | 5. Low-priority code fixes | 0 | 7 |
 | 6. Non-security defects | 0 | 3 |
 | 7. Major upgrades & long-term | 0 | 9 |
@@ -76,7 +77,7 @@ Checked on 2026-10-01: the active prod ConfigMap has `LOG_LEVEL=info`, `PORT=808
 - [x] 4.2 Backup CronJob: pass only `GDRIVE_*` instead of the whole app env [M4]
 - [x] 4.3 Pin `rclone/rclone` image by version/digest [M4]: `rclone/rclone:1.75.1@sha256:45401ad7…` is the base of the own backup image
 - [x] 4.4 Stop installing `sqlite` from the network on every backup run [M4]: own image `ypeskov/kkal-tracker-backup:1.75.1` (`kubernetes/backup/Dockerfile`) has sqlite3 preinstalled
-- [ ] 4.5 rclone `scope = drive` → `drive.file` (needs a new OAuth token) [M4]
+- [-] 4.5 rclone `scope = drive` → `drive.file` (needs a new OAuth token) [M4]: dropped on 2026-10-01. The token stays with full Drive access and is shared with Orgfin; a narrower scope would need a new browser authorization by the owner, would have to be copied into both projects, and would hide the existing backup folder from rclone
 - [ ] 4.6 Encrypt backups (rclone `crypt` remote) [M4]
 - [ ] 4.7 Deployment `securityContext`: read-only root FS, drop capabilities, no privilege escalation, seccomp [L1]
 - [ ] 4.8 Deployment resource requests/limits and liveness/readiness probes [L1]
