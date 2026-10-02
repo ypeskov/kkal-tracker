@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Generate skills/kkal-tracker-food-log-dev from skills/kkal-tracker-food-log.
 
-The dev skill is the production skill pointed at a development server. The agent runs elsewhere,
-so the server is reached by the public address of the development machine. That address is passed
-as an argument and the generated skill is git-ignored: server addresses stay out of the repository.
+The dev skill is the production skill pointed at the development server. The agent runs elsewhere,
+so the server is reached by the public address of the development machine.
 
-Usage:  python3 skills/sync_dev_skill.py http://HOST:8080
-Edit the production skill only, then regenerate. The api_key file of the dev skill is left untouched.
+Usage:  python3 skills/sync_dev_skill.py [http://HOST:PORT]
+Edit the production skill only, then regenerate. The api_key file of the dev skill (git-ignored)
+is left untouched; the API key in the repository is always the XXXXXXXXX placeholder.
 """
 
 import pathlib
@@ -18,6 +18,7 @@ PROD = SKILLS_DIR / "kkal-tracker-food-log"
 DEV = SKILLS_DIR / "kkal-tracker-food-log-dev"
 
 PROD_URL = "https://kcal.peskov.info"
+DEV_URL = "http://37.27.186.57:8080"
 
 DEV_DESCRIPTION = (
     "DEV/TEST copy of the Kkal Tracker food logging skill. It writes to the development server, "
@@ -38,9 +39,10 @@ def replace_once(text, old, new, where):
 
 
 def main():
-    if len(sys.argv) != 2 or not sys.argv[1].startswith(("http://", "https://")):
-        sys.exit(f"Usage: {sys.argv[0]} http://HOST:PORT")
-    dev_url = sys.argv[1].rstrip("/")
+    dev_url = sys.argv[1] if len(sys.argv) > 1 else DEV_URL
+    if len(sys.argv) > 2 or not dev_url.startswith(("http://", "https://")):
+        sys.exit(f"Usage: {sys.argv[0]} [http://HOST:PORT]")
+    dev_url = dev_url.rstrip("/")
 
     (DEV / "scripts").mkdir(parents=True, exist_ok=True)
 

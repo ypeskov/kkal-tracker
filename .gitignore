@@ -34,9 +34,8 @@ data/
 .env.secret
 .deploy.env
 
-# API keys of the agent skills and the generated dev skill (it contains the dev server address)
+# API keys of the agent skills
 skills/*/api_key
-skills/kkal-tracker-food-log-dev/
 
 # Frontend
 web/node_modules/

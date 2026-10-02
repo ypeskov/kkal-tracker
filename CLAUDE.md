@@ -110,8 +110,10 @@ scripts/                # Utility scripts (e.g., create_user.go)
 
 skills/                 # Agent skills that log food through the external API
 ├── kkal-tracker-food-log/      # Production skill (SKILL.md + scripts/kkal_client.py)
-├── kkal-tracker-food-log-dev/  # Generated copy pointed at a dev server; git-ignored, do not edit by hand
-└── sync_dev_skill.py           # Generates the dev skill: python3 skills/sync_dev_skill.py http://HOST:8080
+├── kkal-tracker-food-log-dev/  # Generated copy pointed at the dev server, do not edit by hand
+└── sync_dev_skill.py           # Regenerates the dev skill from the production one
+                                # API keys never go to the repository: the scripts hold the XXXXXXXXX placeholder,
+                                # a real key lives in the git-ignored api_key file of a skill
 
 web/                    # React frontend (Vite + TypeScript)
 ├── src/
