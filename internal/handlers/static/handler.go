@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"log/slog"
+	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -35,7 +36,13 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	// index.html is served for any path that matches neither a file nor a route.
 	// There must be no catch-all static route next to this middleware: the fallback
 	// is applied only to router-level 404s, so that API 404 responses stay untouched.
+	// API paths skip the middleware altogether: an API client that calls a missing endpoint
+	// or uses a wrong method must get an error, never the index page with status 200.
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Skipper: func(c *echo.Context) bool {
+			path := c.Request().URL.Path
+			return path == "/api" || strings.HasPrefix(path, "/api/")
+		},
 		Filesystem: distFS,
 		HTML5:      true,
 		Browse:     false,

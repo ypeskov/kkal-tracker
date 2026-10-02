@@ -71,7 +71,12 @@ def request(method, path, body=None):
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as response:
             raw = response.read()
-            return response.status, json.loads(raw) if raw else None
+            try:
+                return response.status, json.loads(raw) if raw else None
+            except ValueError:
+                # An older server answers unknown API calls with the website page instead of an error
+                fail(f"HTTP {response.status}, but the answer is not JSON: the server does not support "
+                     f"{method} /api/v1{path.split('?')[0]} (probably an older server version). Nothing was changed.")
     except urllib.error.HTTPError as error:
         raw = error.read()
         try:

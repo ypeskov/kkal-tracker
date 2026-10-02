@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -22,6 +21,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/config"
 	"ypeskov/kkal-tracker/internal/database"
+	"ypeskov/kkal-tracker/web"
 
 	"github.com/pressly/goose/v3"
 )
@@ -210,7 +210,8 @@ func newSmokeEnvironment(t *testing.T) (*smokeClient, *fakeSMTPServer) {
 		SMTPPassword: "password",
 		SMTPFrom:     "noreply@example.com",
 	}
-	srv := New(cfg, logger, db, embed.FS{}).Start()
+	// The real embedded frontend (requires web/dist): API errors must not be replaced by its index page
+	srv := New(cfg, logger, db, web.StaticFiles).Start()
 
 	return &smokeClient{t: t, handler: srv.Handler}, smtpServer
 }

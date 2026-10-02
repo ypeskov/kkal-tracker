@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -189,6 +190,18 @@ func TestFoodAPIStoresMeal(t *testing.T) {
 	client.expect(http.StatusNoContent, http.MethodDelete, pastaPath, nil, nil)
 	client.expect(http.StatusNotFound, http.MethodDelete, pastaPath, nil, nil)
 	client.expect(http.StatusBadRequest, http.MethodDelete, "/api/v1/food/abc", nil, nil)
+
+	// A wrong method or an unknown API path is an error for an authorized client too, not the frontend index page
+	for _, request := range [][2]string{
+		{http.MethodPatch, pastaPath}, {http.MethodPost, pastaPath},
+		{http.MethodPut, "/api/v1/data"}, {http.MethodGet, "/api/v1/no-such-endpoint"},
+	} {
+		rec := client.do(request[0], request[1], nil)
+		if rec.Code < 400 || !strings.HasPrefix(rec.Header().Get("Content-Type"), "application/json") {
+			t.Errorf("%s %s: status = %d, Content-Type = %q, want a JSON error",
+				request[0], request[1], rec.Code, rec.Header().Get("Content-Type"))
+		}
+	}
 
 	// Without meal_datetime the meal is stored at the current time
 	var now foodAPIMeal
