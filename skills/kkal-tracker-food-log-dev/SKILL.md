@@ -1,6 +1,6 @@
 ---
 name: kkal-tracker-food-log-dev
-description: DEV/TEST copy of the Kkal Tracker food logging skill. It writes to the development server, not to the real diary. Use it ONLY when the user explicitly asks for the dev or test tracker — "запиши на дев", "в тестовый трекер", "на тестовый сервер", "log it to dev". For every ordinary "I ate X" / "запиши еду" request use the regular kkal-tracker-food-log skill instead.
+description: DEV/TEST copy of the Kkal Tracker food logging skill. It writes to the development server, not to the real diary. Use it ONLY when the current message itself names the dev or test tracker — "запиши на дев", "в тестовый трекер", "на тестовый сервер", "log it to dev". The mention is required in every request — an earlier dev request in the same conversation does not carry over. The one exception is editing or deleting an entry that this dev copy created, which is always done here. For every other "I ate X" / "запиши еду" request use the regular kkal-tracker-food-log skill instead.
 ---
 
 # Kkal Tracker: food diary logging (DEV)
@@ -10,6 +10,14 @@ description: DEV/TEST copy of the Kkal Tracker food logging skill. It writes to 
 This skill writes meals into the user's Kkal Tracker diary. The user usually dictates by voice: one phrase may contain several foods, the names are approximate, and weights may be missing. Your job is to turn that phrase into exact diary entries without making the user repeat themselves.
 
 The server is deliberately strict: it never guesses. Every food you send is either an ingredient the user already has (referenced by `ingredient_id`) or an explicitly described new food. Choosing between the two is your part of the work.
+
+## Production and dev: where a request belongs
+
+Two copies of this skill can be installed: the regular one writes to the real diary, the `-dev` one to a test server. A mix-up either puts test data into the real diary or loses a real meal in the test database, so the routing is strict.
+
+- **Logging food** — every message is routed on its own. It goes to dev only when that message itself names the dev or test tracker ("запиши на дев", "в тестовый трекер", "log it to dev"). A dev request earlier in the conversation does not carry over: a following "добавь ещё кофе" without the word goes to the real diary, even in the middle of a testing session.
+- **Editing and deleting** — these follow the entry, not the wording. Use the copy that created the entry, however the request is phrased; replies of the dev copy start with `[DEV]`, so the conversation shows where each entry went. Entry IDs are separate on each server and the same number can belong to a different, real entry on the other one, so an edit or delete sent to the wrong server silently damages an unrelated entry.
+- If you cannot tell where an entry was created, find it with `entries` before changing anything, and ask the user when it is still unclear.
 
 ## API basics
 

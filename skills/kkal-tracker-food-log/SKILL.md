@@ -1,6 +1,6 @@
 ---
 name: kkal-tracker-food-log
-description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to correct a recorded entry (weight, food, calories, time), to undo or delete one, and to check what is already logged today. The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here. This is the default skill for food logging; a "-dev" copy of it, if installed, is only for requests that explicitly name the dev or test tracker.
+description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to correct a recorded entry (weight, food, calories, time), to undo or delete one, and to check what is already logged today. The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here. This is the default for food logging — the "-dev" copy is only for a message that itself names the dev or test tracker, and an earlier dev request in the conversation does not carry over. Edit or delete an entry with the copy that created it.
 ---
 
 # Kkal Tracker: food diary logging
@@ -8,6 +8,14 @@ description: Record what the user ate or drank into their Kkal Tracker food diar
 This skill writes meals into the user's Kkal Tracker diary. The user usually dictates by voice: one phrase may contain several foods, the names are approximate, and weights may be missing. Your job is to turn that phrase into exact diary entries without making the user repeat themselves.
 
 The server is deliberately strict: it never guesses. Every food you send is either an ingredient the user already has (referenced by `ingredient_id`) or an explicitly described new food. Choosing between the two is your part of the work.
+
+## Production and dev: where a request belongs
+
+Two copies of this skill can be installed: the regular one writes to the real diary, the `-dev` one to a test server. A mix-up either puts test data into the real diary or loses a real meal in the test database, so the routing is strict.
+
+- **Logging food** — every message is routed on its own. It goes to dev only when that message itself names the dev or test tracker ("запиши на дев", "в тестовый трекер", "log it to dev"). A dev request earlier in the conversation does not carry over: a following "добавь ещё кофе" without the word goes to the real diary, even in the middle of a testing session.
+- **Editing and deleting** — these follow the entry, not the wording. Use the copy that created the entry, however the request is phrased; replies of the dev copy start with `[DEV]`, so the conversation shows where each entry went. Entry IDs are separate on each server and the same number can belong to a different, real entry on the other one, so an edit or delete sent to the wrong server silently damages an unrelated entry.
+- If you cannot tell where an entry was created, find it with `entries` before changing anything, and ask the user when it is still unclear.
 
 ## API basics
 

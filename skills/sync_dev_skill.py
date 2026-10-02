@@ -22,8 +22,11 @@ DEV_URL = "https://dev-kcal.peskov.info"
 
 DEV_DESCRIPTION = (
     "DEV/TEST copy of the Kkal Tracker food logging skill. It writes to the development server, "
-    "not to the real diary. Use it ONLY when the user explicitly asks for the dev or test "
-    'tracker — "запиши на дев", "в тестовый трекер", "на тестовый сервер", "log it to dev". For every ordinary '
+    "not to the real diary. Use it ONLY when the current message itself names the dev or test "
+    'tracker — "запиши на дев", "в тестовый трекер", "на тестовый сервер", "log it to dev". The mention is '
+    "required in every request — an earlier dev request in the same conversation does not carry over. "
+    "The one exception is editing or deleting an entry that this dev copy created, which is always done here. "
+    'For every other '
     '"I ate X" / "запиши еду" request use the regular kkal-tracker-food-log skill instead.'
 )
 DEV_BANNER = (
