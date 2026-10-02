@@ -14,6 +14,15 @@ var (
 	ErrTooManyItems  = fmt.Errorf("items must contain at most %d items", MaxMealItems)
 )
 
+// EntryValidationError is a validation problem of a diary entry change. The message is safe to show to the client.
+type EntryValidationError struct {
+	Message string
+}
+
+func (e *EntryValidationError) Error() string {
+	return e.Message
+}
+
 // MealItemError is a validation problem of a single meal item. The message is safe to show to the client.
 type MealItemError struct {
 	Index   int

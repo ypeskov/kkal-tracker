@@ -199,6 +199,100 @@ func TestFoodAPIStoresMeal(t *testing.T) {
 	}
 }
 
+func TestFoodAPIEditsEntry(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+
+	breadID := addIngredient(t, client, "Хлеб", 240)
+	baguetteID := addIngredient(t, client, "Багет", 270)
+
+	var meal foodAPIMeal
+	client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food", map[string]any{
+		"meal_datetime": "2026-03-10T08:00:00Z",
+		"items": []map[string]any{
+			{"ingredient_id": breadID, "weight": 100},
+			{"new_ingredient": map[string]any{"name": "Суп в кафе", "kcal_per_100g": 60}, "weight": 300, "one_off": true},
+		},
+	}, &meal)
+	entryPath := fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID)
+
+	type updated struct {
+		Entry            foodAPIEntry `json:"entry"`
+		Day              string       `json:"day"`
+		DayTotalCalories *int         `json:"day_total_calories"`
+	}
+	check := func(step string, got updated, food string, weight, kcal float64, calories int, datetime string, dayTotal int) {
+		t.Helper()
+		e := got.Entry
+		if e.ID != meal.Entries[0].ID || e.Food != food || e.Weight != weight || e.KcalPer100g != kcal ||
+			e.Calories != calories || e.MealDatetime != datetime {
+			t.Errorf("%s: entry = %+v, want %s %g g, %g kcal/100g, %d kcal at %s", step, e, food, weight, kcal, calories, datetime)
+		}
+		if got.DayTotalCalories == nil || *got.DayTotalCalories != dayTotal {
+			t.Errorf("%s: day total = %v, want %d", step, got.DayTotalCalories, dayTotal)
+		}
+	}
+
+	// Only the weight changes: everything else, including the meal time, stays
+	var result updated
+	client.expect(http.StatusOK, http.MethodPut, entryPath, map[string]any{"weight": 150}, &result)
+	check("weight", result, "Хлеб", 150, 240, 360, "2026-03-10T08:00:00Z", 540)
+
+	// Another ingredient: its name and calories replace the old ones, the weight stays
+	client.expect(http.StatusOK, http.MethodPut, entryPath, map[string]any{"ingredient_id": baguetteID}, &result)
+	check("ingredient", result, "Багет", 150, 270, 405, "2026-03-10T08:00:00Z", 585)
+
+	// A calorie override for this entry only
+	client.expect(http.StatusOK, http.MethodPut, entryPath, map[string]any{"kcal_per_100g": 300}, &result)
+	check("calories", result, "Багет", 150, 300, 450, "2026-03-10T08:00:00Z", 630)
+
+	// Everything at once, including a move to another day
+	result = updated{}
+	client.expect(http.StatusOK, http.MethodPut, entryPath, map[string]any{
+		"ingredient_id": breadID, "weight": 50, "kcal_per_100g": 250, "meal_datetime": "2026-03-11T01:30:00+02:00",
+	}, &result)
+	check("all fields", result, "Хлеб", 50, 250, 125, "2026-03-10T23:30:00Z", 305)
+
+	// One-off entries have no ingredient but can be corrected the same way
+	client.expect(http.StatusOK, http.MethodPut, fmt.Sprintf("/api/v1/food/%d", meal.Entries[1].ID),
+		map[string]any{"weight": 400}, &result)
+	if result.Entry.Food != "Суп в кафе" || result.Entry.Calories != 240 {
+		t.Errorf("one-off entry = %+v, want the same food with 240 kcal", result.Entry)
+	}
+
+	for name, body := range map[string]map[string]any{
+		"nothing to change":  {},
+		"zero weight":        {"weight": 0},
+		"weight too large":   {"weight": 20000},
+		"calories too large": {"kcal_per_100g": 1200},
+		"unknown ingredient": {"ingredient_id": 999999},
+		"invalid datetime":   {"meal_datetime": "yesterday"},
+	} {
+		if rec := client.do(http.MethodPut, entryPath, body); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want %d; body: %s", name, rec.Code, http.StatusBadRequest, rec.Body.String())
+		}
+	}
+	client.expect(http.StatusNotFound, http.MethodPut, "/api/v1/food/999999", map[string]any{"weight": 100}, nil)
+	client.expect(http.StatusBadRequest, http.MethodPut, "/api/v1/food/abc", map[string]any{"weight": 100}, nil)
+
+	// Rejected changes left the entry as it was, and the ingredient list was never touched
+	var data struct {
+		Food []foodAPIEntry `json:"food"`
+	}
+	client.expect(http.StatusOK, http.MethodGet, "/api/v1/data?type=food&from=2026-03-10&to=2026-03-10", nil, &data)
+	if len(data.Food) != 2 {
+		t.Fatalf("diary = %+v, want 2 entries", data.Food)
+	}
+	for _, e := range data.Food {
+		if e.ID == meal.Entries[0].ID && (e.Food != "Хлеб" || e.Weight != 50 || e.Calories != 125) {
+			t.Errorf("entry after rejected changes = %+v", e)
+		}
+	}
+	if ingredients := listIngredients(t, client); len(ingredients) != 2 || ingredients["Хлеб"].KcalPer100g != 240 {
+		t.Errorf("ingredients = %+v, want the two original ones unchanged", ingredients)
+	}
+}
+
 func TestFoodAPIRejectsInvalidMeals(t *testing.T) {
 	client, smtpServer := newSmokeEnvironment(t)
 	signUp(t, client, smtpServer, "food@example.com")
@@ -286,6 +380,8 @@ func TestFoodAPIIsolatesUsers(t *testing.T) {
 	client.expect(http.StatusBadRequest, http.MethodPost, "/api/v1/food",
 		map[string]any{"items": []map[string]any{{"ingredient_id": firstIngredientID, "weight": 100}}}, nil)
 	client.expect(http.StatusNotFound, http.MethodDelete, fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID), nil, nil)
+	client.expect(http.StatusNotFound, http.MethodPut, fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID),
+		map[string]any{"weight": 1}, nil)
 	if ingredients := listIngredients(t, client); len(ingredients) != 0 {
 		t.Errorf("second user sees ingredients of the first one: %+v", ingredients)
 	}
@@ -308,8 +404,8 @@ func TestFoodAPIIsolatesUsers(t *testing.T) {
 		Food []foodAPIEntry `json:"food"`
 	}
 	client.expect(http.StatusOK, http.MethodGet, "/api/v1/data?type=food&from="+today+"&to="+today, nil, &data)
-	if len(data.Food) != 1 || data.Food[0].ID != meal.Entries[0].ID {
-		t.Errorf("first user's diary = %+v, want only the entry they created", data.Food)
+	if len(data.Food) != 1 || data.Food[0].ID != meal.Entries[0].ID || data.Food[0].Weight != 100 {
+		t.Errorf("first user's diary = %+v, want only the unchanged entry they created", data.Food)
 	}
 	if ingredients := listIngredients(t, client); len(ingredients) != 1 || ingredients["Tomato"].TimesUsed != 1 {
 		t.Errorf("first user's ingredients = %+v, want only their own tomato used once", ingredients)

@@ -59,6 +59,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/data", h.GetData)
 	g.GET("/ingredients", h.GetIngredients)
 	g.POST("/food", h.CreateFood)
+	g.PUT("/food/:id", h.UpdateFood)
 	g.DELETE("/food/:id", h.DeleteFood)
 }
 
@@ -214,6 +215,55 @@ func (h *Handler) CreateFood(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, response)
+}
+
+// UpdateFood corrects a stored diary entry: its weight, ingredient, calorie value or time
+func (h *Handler) UpdateFood(c *echo.Context) error {
+	userID := c.Get("user_id").(int)
+
+	entryID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid entry ID")
+	}
+
+	var req UpdateFoodRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	serviceReq := &calorieservice.UpdateMealEntryRequest{
+		EntryID:      entryID,
+		UserID:       userID,
+		Weight:       req.Weight,
+		IngredientID: req.IngredientID,
+		KcalPer100g:  req.KcalPer100g,
+	}
+	if req.MealDatetime != "" {
+		mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Invalid meal_datetime format. Use ISO 8601 format")
+		}
+		serviceReq.MealDatetime = &mealDatetime
+	}
+
+	result, err := h.calorieService.UpdateMealEntry(serviceReq)
+	if err != nil {
+		var validationErr *calorieservice.EntryValidationError
+		switch {
+		case errors.As(err, &validationErr):
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
+		case errors.Is(err, calorieservice.ErrEntryNotFound):
+			return echo.NewHTTPError(http.StatusNotFound, "Food entry not found")
+		}
+		h.logger.Error("Failed to update food entry", "error", err, "user_id", userID, "entry_id", entryID)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update food")
+	}
+
+	return c.JSON(http.StatusOK, UpdateFoodResponse{
+		Entry:            mapFoodEntry(result.Entry),
+		Day:              result.Day,
+		DayTotalCalories: result.DayTotalCalories,
+	})
 }
 
 // DeleteFood removes a diary entry, e.g. one that was just stored by mistake

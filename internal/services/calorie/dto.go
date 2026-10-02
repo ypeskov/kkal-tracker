@@ -78,3 +78,23 @@ type CreateMealResult struct {
 	// DayTotalCalories is nil when the total could not be calculated after the meal was saved
 	DayTotalCalories *int
 }
+
+// UpdateMealEntryRequest changes a stored diary entry. Nil fields keep their current values.
+type UpdateMealEntryRequest struct {
+	EntryID int
+	UserID  int
+	Weight  *float64
+	// IngredientID switches the entry to another ingredient of the user: name, calories and nutrients come from it
+	IngredientID *int
+	// KcalPer100g overrides the calorie value for this entry only
+	KcalPer100g  *float64
+	MealDatetime *time.Time
+}
+
+type UpdateMealEntryResult struct {
+	Entry *models.CalorieEntry
+	// Day is the diary day (YYYY-MM-DD, UTC) the entry belongs to after the change
+	Day string
+	// DayTotalCalories is nil when the total could not be calculated after the entry was saved
+	DayTotalCalories *int
+}

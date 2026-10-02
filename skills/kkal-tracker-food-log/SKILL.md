@@ -1,6 +1,6 @@
 ---
 name: kkal-tracker-food-log
-description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to undo or delete a food entry that was just recorded and to check what is already logged today. The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here.
+description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to correct a recorded entry (weight, food, calories, time), to undo or delete one, and to check what is already logged today. The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here. This is the default skill for food logging; a "-dev" copy of it, if installed, is only for requests that explicitly name the dev or test tracker.
 ---
 
 # Kkal Tracker: food diary logging
@@ -22,6 +22,7 @@ python scripts/kkal_client.py ingredients            # the user's ingredient lis
 python scripts/kkal_client.py add --json '<meal>'    # store a meal (or pipe the JSON to stdin)
 python scripts/kkal_client.py entries                # today's diary entries with IDs
 python scripts/kkal_client.py entries --from 2026-03-01 --to 2026-03-07
+python scripts/kkal_client.py edit 12345 --weight 150   # correct an entry
 python scripts/kkal_client.py delete 12345           # delete an entry
 ```
 
@@ -119,14 +120,29 @@ Example:
 
 ## Fixing mistakes
 
-- **Undo** ("отмени", "удали последнее", "это было не то") → `delete` each entry `id` from the `add` response. If you no longer have the IDs, find them with `entries`.
-- **Wrong weight or food** → delete the wrong entry and add the corrected one.
+Use the entry `id` from the `add` response. If you no longer have it (another conversation, an entry made on the website), find it with `entries`; when several entries could be the one the user means, ask rather than guess.
+
+- **Correct an entry** ("исправь вес на 150", "там было не 200, а 120 грамм", "это была не шея, а грудка", "это было в обед, а не утром") → `edit`. It changes only what you pass and keeps the rest, including the meal time; the server recalculates the calories and returns the new day total.
+
+  ```bash
+  python scripts/kkal_client.py edit 12345 --weight 150
+  python scripts/kkal_client.py edit 12345 --ingredient-id 76          # another food from the ingredient list
+  python scripts/kkal_client.py edit 12345 --kcal 260                  # calories per 100 g for this entry only
+  python scripts/kkal_client.py edit 12345 --datetime 2026-10-02T13:30:00+03:00
+  ```
+
+  The options can be combined. `--ingredient-id` takes the name, calories and nutrients from that ingredient and keeps the weight.
+- **The right food is not in the ingredient list** → `edit` cannot create ingredients. Delete the entry and `add` it again as a new food, passing the original `meal_datetime` so the entry does not move to the current time.
+- **Undo** ("отмени", "удали последнее", "это было не то") → `delete` each entry `id`.
 - Ingredients created by mistake cannot be removed through this API; tell the user to delete them on the Food List page of the website.
+
+After a correction, tell the user what the entry looks like now and the new day total.
 
 ## Error handling
 
 - `409` → a new ingredient has the same name as an existing one (case, spacing and "ё/е" are ignored). The response contains `existing_ingredient` and `item_index`: replace that item's `new_ingredient` with the `ingredient_id` and resend the whole meal. Nothing was saved.
 - `400` → the message names the item (`items[2]: …`) and the problem. Fix it and resend the whole meal. Nothing was saved.
+- `404` on `edit` or `delete` → there is no such entry (already deleted, or a wrong ID). Check with `entries`.
 - `401` → the API key was rejected. Tell the user, do not retry.
 - `429` → rate limited. Wait a few seconds and retry once.
 - `5xx`, timeout or network error on `add` → the meal may have been saved anyway. Run `entries` and look for it before resending; a blind retry is how a meal gets logged twice.

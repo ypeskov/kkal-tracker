@@ -388,7 +388,7 @@ If you encounter old semantic CSS classes during refactoring:
   - A new ingredient whose name equals an existing one (ignoring case, spacing and `ё`/`е`) is rejected with 409 and the existing ingredient
   - `one_off: true` writes a new food to the diary without adding it to the ingredient list (restaurant dishes etc.)
   - A meal is atomic (all items or none); calories are calculated on the server
-  - `DELETE /api/v1/food/:id` removes an entry (undo)
+  - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, time), `DELETE /api/v1/food/:id` removes it
 - **Email Service**: Activation emails and export delivery
 - **Dashboard**: View today's entries with total calorie count
 - **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA, bg_BG) with language switcher, both frontend and backend
@@ -457,6 +457,7 @@ All API routes are prefixed with `/api`:
   - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
   - `GET /api/v1/ingredients` - All user ingredients with `times_used` and `last_used`
   - `POST /api/v1/food` - Store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`
+  - `PUT /api/v1/food/:id` - Change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, meal_datetime?}`; fields that are not sent keep their values, calories are recalculated
   - `DELETE /api/v1/food/:id` - Delete a food entry
 
 ## Deployment

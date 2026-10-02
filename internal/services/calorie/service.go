@@ -1,6 +1,7 @@
 package calorie
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -129,7 +130,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 	newNames := make(map[string]int)
 
 	for i, item := range req.Items {
-		if item.Weight <= 0 || item.Weight > maxItemWeight {
+		if !validItemWeight(item.Weight) {
 			return nil, itemError(i, "weight must be greater than 0 and at most %g grams", maxItemWeight)
 		}
 
@@ -148,11 +149,11 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			}
 			kcalPer100g := ingredient.KcalPer100g
 			if item.KcalPer100g != nil {
-				if *item.KcalPer100g < 0 || *item.KcalPer100g > maxKcalPer100g {
+				if !validKcalPer100g(*item.KcalPer100g) {
 					return nil, itemError(i, "kcal_per_100g must be between 0 and %g", maxKcalPer100g)
 				}
 				kcalPer100g = *item.KcalPer100g
-			} else if kcalPer100g < 0 || kcalPer100g > maxKcalPer100g {
+			} else if !validKcalPer100g(kcalPer100g) {
 				// The ingredient list accepts any value, the diary must not get a nonsensical calorie count from it
 				return nil, itemError(i, "ingredient %q has %g kcal per 100 g, expected a value between 0 and %g; send kcal_per_100g to override it",
 					ingredient.Name, kcalPer100g, maxKcalPer100g)
@@ -178,7 +179,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			if utf8.RuneCountInString(name) > maxFoodNameLength {
 				return nil, itemError(i, "new_ingredient.name must be at most %d characters", maxFoodNameLength)
 			}
-			if food.KcalPer100g < 0 || food.KcalPer100g > maxKcalPer100g {
+			if !validKcalPer100g(food.KcalPer100g) {
 				return nil, itemError(i, "new_ingredient.kcal_per_100g must be between 0 and %g", maxKcalPer100g)
 			}
 			nutrients := []struct {
@@ -215,7 +216,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 		}
 
 		entry.Weight = item.Weight
-		entry.Calories = int(math.Round(item.Weight * entry.KcalPer100g / 100))
+		entry.Calories = entryCalories(item.Weight, entry.KcalPer100g)
 		entries = append(entries, entry)
 	}
 
@@ -256,6 +257,97 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 
 	s.logger.Debug("CreateMeal completed successfully", "user_id", req.UserID, "entries", len(created))
 	return result, nil
+}
+
+// UpdateMealEntry changes the weight, the ingredient, the calorie value or the time of a stored diary entry.
+// Everything that is not sent stays as it is; calories are recalculated from the resulting weight and calorie value.
+func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntryResult, error) {
+	s.logger.Debug("UpdateMealEntry called", "entry_id", req.EntryID, "user_id", req.UserID)
+
+	if req.Weight == nil && req.IngredientID == nil && req.KcalPer100g == nil && req.MealDatetime == nil {
+		return nil, &EntryValidationError{Message: "nothing to change: send weight, ingredient_id, kcal_per_100g or meal_datetime"}
+	}
+
+	entry, err := s.calorieRepo.GetByID(req.EntryID)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && entry.UserID != req.UserID) {
+		s.logger.Debug("UpdateMealEntry failed - entry not found", "entry_id", req.EntryID, "user_id", req.UserID)
+		return nil, ErrEntryNotFound
+	}
+	if err != nil {
+		s.logger.Error("Failed to get calorie entry", "error", err, "entry_id", req.EntryID, "user_id", req.UserID)
+		return nil, err
+	}
+
+	if req.IngredientID != nil {
+		ingredient, err := s.ingredientRepo.GetUserIngredientByID(req.UserID, *req.IngredientID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &EntryValidationError{Message: fmt.Sprintf("ingredient %d not found", *req.IngredientID)}
+		}
+		if err != nil {
+			s.logger.Error("Failed to get user ingredient", "error", err, "user_id", req.UserID, "ingredient_id", *req.IngredientID)
+			return nil, err
+		}
+		if req.KcalPer100g == nil && !validKcalPer100g(ingredient.KcalPer100g) {
+			return nil, &EntryValidationError{Message: fmt.Sprintf(
+				"ingredient %q has %g kcal per 100 g, expected a value between 0 and %g; send kcal_per_100g to override it",
+				ingredient.Name, ingredient.KcalPer100g, maxKcalPer100g)}
+		}
+		entry.Food = ingredient.Name
+		entry.KcalPer100g = ingredient.KcalPer100g
+		entry.Fats = ingredient.Fats
+		entry.Carbs = ingredient.Carbs
+		entry.Proteins = ingredient.Proteins
+	}
+	if req.KcalPer100g != nil {
+		if !validKcalPer100g(*req.KcalPer100g) {
+			return nil, &EntryValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", maxKcalPer100g)}
+		}
+		entry.KcalPer100g = *req.KcalPer100g
+	}
+	if req.Weight != nil {
+		if !validItemWeight(*req.Weight) {
+			return nil, &EntryValidationError{Message: fmt.Sprintf("weight must be greater than 0 and at most %g grams", maxItemWeight)}
+		}
+		entry.Weight = *req.Weight
+	}
+	// The diary keeps meal times in UTC, days are compared as UTC dates
+	mealDatetime := entry.MealDatetime.UTC()
+	if req.MealDatetime != nil {
+		mealDatetime = req.MealDatetime.UTC()
+	}
+
+	updated, err := s.calorieRepo.Update(req.EntryID, req.UserID, entry.Food, entryCalories(entry.Weight, entry.KcalPer100g),
+		entry.Weight, entry.KcalPer100g, entry.Fats, entry.Carbs, entry.Proteins, mealDatetime)
+	if errors.Is(err, repositories.ErrNotFound) {
+		return nil, ErrEntryNotFound
+	}
+	if err != nil {
+		s.logger.Error("Failed to update calorie entry", "error", err, "entry_id", req.EntryID, "user_id", req.UserID)
+		return nil, err
+	}
+
+	s.logger.Info("Calorie entry updated", "entry_id", req.EntryID, "user_id", req.UserID, "food", updated.Food,
+		"calories", updated.Calories, "weight", updated.Weight, "kcalPer100g", updated.KcalPer100g, "meal_datetime", mealDatetime)
+
+	result := &UpdateMealEntryResult{Entry: updated, Day: mealDatetime.Format("2006-01-02")}
+	if dayTotal, err := s.GetTotalCaloriesForDate(req.UserID, result.Day); err == nil {
+		result.DayTotalCalories = &dayTotal
+	}
+
+	s.logger.Debug("UpdateMealEntry completed successfully", "entry_id", req.EntryID, "user_id", req.UserID)
+	return result, nil
+}
+
+func validItemWeight(weight float64) bool {
+	return weight > 0 && weight <= maxItemWeight
+}
+
+func validKcalPer100g(kcalPer100g float64) bool {
+	return kcalPer100g >= 0 && kcalPer100g <= maxKcalPer100g
+}
+
+func entryCalories(weight, kcalPer100g float64) int {
+	return int(math.Round(weight * kcalPer100g / 100))
 }
 
 // cleanFoodName drops invisible characters (control and format ones, e.g. a zero-width space)

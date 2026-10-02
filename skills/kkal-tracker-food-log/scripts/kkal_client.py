@@ -5,6 +5,7 @@ Commands:
   ingredients              list the user's ingredients (compact table, most used first)
   add                      store one meal; the meal JSON comes from --json or stdin
   entries [--from --to]    list diary entries with their IDs (default: today, UTC)
+  edit ENTRY_ID [...]      change the weight, ingredient, calories or time of a diary entry
   delete ENTRY_ID          delete a diary entry
 
 Every command prints the HTTP status on failure and exits with code 1.
@@ -139,6 +140,22 @@ def cmd_entries(args):
     print_json(payload.get("food", []))
 
 
+def cmd_edit(args):
+    changes = {
+        "weight": args.weight,
+        "ingredient_id": args.ingredient_id,
+        "kcal_per_100g": args.kcal,
+        "meal_datetime": args.datetime,
+    }
+    changes = {field: value for field, value in changes.items() if value is not None}
+    if not changes:
+        fail("Nothing to change: pass --weight, --ingredient-id, --kcal or --datetime")
+
+    status, payload = request("PUT", f"/food/{args.entry_id}", changes)
+    expect(status, payload, 200)
+    print_json(payload)
+
+
 def cmd_delete(args):
     status, payload = request("DELETE", f"/food/{args.entry_id}")
     expect(status, payload, 204)
@@ -161,6 +178,14 @@ def main():
     entries.add_argument("--from", dest="date_from", help="YYYY-MM-DD (default: today, UTC)")
     entries.add_argument("--to", dest="date_to", help="YYYY-MM-DD (default: same as --from)")
     entries.set_defaults(func=cmd_entries)
+
+    edit = commands.add_parser("edit", help="change a diary entry; options that are not passed keep their values")
+    edit.add_argument("entry_id", type=int)
+    edit.add_argument("--weight", type=float, help="new weight in grams")
+    edit.add_argument("--ingredient-id", type=int, help="switch the entry to another existing ingredient")
+    edit.add_argument("--kcal", type=float, help="calories per 100 g for this entry only")
+    edit.add_argument("--datetime", help="new meal time, RFC 3339 with the UTC offset")
+    edit.set_defaults(func=cmd_edit)
 
     delete = commands.add_parser("delete", help="delete a diary entry")
     delete.add_argument("entry_id", type=int)

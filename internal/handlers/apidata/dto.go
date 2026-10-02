@@ -69,3 +69,21 @@ type DuplicateIngredientResponse struct {
 	ItemIndex          int            `json:"item_index"`
 	ExistingIngredient IngredientInfo `json:"existing_ingredient"`
 }
+
+// UpdateFoodRequest changes a stored food entry; fields that are not sent keep their values
+type UpdateFoodRequest struct {
+	Weight *float64 `json:"weight"`
+	// IngredientID switches the entry to another existing ingredient
+	IngredientID *int `json:"ingredient_id"`
+	// KcalPer100g overrides the calorie value for this entry only
+	KcalPer100g *float64 `json:"kcal_per_100g"`
+	// MealDatetime is RFC 3339
+	MealDatetime string `json:"meal_datetime"`
+}
+
+type UpdateFoodResponse struct {
+	Entry FoodEntry `json:"entry"`
+	// Day is the diary day (YYYY-MM-DD, UTC) the entry belongs to
+	Day              string `json:"day"`
+	DayTotalCalories *int   `json:"day_total_calories,omitempty"`
+}

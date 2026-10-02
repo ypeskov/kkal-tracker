@@ -6,6 +6,7 @@ import "ypeskov/kkal-tracker/internal/models"
 type Servicer interface {
 	CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, error)
 	CreateMeal(req *CreateMealRequest) (*CreateMealResult, error)
+	UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntryResult, error)
 	UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, error)
 	DeleteEntry(entryID, userID int) error
 	GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error)
