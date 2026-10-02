@@ -1,520 +1,374 @@
 # Kkal-Tracker
 
-A comprehensive calorie tracking and weight management web application built with Go/Echo backend and React/TanStack frontend.
+A calorie tracking and weight management web application: Go/Echo backend, React/TanStack frontend, SQLite database.
 
-**🚀 Zero-dependency deployment** - Compiles to a single binary with embedded frontend assets. Uses SQLite by default for maximum portability and minimal infrastructure requirements. Perfect for self-hosting, Docker containers, or any environment where you want a lightweight, production-ready application without external database dependencies.
+The application compiles to a single binary with the frontend embedded. It needs no external services to run: the database is one SQLite file. SMTP (activation emails, export by email) and OpenAI (AI insights) are optional integrations.
+
+Current version: see [`version.txt`](version.txt).
 
 ## Features
 
-### Core Functionality
-- **Calorie Tracking**: Add food entries with name, weight, kcal/100g, auto-calculated totals
-- **Weight Management**: Track weight history over time with interactive charts
-- **Ingredient Database**: Global ingredients with multilingual names and nutritional data
-- **User Profiles**: Personal settings and preference management
-- **Reports & Analytics**: Data visualization and calorie/weight trends with Chart.js
-- **Dashboard**: Real-time view of today's entries with total calorie count
-- **Internationalization**: Full i18n support (English, Ukrainian, Russian) with language switcher
-- **Integrated Calculator**: Built-in calculator for all numeric fields (weight, calories, macros) with support for mathematical expressions and real-time evaluation
+- **Food diary**: entries with name, weight and kcal per 100 g; calories and macros are calculated automatically
+- **Ingredient list**: every user has a personal ingredient list, copied on registration from the global one in the user's language
+- **Weight tracking**: weight history with charts, a weight goal with a target date and progress
+- **Health metrics**: BMI, BMR and TDEE from the profile (age, height, gender, activity level)
+- **Reports**: calorie and weight trends for any period (Chart.js)
+- **AI insights**: nutrition and weight analysis by an OpenAI model for the last 7, 14, 30 or 90 days, with an optional question, answered in the user's language
+- **Data export**: weight and food data as an Excel file, downloaded or sent by email
+- **API keys and external API**: programmatic access to the user's data, including food logging by AI agents (see [External API](#external-api-apiv1))
+- **Accounts**: registration with email activation, JWT authentication
+- **Internationalization**: English, Ukrainian, Russian and Bulgarian (`en_US`, `uk_UA`, `ru_UA`, `bg_BG`), both in the UI and in emails
+- **Built-in calculator** in every numeric field (weight, calories, macros): `150+80` is evaluated in place
+- **Backups**: a Kubernetes CronJob copies the database to Google Drive
 
-### Technical Features
-- **Backend**: Go with Echo framework v4.13.4
-- **Frontend**: React 18 with TanStack Query & Router, TypeScript, Vite
-- **Database**: SQLite
-- **Authentication**: JWT-based auth (v5.3.0) with bcrypt password hashing, sessionStorage persistence
-- **Logging**: Structured logging with slog
-- **Build System**: Single binary with embedded frontend assets
-- **Live Reload**: Air for development hot-reload
-- **Database Backup**: Optional automated backups to Google Drive
+## Tech Stack
+
+| | |
+|---|---|
+| Backend | Go 1.26+, Echo v5, `modernc.org/sqlite` (pure Go, no CGO), Goose migrations, `golang-jwt` v5, bcrypt, `go-playground/validator`, `go-openai`, `excelize` |
+| Frontend | React 19, TypeScript, Vite, TanStack Query and Router, Tailwind CSS v4, Chart.js, i18next, lucide-react |
+| Tooling | Air (live reload), ESLint, Docker (distroless image), Kubernetes with Kustomize |
+
+Exact versions are in [`go.mod`](go.mod) and [`web/package.json`](web/package.json).
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go 1.21+
-- Node.js 18+
-- npm
+- Go 1.26+
+- Node.js 20.19+ or 22.12+ (required by Vite; Docker builds use Node 24) and npm
+- Optional: the `sqlite3` CLI (used by `make seed-clean`)
 
-### Installation
+### First run
 
-1. Install dependencies:
+All commands are run from the repository root.
+
 ```bash
-make init  # Installs all dependencies and initial setup
-```
+# 1. Configuration
+cp .env.sample .env
 
-2. Run database migrations:
-```bash
+# 2. Go and npm dependencies
+make install-deps
+
+# 3. Database schema
 make migrate-up
-```
 
-3. Seed database with sample ingredients (optional):
-```bash
+# 4. Global ingredient list (optional, but do it before creating users)
 make seed
-```
 
-4. Create a test user:
-```bash
-# Default (English ingredients)
-go run scripts/create_user.go user@example.com password123
+# 5. A user that can log in right away
+go run scripts/create_user.go user@example.com password123          # English ingredients
+go run scripts/create_user.go user@example.com password123 ru_UA    # en_US, uk_UA or ru_UA
 
-# With specific language (en_US, uk_UA, or ru_UA)
-go run scripts/create_user.go user@example.com password123 ru_UA
-```
-
-## Demo User
-
-For quick testing, there's a demo user created during database seeding:
-
-**Email**: `example@example.com`  
-**Password**: `password123`
-
-You can login immediately after running `make seed` without creating additional users.
-
-5. Build and run:
-```bash
+# 6. Build the frontend and the binary, then start the server
 make run
 ```
 
-Or for development:
+The application is available at <http://localhost:8080>.
+
+Notes:
+
+- Keep `ENVIRONMENT=development` in `.env` for local work. Without it the application runs as production and refuses to start with a placeholder or short `JWT_SECRET`. The same applies to `make migrate-*`, `make seed` and `scripts/create_user.go`.
+- A user receives a copy of the global ingredients when the account is created, so seed the database first. The seed has ingredient names in `en_US`, `uk_UA` and `ru_UA`.
+- `scripts/create_user.go` creates an active user without sending an email. Registration through the UI sends an activation link (valid for 24 hours), so it needs working SMTP settings.
+- `make seed` also inserts a sample account `example@example.com` with a month of diary entries. It is created inactive and cannot log in as is.
+
+### Development
+
 ```bash
-make dev
+make watch    # Air: rebuilds the frontend and the backend on every change, restarts the server
+make dev      # go run without rebuilding the frontend (web/dist must already exist)
 ```
 
-### Environment Configuration
+Air watches `.go`, `.ts`, `.tsx`, `.js`, `.html` and `.css` files and writes build errors to `tmp/build-errors.log`. `make watch` offers to install Air if it is missing.
 
-Copy `.env.sample` to `.env` and adjust values as needed:
+### Make commands
 
-```env
-# Server Configuration
-PORT=8080
-JWT_SECRET=your-jwt-secret-key-change-this-in-production
-LOG_LEVEL=debug
+```bash
+make build            # Build the frontend and the backend (binary: ./main)
+make build-frontend   # Build only the frontend into web/dist
+make run              # Build and run
+make watch            # Live reload with Air
+make dev              # go run cmd/web/main.go
+make clean            # Remove build artifacts, web/dist, web/node_modules and tmp
+make install-deps     # go mod tidy and npm install
+make test             # go test -v ./...
 
-# Database Configuration (SQLite)
-DATABASE_PATH=./data/app.db
+make migrate-up                      # Apply all pending migrations
+make migrate-down                    # Roll back the last migration
+make migrate-status                  # Show migration status
+make migrate-create NAME=add_table   # Create a new migration file
 
-# Google Drive Backup (Optional)
-# Use rclone to generate OAuth2 token: https://rclone.org/drive/
-GDRIVE_OAUTH_TOKEN={"access_token":"...","token_type":"Bearer","refresh_token":"..."}
-GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
+make seed             # Run the SQL files from cmd/seed/sql in alphabetical order
+make seed-clean       # Delete the global ingredients and seed again (dev only, needs sqlite3)
 ```
 
-#### Environment Variables
+### Tests and checks
+
+```bash
+make build-frontend      # Go tests need web/dist: the frontend is embedded into the binary
+go test ./...
+go vet ./...
+cd web && npm run lint
+```
+
+The Go tests include an end-to-end smoke test (`internal/server/smoke_test.go`). It starts the fully wired server on a temporary migrated database with a fake SMTP server and walks through registration, the activation email, login, calories, weight and export.
+
+## Configuration
+
+The application reads its settings from the environment. A `.env` file in the working directory is loaded when it exists; variables that are already set take precedence.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_PATH` | `./data/kkal_tracker.db` | Path to SQLite database file |
-| `PORT` | `8080` | HTTP server port |
-| `JWT_SECRET` | `default-secret-key` | Secret key for JWT token signing (change in production!) |
-| `LOG_LEVEL` | `info` | Logging level (`debug`, `info`, `warn`, `error`) |
-| `ENVIRONMENT` | `development` | Application environment (`development`, `production`) |
+| `ENVIRONMENT` | `production` | `development` or `production`. Unset means production: JSON logs and a strict `JWT_SECRET` check |
+| `JWT_SECRET` | none | Signs the JWT tokens. Outside `development` it must be at least 32 characters and not a known placeholder, e.g. `openssl rand -hex 32` |
+| `PORT` | `8080` | HTTP port |
+| `DATABASE_PATH` | `./data/kkal_tracker.db` | SQLite database file (`.env.sample` sets `./data/app.db`) |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `APP_URL` | `http://localhost:8080` | Public URL of the application: base of the activation links and the allowed CORS origin |
+| `TRUSTED_PROXIES` | loopback, link-local and private networks | Comma-separated CIDR ranges whose `X-Forwarded-For` header is trusted. The client IP is the key of the rate limiters |
+| `SMTP_HOST` | `smtp.gmail.com` | SMTP server for activation emails and export by email |
+| `SMTP_PORT` | `587` | |
+| `SMTP_USER` | none | |
+| `SMTP_PASSWORD` | none | For Gmail: an App Password |
+| `SMTP_FROM` | `noreply@kkal-tracker.com` | Sender address |
+| `OPENAI_API_KEY` | none | Enables AI insights |
+| `OPENAI_BASE_URL` | none | Custom base URL (proxy) |
+| `OPENAI_MODEL` | `gpt-5.2` | Model used for the analysis |
+| `AI_USE_MAX_TOKENS` | `false` | Limit the length of the AI answer |
+| `AI_MAX_TOKENS` | `2000` | The limit, when `AI_USE_MAX_TOKENS` is `true` |
 
-#### Database
+`GDRIVE_OAUTH_TOKEN`, `GDRIVE_FOLDER_PATH` and `GDRIVE_CLEANUP` are read only by the Kubernetes backup job, see [Backups](#backups).
 
-SQLite is the only supported database:
+## Database
 
-```env
-DATABASE_PATH=./data/kkal_tracker.db
-```
+SQLite is the only supported database. The schema is managed by [Goose](https://github.com/pressly/goose) migrations in `migrations/`.
 
-## API Endpoints
+**Migrations are never applied automatically.** The server does not touch the schema on startup. Run `make migrate-up` before the first start and after pulling changes that add migrations.
 
-All API routes are prefixed with `/api`:
+The `make migrate-*` targets run the migration CLI `cmd/migrate` with `go run`:
 
-- `/api/auth/*` - Authentication (login, logout, refresh)
-- `/api/calories/*` - Calorie entry CRUD operations
-- `/api/ingredients/*` - Ingredient search and management
-- `/api/weight/*` - Weight history tracking
-- `/api/profile/*` - User profile management
-- `/api/reports/*` - Analytics and reporting
-- `/api/v1/*` - External API for scripts and AI agents (API key in the `X-API-Key` header): data export, ingredient list, food logging. Ready-made agent skills live in `skills/`
+| Command | What it does |
+|---------|--------------|
+| `make migrate-up` | Applies all pending migrations |
+| `make migrate-down` | Rolls back the last applied migration (one per call) |
+| `make migrate-status` | Lists the migrations as applied or pending |
+| `make migrate-create NAME=add_table` | Creates an empty timestamped SQL file in `migrations/` with the `goose` CLI (installed on first use) |
 
-## Development
+How the CLI works:
 
-### Make Commands
+- It loads the same configuration as the server (`.env`, then the environment) and migrates the database at `DATABASE_PATH`. The `JWT_SECRET` check applies here too, so either set `ENVIRONMENT=development` or provide a real secret.
+- It reads the migration files from the `migrations/` directory relative to the current directory, so run it from the repository root.
+- Applied versions are recorded by Goose in the `goose_db_version` table of the same database.
+- `scripts/create_user.go` applies all pending migrations as well before creating the user.
 
-```bash
-# Development
-make dev            # Start development with Air live reload
-make watch          # Alternative to 'make dev' with Air auto-install prompt
-make build          # Build both frontend and backend
-make run            # Build and run the application
-make clean          # Clean build artifacts
-make init           # Install dependencies and initial setup
-
-# Database Migrations
-make migrate-up     # Run all pending migrations
-make migrate-down   # Rollback last migration
-make migrate-status # Check migration status
-make migrate-create NAME=migration_name # Create new migration
-
-# Database Seeding
-make seed           # Seed database with initial data
-make seed-clean     # Clean and re-seed database (dev only)
-
-# Testing & Quality
-make test           # Run all Go tests
-```
-
-### Live Reload Development
-
-The project includes Air for live reloading during development. Air automatically rebuilds and restarts your application when Go files change.
+For another database file set `DATABASE_PATH`:
 
 ```bash
-make watch          # Start Air live reload
+DATABASE_PATH=/path/to/app.db make migrate-up
 ```
 
-Air will:
-- Watch for changes in `.go`, `.tsx`, `.ts`, `.html`, `.css`, `.js` files
-- Automatically rebuild the application
-- Restart the server with the new binary
-- Log build errors to `build-errors.log`
-- Auto-install Air if not present (with confirmation)
+In production the migrations are applied the same way: from a checkout of the repository with Go installed, with `DATABASE_PATH` pointing to the production database file. The Docker image has no migration runner and `deploy.sh` does not run migrations. In the Kubernetes setup the database is on a `hostPath` volume, so the file is reachable on the server itself.
 
-### Database
+## API
 
-The application uses SQLite through a repository pattern with **Goose migrations**; the database file is created at `DATABASE_PATH`.
+All endpoints are under `/api`. Unknown `/api` paths answer with 404, they never fall back to the frontend page.
 
-#### Migration Management
+### Application API (JWT)
 
-The project uses [Goose](https://github.com/pressly/goose) for database migrations with **manual control only**:
+`POST /api/auth/login` returns a token valid for 24 hours. Protected endpoints take it in the `Authorization: Bearer <token>` header.
 
-- **Run migrations**: `make migrate-up`
-- **Rollback**: `make migrate-down` 
-- **Status**: `make migrate-status`
-- **Create new**: `make migrate-create NAME=add_new_table`
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/languages` | Supported languages (public) |
+| `POST /api/auth/login` | Log in |
+| `POST /api/auth/register` | Register; sends an activation email |
+| `GET /api/auth/activate/:token` | Activate an account |
+| `GET /api/auth/me` | Current user |
+| `GET, POST /api/calories`, `PUT, DELETE /api/calories/:id` | Food diary entries (`dateFrom`, `dateTo` filters) |
+| `GET, POST /api/ingredients`, `GET, PUT, DELETE /api/ingredients/:id` | Ingredient list of the user |
+| `GET, POST /api/weight`, `PUT, DELETE /api/weight/:id` | Weight history (`from`, `to` filters) |
+| `GET, PUT /api/profile` | Profile |
+| `GET, PUT, DELETE /api/profile/goal` | Weight goal: progress, set, clear |
+| `GET /api/metrics` | BMI, BMR, TDEE |
+| `GET /api/reports/data?from=&to=` | Aggregated data for reports |
+| `GET /api/ai/status`, `POST /api/ai/analyze` | AI insights |
+| `POST /api/export` | Export to Excel: download or email |
+| `GET, POST /api/api-keys`, `POST /api/api-keys/:id/revoke`, `DELETE /api/api-keys/:id` | API key management |
 
-**Important**: Migrations are **NOT** run automatically on startup. You must run them manually:
+Rate limits per IP: `/api/auth/*` 5 requests per second; registration 3 attempts, then one per 20 minutes; `/api/ai/*` 2 requests per minute.
+
+### External API (`/api/v1`)
+
+For scripts and AI agents. Authentication is an API key in the `X-API-Key` header. Keys are created in the UI (Settings → API Keys), can be time-limited or permanent, and are shown in full only once; the server stores a SHA-256 hash. A key gives full read and write access to the user's data, there are no scopes.
+
+Rate limit per IP: a burst of 20 requests, then 1 request per second.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/v1/data?type=weight\|food\|both&from=YYYY-MM-DD&to=YYYY-MM-DD` | Weight entries, food entries or both |
+| `GET /api/v1/ingredients` | All ingredients of the user with `times_used` and `last_used` |
+| `POST /api/v1/food` | Store a meal |
+| `PUT /api/v1/food/:id` | Change a food entry |
+| `DELETE /api/v1/food/:id` | Delete a food entry |
 
 ```bash
-# Before first run or after pulling new migrations
-make migrate-up
-
-# Then start the application
-make run
+curl -H "X-API-Key: $KEY" "http://localhost:8080/api/v1/data?type=both&from=2026-10-01&to=2026-10-02"
 ```
 
-#### Database Seeding
+A meal is a list of items. Each item refers to an existing ingredient by `ingredient_id` or describes a new one in `new_ingredient`:
 
-The project includes a seeding system to populate the database with sample ingredients data:
-
-- **Seed location**: SQL files in `cmd/seed/sql/` directory
-- **Seed command**: `make seed` - Executes all SQL files in alphabetical order
-- **Clean and reseed**: `make seed-clean` - Removes existing data and re-seeds
-
-The seeding system:
-- Reads all `.sql` files from `cmd/seed/sql/`
-- Executes them in alphabetical order (name files like `01_ingredients.sql`, `02_categories.sql`)
-- Uses transactions for safety
-- Supports idempotent operations with `INSERT OR REPLACE`
-
-For production Docker deployments:
-```dockerfile
-# Option 1: During build
-RUN go run cmd/seed/main.go
-
-# Option 2: With environment variable
-ENV SEED_DB=true
-CMD sh -c "if [ \"$SEED_DB\" = \"true\" ]; then go run cmd/seed/main.go; fi && ./main"
+```json
+{
+  "meal_datetime": "2026-10-02T13:30:00+03:00",
+  "items": [
+    {"ingredient_id": 75, "weight": 150},
+    {"new_ingredient": {"name": "Hummus", "kcal_per_100g": 240, "fats": 17, "carbs": 12, "proteins": 8}, "weight": 60},
+    {"new_ingredient": {"name": "Restaurant pasta", "kcal_per_100g": 180}, "weight": 350, "one_off": true}
+  ]
+}
 ```
 
-### Authentication
+- The server never matches or creates ingredients by name on its own: the client reads the ingredient list and decides.
+- A new ingredient whose name equals an existing one (ignoring case, spacing and `ё`/`е`) is rejected with 409, the response contains the existing ingredient.
+- `one_off: true` writes the food to the diary without adding it to the ingredient list.
+- `meal_datetime` is optional and takes RFC 3339 with a time zone offset.
+- A meal is atomic: all items are stored or none. Calories are calculated on the server.
+- `PUT /api/v1/food/:id` takes `weight`, `ingredient_id`, `kcal_per_100g`, `meal_datetime`; fields that are not sent keep their values, calories are recalculated.
 
-- Passwords are hashed using bcrypt
-- JWT tokens are valid for 24 hours
-- Protected routes require `Authorization: Bearer <token>` header
+### Agent skills
 
-### User Creation
+`skills/` contains ready-made skills that let an AI agent log food through the external API, for example from voice dictation.
 
-When creating users with `scripts/create_user.go`:
-- Global ingredients are automatically copied to user's personal ingredients
-- Language can be specified (en_US, uk_UA, ru_UA) to copy ingredients with appropriate translations
-- Default language is en_US if not specified
+- `kkal-tracker-food-log/` is the production skill: `SKILL.md` and the client `scripts/kkal_client.py` (Python standard library only).
+- `kkal-tracker-food-log-dev/` is the same skill pointed at the development server. It is generated, do not edit it by hand: change the production skill and run `python3 skills/sync_dev_skill.py`.
+- The client takes the key from the `KKAL_API_KEY` variable or from the git-ignored `api_key` file in the skill folder; `KKAL_BASE_URL` overrides the server address. The scripts in the repository hold only the `XXXXXXXXX` placeholder.
 
-## Tech Stack
+## Project Structure
 
-### Backend
-- **Echo v4.13.4** - Web framework
-- **modernc.org/sqlite v1.38.2** - SQLite driver
-- **Goose v3.25.0** - Database migrations
-- **JWT-Go v5.3.0** - Authentication
-- **golang.org/x/crypto v0.41.0** - bcrypt password hashing
-- **go-playground/validator v10.27.0** - Input validation
-- **Air** - Live reload for development
+```
+cmd/
+├── web/           # Web server
+├── migrate/       # Migration runner
+└── seed/          # Database seeding, SQL files in sql/
+internal/
+├── auth/          # JWT tokens
+├── config/        # Configuration from the environment
+├── database/      # SQLite connection and Goose calls
+├── handlers/      # HTTP handlers, one directory per domain
+├── i18n/          # Backend translations
+├── logger/        # slog setup
+├── middleware/    # JWT auth, API key auth, validator
+├── models/        # Data models
+├── repositories/  # Data access
+├── server/        # Wiring, routes, security settings, smoke tests
+└── services/      # Business logic, one directory per domain
+kubernetes/        # Kustomize base, dev and prod overlays, backup image
+migrations/        # Goose SQL migrations
+scripts/           # create_user.go
+skills/            # Agent skills for food logging
+web/               # React frontend; web/dist is embedded into the binary
+```
 
-### Frontend
-- **React 18.3.1** - UI library
-- **TanStack Query v5.62.7** - Server state management
-- **TanStack Router v1.87.0** - Routing
-- **Chart.js v4.5.0** - Data visualization
-- **react-i18next v15.7.3** - Internationalization
-- **Tailwind CSS v4.1.13** - Styling
-- **Vite v6.0.5** - Build tool
-- **TypeScript v5.6.2** - Type safety
+## Security
+
+- Passwords are hashed with bcrypt; JWT tokens live for 24 hours and are kept in `sessionStorage`.
+- Strict Content-Security-Policy (`internal/server/security.go`): scripts only from the own origin, no inline scripts, no `eval`.
+- HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`; request bodies are limited to 1 MB.
+- Rate limiters are in-memory and per instance: the deployment runs a single replica.
+- Internal error details are logged, never returned to the client.
 
 ## Deployment
 
-### Production Build
-
-1. Set `ENVIRONMENT=production` in your environment
-2. Change `JWT_SECRET` to a secure random string
-3. Set `DATABASE_PATH` to the location of the SQLite database file
-4. Build with `make build`
-5. Deploy the binary and serve on your preferred port
-
-The application compiles to a single binary with embedded frontend assets, making it easy to deploy anywhere.
-
-### Docker Deployment
-
-#### Building Docker Image
-
-The project includes an automated build script `build-and-push.sh` that handles Docker image creation and publishing.
-
-**Basic Usage:**
+### Binary
 
 ```bash
-# Build image with default tag (latest)
-./build-and-push.sh
-
-# Build with custom tag (version.txt will be updated to "v1.2.13")
-./build-and-push.sh 1.2.13
-
-# Build and push to Docker registry
-./build-and-push.sh push
-
-# Build with custom tag and push
-./build-and-push.sh 1.2.13 push
+make build    # ./main with the frontend embedded
 ```
 
-**Advanced Options:**
+Set `JWT_SECRET` (32+ characters), `DATABASE_PATH`, `APP_URL` and the SMTP settings in the environment, apply the migrations and start the binary. Leave `ENVIRONMENT` unset or set it to `production`.
+
+### Docker
+
+`build-and-push.sh` builds the image `ypeskov/kcal-tracker`:
 
 ```bash
-# Build for specific platform (e.g., for ARM servers)
-./build-and-push.sh --platform=linux/arm64
-
-# Build for multiple platforms and push
-./build-and-push.sh --platform=linux/amd64,linux/arm64 push
-
-# Show help
-./build-and-push.sh --help
+./build-and-push.sh 5.9.0                           # Build, tag as 5.9.0 and latest
+./build-and-push.sh 5.9.0 --push                    # Build and push the version tag to Docker Hub
+./build-and-push.sh 5.9.0 --push --platform=linux/amd64
 ```
 
-**Complete Example Workflow:**
+The script removes `web/dist`, always builds without cache and writes `v<TAG>` to `version.txt`. Without `--platform` the image is built for the architecture of the build machine.
+
+The image is distroless and runs as a non-root user. It contains the server binary and the migration files, with no `.env` file and no migration runner: all settings come from the environment, and `ENVIRONMENT=production` is preset.
 
 ```bash
-# 1. Build and test locally
-./build-and-push.sh 1.2.13
-# Note: Script automatically updates version.txt to "v1.2.13" after successful build
-
-# 2. Test the image
-docker run -p 8080:8080 -e JWT_SECRET=test-secret ypeskov/kcal-tracker:1.2.13
-
-# 3. Push to registry
-./build-and-push.sh 1.2.13 push
-
-# Or combine build and push in one command
-./build-and-push.sh 1.2.13 push
+docker run -p 8080:8080 \
+  -v "$PWD/data:/data" \
+  -e DATABASE_PATH=/data/app.db \
+  -e JWT_SECRET="$(openssl rand -hex 32)" \
+  ypeskov/kcal-tracker:5.9.0
 ```
 
-**Multi-architecture Build:**
+The database file must already be migrated and writable by the container user (UID 65532).
+
+### Automated deployment
+
+`deploy.sh` runs the whole release from the `develop` branch with a clean working tree:
 
 ```bash
-# Build for both AMD64 and ARM64 and push
-./build-and-push.sh --platform=linux/amd64,linux/arm64 1.2.13 push
+./deploy.sh --tag=5.9.0
 ```
 
-The script:
-- Uses multi-stage Docker builds for minimal image size
-- Embeds frontend assets into the final binary
-- Supports custom tags and platform targeting
-- Automatically tags images with both version and `latest`
-- **Automatically updates `version.txt`** with the tag after successful build (adds "v" prefix)
-- Pushes to Docker Hub (`ypeskov/kcal-tracker`) when requested
+1. Builds and pushes the Docker image
+2. Sets the image tag in `kubernetes/base/deployment.yaml`
+3. Commits `version.txt` and the manifest as `v<TAG>`, pushes `develop`
+4. Merges `develop` into `master` and pushes it
+5. Connects to the server over SSH, pulls the repository and runs `kubectl apply -k kubernetes/overlays/prod`
 
-**Note**: You don't need to manually update `version.txt` - the script does this automatically after a successful build.
+The server address and the repository path on it come from `.deploy.env` (git-ignored, see `.deploy.env.sample`). Options: `--skip-build`, `--skip-k8s`, `--skip-deploy`, `--dry-run`, `--platform=...`; `./deploy.sh --help` describes them.
 
-#### Manual Docker Build
-
-If you prefer manual building:
-
-```bash
-# Build image
-docker build -t ypeskov/kcal-tracker:v1.2.13 .
-
-# Tag as latest
-docker tag ypeskov/kcal-tracker:v1.2.13 ypeskov/kcal-tracker:latest
-
-# Push to registry
-docker push ypeskov/kcal-tracker:v1.2.13
-docker push ypeskov/kcal-tracker:latest
-```
-
-### Kubernetes Deployment
-
-Full Kubernetes configurations are available in the `kubernetes/` directory with Kustomize support.
-
-#### Directory Structure
+### Kubernetes
 
 ```
 kubernetes/
-├── base/                          # Base configurations (common to all environments)
-│   ├── deployment.yaml           # Deployment spec
-│   ├── service.yaml              # Service definition
-│   ├── ingress.yaml              # Ingress rules
-│   ├── pv.yaml                   # Persistent Volume
-│   ├── pvc.yaml                  # Persistent Volume Claim
-│   ├── configmap-backup.yaml     # Backup configuration
-│   ├── cronjob-backup.yaml       # Automated backup CronJob
-│   └── kustomization.yaml        # Base kustomization
+├── base/                     # Deployment, Service, Ingress, PV and PVC, backup CronJob and its script
+├── backup/Dockerfile         # Backup image: pinned rclone with sqlite3
 └── overlays/
-    ├── dev/                      # Development environment
-    │   └── kustomization.yaml
-    └── prod/                     # Production environment
-        └── kustomization.yaml
+    ├── dev/                  # The base as is
+    └── prod/                 # Config and secret generators, Traefik ingress with TLS
 ```
 
-#### Deployment Process
-
-**1. Update Image Tag in Manifests**
-
-After building a new Docker image, update the Kubernetes manifests to use the new version:
+The production overlay generates the ConfigMap `kkal-tracker-env` from `.env` and the Secret `kkal-tracker-secrets` from `.env.secret` (`JWT_SECRET`, `SMTP_PASSWORD`, `OPENAI_API_KEY`, `GDRIVE_OAUTH_TOKEN`). Both files live only on the server; create them from `.env.sample` and `.env.secret.sample` in `kubernetes/overlays/prod/`.
 
 ```bash
-# Using kustomize to update image tag
-cd kubernetes/overlays/prod
-kustomize edit set image ypeskov/kcal-tracker:v1.2.13
-
-# Or manually edit the kustomization.yaml file
-```
-
-Alternatively, edit `kubernetes/overlays/prod/kustomization.yaml`:
-
-```yaml
-images:
-  - name: ypeskov/kcal-tracker
-    newTag: v1.2.13  # Update this line
-```
-
-**2. Review Changes**
-
-Preview the changes before applying:
-
-```bash
-# Preview dev environment
-kubectl kustomize kubernetes/overlays/dev
-
-# Preview prod environment
-kubectl kustomize kubernetes/overlays/prod
-```
-
-**3. Apply to Cluster**
-
-Deploy to your Kubernetes cluster:
-
-```bash
-# Deploy to development
-kubectl apply -k kubernetes/overlays/dev
-
-# Deploy to production
-kubectl apply -k kubernetes/overlays/prod
-```
-
-**4. Verify Deployment**
-
-Check the deployment status:
-
-```bash
-# Check pod status
-kubectl get pods -l app=kkal-tracker
-
-# Check deployment rollout
-kubectl rollout status deployment/kkal-tracker
-
-# View logs
-kubectl logs -f deployment/kkal-tracker
-
-# Check service and ingress
-kubectl get svc,ingress
-```
-
-#### Complete Deployment Workflow
-
-Here's a full example from building to deploying:
-
-```bash
-# 1. Build and push Docker image
-./build-and-push.sh 1.2.13 push
-# Script automatically updates version.txt to "v1.2.13" after successful build
-
-# 2. Commit version change
-git add version.txt
-git commit -m "bump version to v1.2.13"
-
-# 3. Update Kubernetes manifests
-cd kubernetes/overlays/prod
-kustomize edit set image ypeskov/kcal-tracker:1.2.13
-
-# 4. Commit manifest changes
-git add kustomization.yaml
-git commit -m "deploy: update to v1.2.13"
-git push
-
-# 5. Apply to cluster
-kubectl apply -k kubernetes/overlays/prod
-
-# 6. Monitor rollout
+kubectl kustomize kubernetes/overlays/prod      # Preview
+kubectl apply -k kubernetes/overlays/prod       # Apply
 kubectl rollout status deployment/kkal-tracker
 kubectl logs -f deployment/kkal-tracker
 ```
 
-#### Environment Configuration
+Details of the setup:
 
-Configure environment variables in your Kubernetes manifests:
+- The image tag is set in `kubernetes/base/deployment.yaml` (`deploy.sh` updates it).
+- The database is on a `hostPath` PersistentVolume mounted at `/data`, `DATABASE_PATH=/data/app.db`.
+- The production ingress uses the cluster-wide Traefik controller and a cert-manager certificate; the host is set in `overlays/prod/ingress-patch.yaml`.
+- Set `TRUSTED_PROXIES` to the pod network of the cluster (k3s default: `10.42.0.0/16`), so that rate limiting sees real client addresses.
 
-**For Development** (`kubernetes/overlays/dev/kustomization.yaml`):
-```yaml
-configMapGenerator:
-  - name: kkal-tracker-config
-    literals:
-      - ENVIRONMENT=development
-      - LOG_LEVEL=debug
-```
-
-**For Production** (`kubernetes/overlays/prod/kustomization.yaml`):
-```yaml
-configMapGenerator:
-  - name: kkal-tracker-config
-    literals:
-      - ENVIRONMENT=production
-      - LOG_LEVEL=info
-
-secretGenerator:
-  - name: kkal-tracker-secrets
-    literals:
-      - JWT_SECRET=your-production-secret-here
-```
-
-#### Automated Backups
-
-The Kubernetes deployment includes a CronJob for automated database backups:
-
-- **Schedule**: Configured via CronJob spec (default: daily)
-- **Target**: Google Drive (via rclone OAuth2)
-- **Configuration**: `kubernetes/base/configmap-backup.yaml`
-- **Job Definition**: `kubernetes/base/cronjob-backup.yaml`
-
-To configure backups, update the ConfigMap with your Google Drive credentials and folder path.
-
-#### Rollback
-
-If you need to rollback to a previous version:
+Rollback:
 
 ```bash
-# Check rollout history
-kubectl rollout history deployment/kkal-tracker
-
-# Rollback to previous version
 kubectl rollout undo deployment/kkal-tracker
-
-# Rollback to specific revision
-kubectl rollout undo deployment/kkal-tracker --to-revision=2
 ```
+
+or set the previous image tag in `deployment.yaml` and apply again.
+
+### Backups
+
+The CronJob `kkal-tracker-backup` runs every day at 02:00 (Europe/Sofia). It makes a consistent copy of the database with `sqlite3 .backup`, compresses it, stores it in `/data/backups` (7 days) and uploads it to Google Drive with rclone.
+
+- `GDRIVE_OAUTH_TOKEN` (in `.env.secret`): OAuth2 token generated with [rclone](https://rclone.org/drive/). Without it the upload is skipped and only the local copy is kept.
+- `GDRIVE_FOLDER_PATH` (in `.env`): target folder on Google Drive.
+- `GDRIVE_CLEANUP=true` (in `.env`): also delete backups older than 7 days from Google Drive.
+
+The job image `ypeskov/kkal-tracker-backup` is built from `kubernetes/backup/Dockerfile`; its tag follows the rclone version.
