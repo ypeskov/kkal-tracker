@@ -23,7 +23,7 @@ import urllib.request
 # Create the key in Kkal Tracker: Settings -> API Keys. Put it into a file named "api_key"
 # in the skill folder (next to SKILL.md) or paste it here.
 # The environment variables KKAL_API_KEY and KKAL_BASE_URL take precedence.
-DEFAULT_BASE_URL = "http://37.27.186.57:8080"
+DEFAULT_BASE_URL = "https://dev-kcal.peskov.info"
 API_KEY = "XXXXXXXXX"
 # -----------------------------------------------------------------------------
 

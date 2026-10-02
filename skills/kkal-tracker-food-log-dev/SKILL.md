@@ -13,7 +13,7 @@ The server is deliberately strict: it never guesses. Every food you send is eith
 
 ## API basics
 
-- Base URL: `http://37.27.186.57:8080`
+- Base URL: `https://dev-kcal.peskov.info`
 - Auth: `X-API-Key` header. The client takes the key from the `KKAL_API_KEY` environment variable, from a file named `api_key` in the skill folder (next to this file), or from the constant at the top of `scripts/kkal_client.py`. If the script says the key is not configured, ask the user to create one in Kkal Tracker (Settings → API Keys) and save it to the `api_key` file.
 - Rate limit: a burst of 20 requests, then 1 request per second. A normal logging takes two calls.
 

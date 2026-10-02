@@ -18,7 +18,7 @@ PROD = SKILLS_DIR / "kkal-tracker-food-log"
 DEV = SKILLS_DIR / "kkal-tracker-food-log-dev"
 
 PROD_URL = "https://kcal.peskov.info"
-DEV_URL = "http://37.27.186.57:8080"
+DEV_URL = "https://dev-kcal.peskov.info"
 
 DEV_DESCRIPTION = (
     "DEV/TEST copy of the Kkal Tracker food logging skill. It writes to the development server, "
