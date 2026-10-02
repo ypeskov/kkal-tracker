@@ -179,12 +179,14 @@ func TestServerRateLimitIgnoresSpoofedForwardedFor(t *testing.T) {
 func TestServerAPIv1RateLimitRunsBeforeKeyCheck(t *testing.T) {
 	srv := newTestServer(t)
 
-	// No API key: the first request is rejected by the key check, the next one by the limiter
-	if code := serve(srv, http.MethodGet, "/api/v1/data", "", nil); code != http.StatusUnauthorized {
-		t.Fatalf("first request: status = %d, want %d", code, http.StatusUnauthorized)
+	// No API key: requests within the burst are rejected by the key check, the next one by the limiter
+	for i := 1; i <= apiV1RateBurst; i++ {
+		if code := serve(srv, http.MethodGet, "/api/v1/data", "", nil); code != http.StatusUnauthorized {
+			t.Fatalf("request %d within burst: status = %d, want %d", i, code, http.StatusUnauthorized)
+		}
 	}
 	if code := serve(srv, http.MethodGet, "/api/v1/data", "", nil); code != http.StatusTooManyRequests {
-		t.Errorf("second request: status = %d, want %d", code, http.StatusTooManyRequests)
+		t.Errorf("request over burst: status = %d, want %d", code, http.StatusTooManyRequests)
 	}
 }
 

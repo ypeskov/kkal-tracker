@@ -24,6 +24,8 @@ type UserRepository interface {
 type CalorieEntryRepository interface {
 	Create(userID int, food string, calories int, weight float64, kcalPer100g float64,
 		fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
+	// CreateMeal stores all entries of one meal, and the new ingredients they bring, in a single transaction
+	CreateMeal(userID int, entries []models.NewMealEntry, mealDatetime time.Time) ([]models.CreatedMealEntry, error)
 	GetByID(id int) (*models.CalorieEntry, error)
 	GetByUserID(userID int) ([]*models.CalorieEntry, error)
 	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error)
@@ -46,6 +48,7 @@ type WeightHistoryRepository interface {
 type IngredientRepository interface {
 	// User ingredients
 	GetAllUserIngredients(userID int) ([]*models.UserIngredient, error)
+	GetUserIngredientsWithUsage(userID int) ([]*models.UserIngredientUsage, error)
 	GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error)
 	GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error)
 	CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64,

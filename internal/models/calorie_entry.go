@@ -19,3 +19,22 @@ type CalorieEntry struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 	CreatedAt    time.Time `json:"created_at"`
 }
+
+// NewMealEntry is one diary entry to be stored as part of a meal
+type NewMealEntry struct {
+	Food        string
+	Calories    int
+	Weight      float64
+	KcalPer100g float64
+	Fats        *float64
+	Carbs       *float64
+	Proteins    *float64
+	// SaveAsIngredient also adds the food to the user's ingredient list
+	SaveAsIngredient bool
+}
+
+// CreatedMealEntry is a stored diary entry together with the ingredient created for it (if any)
+type CreatedMealEntry struct {
+	Entry      *CalorieEntry
+	Ingredient *UserIngredient
+}

@@ -130,6 +130,7 @@ type smokeClient struct {
 	t       *testing.T
 	handler http.Handler
 	token   string
+	apiKey  string
 }
 
 func (c *smokeClient) do(method, path string, body any) *httptest.ResponseRecorder {
@@ -151,6 +152,9 @@ func (c *smokeClient) do(method, path string, body any) *httptest.ResponseRecord
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	if c.apiKey != "" {
+		req.Header.Set("X-API-Key", c.apiKey)
 	}
 
 	rec := httptest.NewRecorder()

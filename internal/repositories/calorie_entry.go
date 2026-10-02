@@ -53,6 +53,95 @@ func (r *CalorieEntryRepositoryImpl) Create(userID int,
 	return r.GetByID(int(id))
 }
 
+// CreateMeal stores all entries of one meal in a single transaction: either every entry
+// (and every new ingredient) is saved or none. The result is built from the inserted values
+// instead of being read back, so a committed meal can never be reported as failed.
+func (r *CalorieEntryRepositoryImpl) CreateMeal(userID int, entries []models.NewMealEntry,
+	mealDatetime time.Time) ([]models.CreatedMealEntry, error) {
+
+	r.logger.Debug("Creating meal",
+		slog.Int("user_id", userID),
+		slog.Int("entries", len(entries)))
+
+	entryQuery, err := r.sqlLoader.Load(QueryInsertCalorieEntry)
+	if err != nil {
+		return nil, err
+	}
+	ingredientQuery, err := r.sqlLoader.Load(QueryInsertUserIngredient)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	now := time.Now().UTC()
+	created := make([]models.CreatedMealEntry, 0, len(entries))
+
+	for _, e := range entries {
+		var ingredient *models.UserIngredient
+		if e.SaveAsIngredient {
+			result, err := tx.Exec(ingredientQuery, userID, e.Food, e.KcalPer100g, e.Fats, e.Carbs, e.Proteins)
+			if err != nil {
+				return nil, err
+			}
+			ingredientID, err := result.LastInsertId()
+			if err != nil {
+				return nil, err
+			}
+			ingredient = &models.UserIngredient{
+				ID:          int(ingredientID),
+				UserID:      userID,
+				Name:        e.Food,
+				KcalPer100g: e.KcalPer100g,
+				Fats:        e.Fats,
+				Carbs:       e.Carbs,
+				Proteins:    e.Proteins,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+		}
+
+		result, err := tx.Exec(entryQuery, userID, e.Food, e.Calories, e.Weight, e.KcalPer100g,
+			e.Fats, e.Carbs, e.Proteins, mealDatetime, now)
+		if err != nil {
+			return nil, err
+		}
+		entryID, err := result.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		created = append(created, models.CreatedMealEntry{
+			Entry: &models.CalorieEntry{
+				ID:           int(entryID),
+				UserID:       userID,
+				Food:         e.Food,
+				Calories:     e.Calories,
+				Weight:       e.Weight,
+				KcalPer100g:  e.KcalPer100g,
+				Fats:         e.Fats,
+				Carbs:        e.Carbs,
+				Proteins:     e.Proteins,
+				MealDatetime: mealDatetime,
+				UpdatedAt:    now,
+				CreatedAt:    now,
+			},
+			Ingredient: ingredient,
+		})
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	r.logger.Debug("Meal created", slog.Int("user_id", userID), slog.Int("entries", len(created)))
+	return created, nil
+}
+
 func (r *CalorieEntryRepositoryImpl) GetByID(id int) (*models.CalorieEntry, error) {
 	r.logger.Debug("Getting calorie entry by ID", slog.Int("id", id))
 

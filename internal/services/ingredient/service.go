@@ -32,6 +32,20 @@ func (s *Service) GetAllIngredients(userID int) ([]*models.UserIngredient, error
 	return ingredients, nil
 }
 
+// GetIngredientsWithUsage returns all user ingredients with their usage statistics in the food diary
+func (s *Service) GetIngredientsWithUsage(userID int) ([]*models.UserIngredientUsage, error) {
+	s.logger.Debug("GetIngredientsWithUsage called", "user_id", userID)
+
+	ingredients, err := s.ingredientRepo.GetUserIngredientsWithUsage(userID)
+	if err != nil {
+		s.logger.Error("Failed to get user ingredients with usage", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	s.logger.Debug("GetIngredientsWithUsage completed successfully", "user_id", userID, "count", len(ingredients))
+	return ingredients, nil
+}
+
 func (s *Service) GetIngredientByID(userID, ingredientID int) (*models.UserIngredient, error) {
 	s.logger.Debug("GetIngredientByID called", "user_id", userID, "ingredient_id", ingredientID)
 

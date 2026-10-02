@@ -29,3 +29,11 @@ type UserIngredient struct {
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`
 }
+
+// UserIngredientUsage is a user ingredient with statistics of its use in the food diary
+type UserIngredientUsage struct {
+	UserIngredient
+	TimesUsed int
+	// LastUsed is the date (YYYY-MM-DD) of the latest diary entry with this ingredient, nil if never used
+	LastUsed *string
+}

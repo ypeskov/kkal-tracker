@@ -135,7 +135,7 @@ func (s *Server) Start() *http.Server {
 	exportHandler := exporthandler.New(exportSvc, s.userRepo, s.logger)
 	apiKeyHandler := apikeyhandler.New(apiKeySvc, s.logger)
 	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeySvc, s.logger)
-	apiDataHandler := apidatahandler.New(calorieService, weightService, s.logger)
+	apiDataHandler := apidatahandler.New(calorieService, weightService, ingredientService, s.logger)
 
 	apiGroup := e.Group("/api")
 
@@ -191,9 +191,9 @@ func (s *Server) Start() *http.Server {
 	apiKeysGroup := apiGroup.Group("/api-keys", authMiddleware.RequireAuth)
 	apiKeyHandler.RegisterRoutes(apiKeysGroup)
 
-	// External data API (API key auth, rate limited: 60 req/min)
+	// External data API (API key auth, rate limited: 60 req/min with a burst for multi-step clients)
 	// The limiter runs before the API key check so that requests with invalid keys are limited too
-	v1RateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(1))
+	v1RateLimiter := newRateLimiter(s.logger, "api-v1", apiV1RateBurst, apiV1RateInterval)
 	v1Group := apiGroup.Group("/v1", v1RateLimiter, apiKeyMiddleware.RequireAPIKey)
 	apiDataHandler.RegisterRoutes(v1Group)
 

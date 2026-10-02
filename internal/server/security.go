@@ -24,6 +24,11 @@ const (
 	registerRateBurst    = 3
 	registerRateInterval = 20 * time.Minute
 
+	// External API: an agent reads the ingredient list and stores a meal in quick succession,
+	// so a short burst is allowed, then one request per second per IP
+	apiV1RateBurst    = 20
+	apiV1RateInterval = time.Second
+
 	minRateLimiterExpiry = 3 * time.Minute
 
 	// The frontend is a single bundle served from this origin and talks only to /api.

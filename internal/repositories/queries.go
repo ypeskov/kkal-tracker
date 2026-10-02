@@ -33,6 +33,7 @@ const (
 
 	// Ingredient queries
 	QueryGetAllUserIngredients       = "getAllUserIngredients"
+	QueryGetUserIngredientsWithUsage = "getUserIngredientsWithUsage"
 	QueryGetUserIngredientByName     = "getUserIngredientByName"
 	QueryGetUserIngredientByID       = "getUserIngredientByID"
 	QueryUpdateUserIngredient        = "updateUserIngredient"
@@ -345,6 +346,34 @@ func getQueries() map[string]string {
 		FROM user_ingredients
 		WHERE user_id = $1
 		ORDER BY name
+	`,
+
+		// Usage statistics are matched by name: diary entries keep a copy of the food name, not a reference
+		buildKey(QueryGetUserIngredientsWithUsage, DialectSQLite): `
+		SELECT i.id, i.user_id, i.name, i.kcal_per_100g, i.fats, i.carbs, i.proteins, i.global_ingredient_id, i.created_at, i.updated_at,
+			COALESCE(u.times_used, 0), u.last_used
+		FROM user_ingredients i
+		LEFT JOIN (
+			SELECT food, COUNT(*) AS times_used, substr(MAX(meal_datetime), 1, 10) AS last_used
+			FROM calorie_entries
+			WHERE user_id = ?
+			GROUP BY food
+		) u ON u.food = i.name
+		WHERE i.user_id = ?
+		ORDER BY i.name
+	`,
+		buildKey(QueryGetUserIngredientsWithUsage, DialectPostgres): `
+		SELECT i.id, i.user_id, i.name, i.kcal_per_100g, i.fats, i.carbs, i.proteins, i.global_ingredient_id, i.created_at, i.updated_at,
+			COALESCE(u.times_used, 0), u.last_used
+		FROM user_ingredients i
+		LEFT JOIN (
+			SELECT food, COUNT(*) AS times_used, TO_CHAR(MAX(meal_datetime), 'YYYY-MM-DD') AS last_used
+			FROM calorie_entries
+			WHERE user_id = $1
+			GROUP BY food
+		) u ON u.food = i.name
+		WHERE i.user_id = $1
+		ORDER BY i.name
 	`,
 
 		buildKey(QueryGetUserIngredientByName, DialectSQLite): `

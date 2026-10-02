@@ -69,7 +69,7 @@ internal/               # Core application code (clean architecture)
 ├── database/           # Database connection (SQLite)
 ├── handlers/           # HTTP handlers — one subdirectory per domain
 │   ├── ai/             # AI analysis endpoints (handler.go, dto.go)
-│   ├── apidata/        # External data API (API key-protected)
+│   ├── apidata/        # External API (API key-protected): data export, ingredient list, food logging
 │   ├── apikey/         # API key management CRUD (JWT-protected)
 │   ├── auth/           # Authentication (login, register, activate)
 │   ├── calories/       # Calorie entry CRUD
@@ -107,6 +107,11 @@ kubernetes/             # K8s deployment configs (Traefik ingress, deployed sepa
 migrations/             # Goose SQL migration files (run with `make migrate-*`)
 
 scripts/                # Utility scripts (e.g., create_user.go)
+
+skills/                 # Agent skills that log food through the external API
+├── kkal-tracker-food-log/      # Production skill (SKILL.md + scripts/kkal_client.py)
+├── kkal-tracker-food-log-dev/  # Generated copy pointed at a dev server; git-ignored, do not edit by hand
+└── sync_dev_skill.py           # Generates the dev skill: python3 skills/sync_dev_skill.py http://HOST:8080
 
 web/                    # React frontend (Vite + TypeScript)
 ├── src/
@@ -372,8 +377,16 @@ If you encounter old semantic CSS classes during refactoring:
   - Key management UI in Settings (create, revoke, delete)
   - SHA-256 hashed storage, full key shown only once at creation
   - Time-limited (N days) or permanent keys
-  - `X-API-Key` header authentication for `GET /api/v1/data` endpoint
+  - `X-API-Key` header authentication for the `/api/v1` endpoints
   - JSON response with weight entries, food entries, or both
+  - A key gives full access to the user's data, both read and write (there are no scopes)
+- **Food Logging API for AI agents**: an agent (e.g. voice dictation through a skill from `skills/`) stores meals via `/api/v1`
+  - The agent reads the whole ingredient list (`GET /api/v1/ingredients`, with usage statistics) and matches foods itself
+  - `POST /api/v1/food` takes a meal as a list of items: `ingredient_id` for an existing ingredient or `new_ingredient` for a new one. The server never matches or creates ingredients by name on its own
+  - A new ingredient whose name equals an existing one (ignoring case, spacing and `ё`/`е`) is rejected with 409 and the existing ingredient
+  - `one_off: true` writes a new food to the diary without adding it to the ingredient list (restaurant dishes etc.)
+  - A meal is atomic (all items or none); calories are calculated on the server
+  - `DELETE /api/v1/food/:id` removes an entry (undo)
 - **Email Service**: Activation emails and export delivery
 - **Dashboard**: View today's entries with total calorie count
 - **Internationalization**: Full i18n support (en_US, uk_UA, ru_UA, bg_BG) with language switcher, both frontend and backend
@@ -438,8 +451,11 @@ All API routes are prefixed with `/api`:
   - `GET /api/api-keys` - List user's API keys (prefixes only)
   - `POST /api/api-keys/:id/revoke` - Revoke a key
   - `DELETE /api/api-keys/:id` - Delete a key
-- `/api/v1/data` - External data API (API key auth via `X-API-Key` header, rate limited: 60 req/min)
+- `/api/v1/*` - External API (API key auth via `X-API-Key` header, rate limited per IP: burst of 20, then 1 req/sec)
   - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - `GET /api/v1/ingredients` - All user ingredients with `times_used` and `last_used`
+  - `POST /api/v1/food` - Store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`
+  - `DELETE /api/v1/food/:id` - Delete a food entry
 
 ## Deployment
 

@@ -64,6 +64,54 @@ func (r *IngredientRepositoryImpl) GetAllUserIngredients(userID int) ([]*models.
 	return ingredients, nil
 }
 
+// GetUserIngredientsWithUsage Get all user ingredients with how often and when they were last used in the diary
+func (r *IngredientRepositoryImpl) GetUserIngredientsWithUsage(userID int) ([]*models.UserIngredientUsage, error) {
+	r.logger.Debug("getting user ingredients with usage", slog.Int("user_id", userID))
+
+	sqlQuery, err := r.sqlLoader.Load(QueryGetUserIngredientsWithUsage)
+	if err != nil {
+		r.logger.Error("failed to load SQL query QueryGetUserIngredientsWithUsage", "error", err)
+		return nil, err
+	}
+
+	// For SQLite, we need to pass userID twice (for the usage subquery and the main query)
+	args := []any{userID}
+	if r.sqlLoader.Dialect == DialectSQLite {
+		args = append(args, userID)
+	}
+
+	rows, err := r.db.Query(sqlQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ingredients []*models.UserIngredientUsage
+	for rows.Next() {
+		ingredient := &models.UserIngredientUsage{}
+		err := rows.Scan(
+			&ingredient.ID,
+			&ingredient.UserID,
+			&ingredient.Name,
+			&ingredient.KcalPer100g,
+			&ingredient.Fats,
+			&ingredient.Carbs,
+			&ingredient.Proteins,
+			&ingredient.GlobalIngredientID,
+			&ingredient.CreatedAt,
+			&ingredient.UpdatedAt,
+			&ingredient.TimesUsed,
+			&ingredient.LastUsed,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ingredients = append(ingredients, ingredient)
+	}
+
+	return ingredients, rows.Err()
+}
+
 // GetUserIngredientByName Get user ingredient by name
 func (r *IngredientRepositoryImpl) GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error) {
 	query, err := r.sqlLoader.Load(QueryGetUserIngredientByName)

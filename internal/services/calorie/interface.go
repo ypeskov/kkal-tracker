@@ -5,6 +5,7 @@ import "ypeskov/kkal-tracker/internal/models"
 // Servicer defines the calorie service contract used by handlers and other services.
 type Servicer interface {
 	CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, error)
+	CreateMeal(req *CreateMealRequest) (*CreateMealResult, error)
 	UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, error)
 	DeleteEntry(entryID, userID int) error
 	GetEntriesByDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error)

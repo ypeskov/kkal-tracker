@@ -126,6 +126,7 @@ All API routes are prefixed with `/api`:
 - `/api/weight/*` - Weight history tracking
 - `/api/profile/*` - User profile management
 - `/api/reports/*` - Analytics and reporting
+- `/api/v1/*` - External API for scripts and AI agents (API key in the `X-API-Key` header): data export, ingredient list, food logging. Ready-made agent skills live in `skills/`
 
 ## Development
 
