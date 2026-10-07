@@ -179,11 +179,12 @@ GDRIVE_FOLDER_PATH=/services/kkal-tracker/backups
 - **Comments**: ALWAYS write comments in English only. Never use Russian, Ukrainian, or any other language for code comments. This ensures international accessibility and consistency across the codebase
 - **Git commits**: NEVER add "Co-Authored-By" or any other AI/assistant attribution to commit messages. No mentions of AI tools in commits
 - **Library usage**: When writing code that uses external libraries (Go modules, npm packages), ALWAYS use the Context7 MCP tool (`resolve-library-id` → `query-docs`) to fetch up-to-date documentation for the library version used in the project. Do NOT rely on memory — APIs change between versions. Check `go.mod` / `package.json` for actual versions before coding
-- **Server Management**:
-  # ⚠️  CRITICAL WARNING - DO NOT START DEVELOPMENT SERVER ⚠️
-  # NEVER RUN `make dev` OR ANY SERVER COMMANDS WITHOUT EXPLICIT USER APPROVAL
-  # THE USER MANAGES THE DEVELOPMENT SERVER (Air) IN A SEPARATE TERMINAL SESSION
-  # ONLY BUILD COMMANDS (`make build`, `make build-frontend`) ARE ALLOWED
+- **Server Management**: development happens on a VM, nobody else runs the server there. The dev server may be started
+  (`make watch` with Air, in the background, log to `tmp/dev-server.log`; `air` lives in `~/go/bin`) to verify a change or when the
+  user asks; port comes from `.env` (currently 8081). Before starting, check that nothing is already listening on the port; say
+  the URL (`http://<VM IP>:<port>`) when the server is started for the user. The local database is `data/app.db`; a copy of
+  production is pulled from the Google Drive backups (`kkal_tracker_backup_*.db.gz`, the download tool returns base64) after
+  saving the old file as `data/app.db.bak_YYYYMMDD`
 
 ## Frontend Style Standards
 
