@@ -512,9 +512,10 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
 
 ## Production Build & Deployment
 
-Production runs ONLY what is on `master`. The order is fixed: checks → commits on `develop` → push `develop` →
-merge into `master` → push `master` → the image is built from the `master` checkout → deploy. `deploy.sh` does
-everything after the commits; never build a production image from `develop` or from an uncommitted tree.
+Production runs ONLY what is on `master`, and nothing is pushed to git before the artifact it describes exists:
+the image goes to Docker Hub before the version commit, the version commit before the deploy. The order is fixed:
+checks → commits on `develop` → `deploy.sh` (push develop → merge into master → image from master → version
+commit on master → sync develop → deploy). Never build a production image from `develop` or from an uncommitted tree.
 
 ### 1. Checks (feature is done, not committed yet)
 ```bash
@@ -532,12 +533,14 @@ Verify the change in the running dev server when it has a visible side (`make wa
 ./deploy.sh --tag=X.Y.Z            # asks for confirmation; `--dry-run` prints the steps
 ```
 Pick the next version from `version.txt` (`vX.Y.Z`): patch for fixes, minor for features. The script:
-1. Checks: on `develop`, clean tree, `develop`/`master` in sync with origin, `master` contains nothing that `develop` lacks
-2. Writes `version.txt` and `kubernetes/base/deployment.yaml` (`image: ypeskov/kcal-tracker:X.Y.Z`), commits `vX.Y.Z` on `develop`, pushes `develop`
-3. Merges `develop` into `master`, pushes `master`
-4. Builds the image from the `master` checkout (`build-and-push.sh X.Y.Z --push`: removes `web/dist`, `--no-cache`, tags `X.Y.Z` and `latest`), pushes it to Docker Hub, tags `master` with `vX.Y.Z`
-5. SSH to the server (`.deploy.env`: `SSH_HOST`, `K8S_REPO_SERVER`), `git pull` on `master`, `kubectl apply -k kubernetes/overlays/prod`, waits for the rollout
-6. Returns to `develop`
+1. Checks: on `develop`, clean tree, `develop`/`master` in sync with origin, `master` contains nothing that `develop` lacks, `vX.Y.Z` is new
+2. Pushes `develop`
+3. Merges `develop` into `master` locally (not pushed)
+4. Builds the image from the `master` checkout (`build-and-push.sh X.Y.Z --push`: removes `web/dist`, `--no-cache`, tags `X.Y.Z` and `latest`) and pushes it to Docker Hub. If this fails, local `master` is reset to `origin/master`: nothing has left the machine and the same tag can be retried
+5. Writes `version.txt` and `kubernetes/base/deployment.yaml` (`image: ypeskov/kcal-tracker:X.Y.Z`), commits `vX.Y.Z` on `master`, tags it, pushes `master` and the tag
+6. Merges `master` back into `develop`, pushes `develop`
+7. SSH to the server (`.deploy.env`: `SSH_HOST`, `K8S_REPO_SERVER`), checks the repo is on `master`, `git pull`, `kubectl apply -k kubernetes/overlays/prod`, waits for the rollout
+8. Ends on `develop`
 
 Do NOT pass `--platform`: the image is built for the host architecture. `--skip-deploy` stops after the image is pushed.
 
