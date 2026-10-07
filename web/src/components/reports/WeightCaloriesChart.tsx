@@ -142,10 +142,7 @@ export default function WeightCaloriesChart({
   if (showCalories) {
     datasets.push({
       label: t('report.calories'),
-      data: sortedDates.map(date => {
-        const calories = calorieMap.get(date);
-        return calories ? calories / 10 : null;
-      }),
+      data: sortedDates.map(date => calorieMap.get(date) || null),
       borderColor: 'rgb(34, 197, 94)',
       backgroundColor: 'rgba(34, 197, 94, 0.5)',
       yAxisID: 'y2',
@@ -157,7 +154,7 @@ export default function WeightCaloriesChart({
   const data = {
     labels: sortedDates.map(date => {
       try {
-        return format(new Date(date), 'MMM d');
+        return format(parseISO(date), 'MMM d');
       } catch {
         return date;
       }
@@ -187,9 +184,7 @@ export default function WeightCaloriesChart({
               if (context.dataset.yAxisID === 'y1') {
                 label += `${context.parsed.y.toFixed(2)} ${t('common.kg')}`;
               } else {
-                // Show actual calories value (multiply back by 10)
-                const actualCalories = context.parsed.y * 10;
-                label += `${actualCalories.toFixed(0)} ${t('common.kcal')}`;
+                label += `${context.parsed.y.toFixed(0)} ${t('common.kcal')}`;
               }
             }
             return label;
@@ -222,12 +217,7 @@ export default function WeightCaloriesChart({
         position: 'right' as const,
         title: {
           display: true,
-          text: `${t('report.calories_kcal')} (÷10)`,
-        },
-        ticks: {
-          callback: function (value: any) {
-            return `10×${value.toFixed(1)}`;
-          },
+          text: t('report.calories_kcal'),
         },
         grid: {
           drawOnChartArea: false,
