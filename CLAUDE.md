@@ -356,7 +356,7 @@ If you encounter old semantic CSS classes during refactoring:
 4. Air watches Go, TS, TSX, JS, HTML, CSS files and triggers rebuilds
 5. Air excludes `web/dist`, `web/node_modules`, `tmp`, `bin`, `data` from watching
 6. Build errors logged to `tmp/build-errors.log`
-7. Docker images versioned via `version.txt` (current: v5.2.1)
+7. Docker images versioned via `version.txt` (written by `deploy.sh`)
 8. **IMPORTANT**: `build-and-push.sh` always builds without cache (`--no-cache`) and removes `web/dist/` before building
 
 ## Features
@@ -465,12 +465,11 @@ All API routes are prefixed with `/api`:
 
 ### Docker
 - **Dockerfile**: Multi-stage build for optimized image size
-- **Build script**: `build-and-push.sh` - Automated Docker build and push
+- **Build script**: `build-and-push.sh TAG [--push] [--platform=PLATFORM]` - Docker build and push, called by `deploy.sh`
   - **Always builds without cache** (`--no-cache`) to ensure fresh builds
   - **Automatically cleans `web/dist/`** before build
-  - Supports custom tags and platform selection (e.g., `linux/amd64`)
-  - Optional push to Docker registry
-  - Usage: `./build-and-push.sh [--platform=PLATFORM] [push] [TAG]`
+  - Tags the image `TAG` and `latest`, writes `vTAG` to `version.txt`
+  - Production images are built only by `deploy.sh` from `master` (see Production Build & Deployment)
 - **Image**: `ypeskov/kcal-tracker` (versioned with `version.txt`)
 
 ### Kubernetes
@@ -513,79 +512,44 @@ Full Kubernetes deployment configuration in `kubernetes/` directory:
 
 ## Production Build & Deployment
 
-### Prerequisites
-- Code tested locally (`make dev`)
-- All changes committed to develop branch
-- Docker authenticated for push to Docker Hub
+Production runs ONLY what is on `master`. The order is fixed: checks → commits on `develop` → push `develop` →
+merge into `master` → push `master` → the image is built from the `master` checkout → deploy. `deploy.sh` does
+everything after the commits; never build a production image from `develop` or from an uncommitted tree.
 
-### Build Steps
-
-#### 1. Commit Code Changes
+### 1. Checks (feature is done, not committed yet)
 ```bash
-git add .
-git commit -m "description of changes"
-git push origin develop
+go vet ./... && go test ./...        # tests need web/dist: run `make build-frontend` first
+cd web && npx tsc --noEmit -p tsconfig.app.json && npm run lint
 ```
+Verify the change in the running dev server when it has a visible side (`make watch`, see Server Management).
 
-#### 2. Build and Push Docker Image
-Use the `build-and-push.sh` script:
+### 2. Commits on develop
+- Work on `develop`, one commit per logical change, message in English, no AI attribution
+- `git push origin develop` only when the user asked to push/deploy
+
+### 3. Release with deploy.sh
 ```bash
-./build-and-push.sh VERSION --push
+./deploy.sh --tag=X.Y.Z            # asks for confirmation; `--dry-run` prints the steps
 ```
+Pick the next version from `version.txt` (`vX.Y.Z`): patch for fixes, minor for features. The script:
+1. Checks: on `develop`, clean tree, `develop`/`master` in sync with origin, `master` contains nothing that `develop` lacks
+2. Writes `version.txt` and `kubernetes/base/deployment.yaml` (`image: ypeskov/kcal-tracker:X.Y.Z`), commits `vX.Y.Z` on `develop`, pushes `develop`
+3. Merges `develop` into `master`, pushes `master`
+4. Builds the image from the `master` checkout (`build-and-push.sh X.Y.Z --push`: removes `web/dist`, `--no-cache`, tags `X.Y.Z` and `latest`), pushes it to Docker Hub, tags `master` with `vX.Y.Z`
+5. SSH to the server (`.deploy.env`: `SSH_HOST`, `K8S_REPO_SERVER`), `git pull` on `master`, `kubectl apply -k kubernetes/overlays/prod`, waits for the rollout
+6. Returns to `develop`
 
-Example:
+Do NOT pass `--platform`: the image is built for the host architecture. `--skip-deploy` stops after the image is pushed.
+
+### 4. Verify
 ```bash
-./build-and-push.sh 5.1.1 --push
+ssh $SSH_HOST  # then, with KUBECONFIG=/home/kuber/.kube/config:
+kubectl get pods -l app=kkal-tracker
+kubectl get deployment kkal-tracker -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl logs POD_NAME            # --previous: logs from the previous run if it crashed
 ```
-
-**What the script does:**
-- Removes `web/dist/` for a clean build
-- Builds image without cache (`--no-cache`)
-- Tags as both `VERSION` and `latest`
-- Pushes to Docker Hub (`ypeskov/kcal-tracker:VERSION`)
-- Writes version to `version.txt`
-
-**IMPORTANT:** Do NOT specify `--platform` flag, so the image builds for the host machine architecture (arm64 for Apple Silicon servers).
-
-#### 3. Commit Version Update
-```bash
-git add version.txt
-git commit -m "docker vVERSION"
-git push origin develop
-```
-
-#### 4. Update Kubernetes Deployment
-Edit `kubernetes/base/deployment.yaml`:
-```yaml
-image: ypeskov/kcal-tracker:VERSION
-```
-
-Commit:
-```bash
-git add kubernetes/base/deployment.yaml
-git commit -m "update deployment to vVERSION"
-git push origin develop
-```
-
-#### 5. Deploy to Server
-On the Kubernetes server:
-```bash
-# Option 1: Apply manifests
-kubectl apply -k kubernetes/overlays/prod/
-
-# Option 2: Update image directly
-kubectl set image deployment/kkal-tracker kkal-tracker=ypeskov/kcal-tracker:VERSION
-
-# Option 3: Restart deployment (if tag didn't change)
-kubectl rollout restart deployment kkal-tracker
-```
-
-#### 6. Verify Deployment
-```bash
-kubectl get pods
-kubectl logs POD_NAME
-kubectl logs POD_NAME --previous  # logs from previous run if crashed
-```
+Fallbacks when the script cannot be used: `kubectl set image deployment/kkal-tracker kkal-tracker=ypeskov/kcal-tracker:X.Y.Z`,
+or `kubectl rollout restart deployment kkal-tracker` when the tag did not change.
 
 ### Common Errors
 | Error | Cause | Solution |
