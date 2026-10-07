@@ -251,13 +251,13 @@ export default function Report() {
               stats={[
                 ...(showWeight && reportData?.weight_history && reportData.weight_history.length > 0
                   ? [
-                    { label: t('report.min_weight'), value: `${weightStats.min} kg`, color: 'text-blue-600' },
-                    { label: t('report.max_weight'), value: `${weightStats.max} kg`, color: 'text-blue-600' },
-                    { label: t('report.avg_weight'), value: `${weightStats.average} kg`, color: 'text-blue-600' },
+                    { label: t('report.min_weight'), value: `${weightStats.min} ${t('common.kg')}`, color: 'text-blue-600' },
+                    { label: t('report.max_weight'), value: `${weightStats.max} ${t('common.kg')}`, color: 'text-blue-600' },
+                    { label: t('report.avg_weight'), value: `${weightStats.average} ${t('common.kg')}`, color: 'text-blue-600' },
                   ]
                   : []),
                 ...(avgCaloriesPerDay > 0
-                  ? [{ label: t('report.avg_calories_per_day'), value: `${avgCaloriesPerDay} kcal`, color: 'text-green-600' }]
+                  ? [{ label: t('report.avg_calories_per_day'), value: `${avgCaloriesPerDay} ${t('common.kcal')}`, color: 'text-green-600' }]
                   : []),
               ]}
             />

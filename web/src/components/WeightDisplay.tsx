@@ -40,7 +40,7 @@ export default function WeightDisplay({ weightHistory }: WeightDisplayProps) {
       </label>
       <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
         {latestWeight !== null ? (
-          <span>{latestWeight.toFixed(1)} kg</span>
+          <span>{latestWeight.toFixed(1)} {t('common.kg')}</span>
         ) : (
           <span className="text-gray-400">{t('profile.noWeightData')}</span>
         )}

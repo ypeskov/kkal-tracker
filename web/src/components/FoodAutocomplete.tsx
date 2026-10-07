@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, forwardRef, ForwardedRef } from 'react'
 import { Ingredient, ingredientService } from '@/api/ingredients'
+import { useTranslation } from 'react-i18next'
 
 interface FoodAutocompleteProps {
   value: string
@@ -15,6 +16,7 @@ const FoodAutocomplete = forwardRef<HTMLInputElement, FoodAutocompleteProps>(
     { value, onChange, onSelect, placeholder, required, id },
     ref: ForwardedRef<HTMLInputElement>
   ) {
+  const { t } = useTranslation()
   const [suggestions, setSuggestions] = useState<Ingredient[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -131,10 +133,10 @@ const FoodAutocomplete = forwardRef<HTMLInputElement, FoodAutocompleteProps>(
             >
               <div className="font-medium text-gray-800 mb-1">{ingredient.name}</div>
               <div className="text-sm text-gray-600 leading-tight">
-                {ingredient.kcalPer100g} kcal/100g
-                {ingredient.proteins && ` • ${ingredient.proteins}g protein`}
-                {ingredient.carbs && ` • ${ingredient.carbs}g carbs`}
-                {ingredient.fats && ` • ${ingredient.fats}g fats`}
+                {ingredient.kcalPer100g} {t('common.kcalPer100g')}
+                {ingredient.proteins && ` • ${ingredient.proteins}${t('common.g')} ${t('foodList.proteins').toLowerCase()}`}
+                {ingredient.carbs && ` • ${ingredient.carbs}${t('common.g')} ${t('foodList.carbs').toLowerCase()}`}
+                {ingredient.fats && ` • ${ingredient.fats}${t('common.g')} ${t('foodList.fats').toLowerCase()}`}
               </div>
             </div>
           ))}

@@ -39,10 +39,10 @@ export default function WeightGoalProgressDisplay({
       {/* Current and Target Weight */}
       <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
         <span>
-          {t('weightGoal.current')}: <strong>{goalProgress.current_weight.toFixed(2)} kg</strong>
+          {t('weightGoal.current')}: <strong>{goalProgress.current_weight.toFixed(2)} {t('common.kg')}</strong>
         </span>
         <span>
-          {t('weightGoal.target')}: <strong>{goalProgress.target_weight} kg</strong>
+          {t('weightGoal.target')}: <strong>{goalProgress.target_weight} {t('common.kg')}</strong>
         </span>
       </div>
 

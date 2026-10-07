@@ -51,7 +51,7 @@ export default function HealthMetricsCard() {
           <div className="p-3 bg-green-50 rounded-lg">
             <div className="text-xs text-gray-600 mb-1">{t('profile.bmr')}</div>
             <div className="text-xl font-bold text-green-600">{Math.round(healthMetrics.bmr)}</div>
-            <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day</div>
+            <div className="text-xs text-gray-500 mt-1">{t('common.kcalPerDay')}</div>
           </div>
         )}
 
@@ -59,7 +59,7 @@ export default function HealthMetricsCard() {
           <div className="p-3 bg-purple-50 rounded-lg">
             <div className="text-xs text-gray-600 mb-1">{t('profile.tdee')}</div>
             <div className="text-xl font-bold text-purple-600">{Math.round(healthMetrics.tdee)}</div>
-            <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day</div>
+            <div className="text-xs text-gray-500 mt-1">{t('common.kcalPerDay')}</div>
           </div>
         )}
       </div>

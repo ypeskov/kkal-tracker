@@ -159,15 +159,15 @@ export default function ReportFilters({
             <div className="flex flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-600">{t('report.min_weight')}</span>
-                <span className="text-lg font-bold text-blue-600">{weightStats.min} kg</span>
+                <span className="text-lg font-bold text-blue-600">{weightStats.min} {t('common.kg')}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-600">{t('report.max_weight')}</span>
-                <span className="text-lg font-bold text-blue-600">{weightStats.max} kg</span>
+                <span className="text-lg font-bold text-blue-600">{weightStats.max} {t('common.kg')}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-600">{t('report.avg_weight')}</span>
-                <span className="text-lg font-bold text-blue-600">{weightStats.average} kg</span>
+                <span className="text-lg font-bold text-blue-600">{weightStats.average} {t('common.kg')}</span>
               </div>
             </div>
           </div>

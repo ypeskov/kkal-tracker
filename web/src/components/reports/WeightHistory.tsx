@@ -209,7 +209,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <p className="text-xs text-gray-600 mb-1">{t('report.first_weight')}</p>
-                <p className="text-lg font-bold text-gray-800">{periodDelta.firstWeight.toFixed(2)} kg</p>
+                <p className="text-lg font-bold text-gray-800">{periodDelta.firstWeight.toFixed(2)} {t('common.kg')}</p>
               </div>
               <div className="text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${periodDelta.delta > 0
@@ -221,13 +221,13 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                   <span className="text-xs text-gray-600">{t('report.total_delta')}</span>
                   <span className={`text-2xl font-bold ${periodDelta.delta > 0 ? 'text-red-700' : periodDelta.delta < 0 ? 'text-green-700' : 'text-gray-700'
                     }`}>
-                    {periodDelta.delta > 0 ? '+' : ''}{periodDelta.delta.toFixed(2)} kg
+                    {periodDelta.delta > 0 ? '+' : ''}{periodDelta.delta.toFixed(2)} {t('common.kg')}
                   </span>
                 </div>
               </div>
               <div className="text-center">
                 <p className="text-xs text-gray-600 mb-1">{t('report.last_weight')}</p>
-                <p className="text-lg font-bold text-gray-800">{periodDelta.lastWeight.toFixed(2)} kg</p>
+                <p className="text-lg font-bold text-gray-800">{periodDelta.lastWeight.toFixed(2)} {t('common.kg')}</p>
               </div>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  {t('report.weight')} (kg)
+                  {t('report.weight')} ({t('common.kg')})
                 </label>
                 <input
                   ref={weightInputRef}
@@ -338,12 +338,12 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
                     {format(new Date(entry.recorded_at), 'PPP')}
                   </td>
                   <td className="p-3">
-                    {entry.weight.toFixed(2)} kg
+                    {entry.weight.toFixed(2)} {t('common.kg')}
                   </td>
                   <td className="p-3">
                     {entry.delta !== null ? (
                       <span className={`font-medium ${entry.delta > 0 ? 'text-red-600' : entry.delta < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                        {entry.delta > 0 ? '+' : ''}{entry.delta.toFixed(2)} kg
+                        {entry.delta > 0 ? '+' : ''}{entry.delta.toFixed(2)} {t('common.kg')}
                       </span>
                     ) : (
                       <span className="text-gray-400">-</span>

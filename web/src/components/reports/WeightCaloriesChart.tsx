@@ -200,11 +200,11 @@ export default function WeightCaloriesChart({
             }
             if (context.parsed.y !== null) {
               if (context.dataset.yAxisID === 'y1') {
-                label += `${context.parsed.y.toFixed(2)} kg`;
+                label += `${context.parsed.y.toFixed(2)} ${t('common.kg')}`;
               } else {
                 // Show actual calories value (multiply back by 10)
                 const actualCalories = context.parsed.y * 10;
-                label += `${actualCalories.toFixed(0)} kcal`;
+                label += `${actualCalories.toFixed(0)} ${t('common.kcal')}`;
               }
             }
             return label;
