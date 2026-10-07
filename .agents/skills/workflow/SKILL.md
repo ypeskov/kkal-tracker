@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Task lifecycle for the agent team - BA → backend/frontend dev → code reviews → security → QA → BA acceptance → DevOps, with task-specs/, status.md and review reports in agent-reviews/. Use when the user asks to run a task (feature, bug, refactoring) through the workflow or the agents, and in every subagent working on a task from task-specs/.
+description: Task lifecycle for the agent team - BA → backend/frontend dev → code reviews → security → QA → BA acceptance → DevOps, with task-specs/, status.md and review reports in agent-reviews/. Use by default for every task that changes code (feature, bug, refactoring) unless the user agreed to do a small task in the main session, and in every subagent working on a task from task-specs/.
 ---
 
 # Agent Workflow

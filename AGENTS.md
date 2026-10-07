@@ -61,5 +61,8 @@ Subagents are maintained in `.claude/agents/` (source of truth, Claude Code form
 `qa-engineer`, `devops-engineer`. Change them only there. How they work together on a task (BA → dev → reviews →
 QA → acceptance → DevOps, `task-specs/`, `agent-reviews/`): the `workflow` skill.
 
+**Every task that changes code (feature, bug, refactoring) runs through the `workflow` skill by default.** If a task
+looks small, propose to the user to skip the workflow and do it in the main session; skip it only when they agree.
+
 If you are not Claude Code and your runtime supports subagents: at session start run the check from the
 `sync-subagents` skill; if your runtime's subagents are missing or stale, offer the user to regenerate them.
