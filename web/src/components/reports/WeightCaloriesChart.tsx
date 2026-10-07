@@ -10,7 +10,7 @@ import {
   Tooltip,
   TooltipItem,
 } from 'chart.js';
-import { addDays, differenceInDays, format } from 'date-fns';
+import { addDays, differenceInDays, format, parseISO } from 'date-fns';
 import { Line } from 'react-chartjs-2';
 import { useTranslation } from 'react-i18next';
 
@@ -63,8 +63,8 @@ export default function WeightCaloriesChart({
     const lastDataDate = sortedDates[sortedDates.length - 1];
     const targetDateStr = goalData.targetDate.split('T')[0]; // Normalize to YYYY-MM-DD
     if (targetDateStr > lastDataDate) {
-      let current = addDays(new Date(lastDataDate), 1);
-      const target = new Date(targetDateStr);
+      let current = addDays(parseISO(lastDataDate), 1);
+      const target = parseISO(targetDateStr);
       let daysAdded = 0;
       while (current <= target && daysAdded < MAX_PROJECTION_DAYS) {
         sortedDates.push(format(current, 'yyyy-MM-dd'));
@@ -83,9 +83,9 @@ export default function WeightCaloriesChart({
     const trend = goalData?.trend;
     if (!goalData || !trend || sortedDates.length === 0) return null;
 
-    const goalStartDate = new Date(goalData.startDate);
+    const goalStartDate = parseISO(goalData.startDate); // Local midnight: day counts stay whole across DST changes
     return sortedDates.map(dateStr => {
-      const daysFromGoalStart = differenceInDays(new Date(dateStr), goalStartDate);
+      const daysFromGoalStart = differenceInDays(parseISO(dateStr), goalStartDate);
       if (daysFromGoalStart < 0) return null;
       return trend.startWeight + trend.kgPerDay * daysFromGoalStart;
     });
