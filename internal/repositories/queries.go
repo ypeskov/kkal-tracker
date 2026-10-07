@@ -13,6 +13,7 @@ const (
 	QueryActivateUser          = "activateUser"
 	QueryDeleteUser            = "deleteUser"
 	QuerySetWeightGoal         = "setWeightGoal"
+	QueryUpdateWeightGoal      = "updateWeightGoal"
 	QueryClearWeightGoal       = "clearWeightGoal"
 
 	// Group of CalorieEntries queries
@@ -24,12 +25,13 @@ const (
 	QueryDeleteCalorieEntry           = "deleteCalorieEntry"
 
 	// Weight History queries
-	QueryGetWeightHistory            = "getWeightHistory"
-	QueryGetWeightHistoryByDateRange = "getWeightHistoryByDateRange"
-	QueryGetLatestWeightHistory      = "getLatestWeightHistory"
-	QueryCreateWeightHistory         = "createWeightHistory"
-	QueryUpdateWeightHistory         = "updateWeightHistory"
-	QueryDeleteWeightHistory         = "deleteWeightHistory"
+	QueryGetWeightHistory                 = "getWeightHistory"
+	QueryGetWeightHistoryByDateRange      = "getWeightHistoryByDateRange"
+	QueryGetLatestWeightHistory           = "getLatestWeightHistory"
+	QueryGetLatestWeightHistoryOnOrBefore = "getLatestWeightHistoryOnOrBefore"
+	QueryCreateWeightHistory              = "createWeightHistory"
+	QueryUpdateWeightHistory              = "updateWeightHistory"
+	QueryDeleteWeightHistory              = "deleteWeightHistory"
 
 	// Ingredient queries
 	QueryGetAllUserIngredients       = "getAllUserIngredients"
@@ -172,13 +174,25 @@ func getQueries() map[string]string {
 
 		buildKey(QuerySetWeightGoal, DialectSQLite): `
 		UPDATE users
-		SET target_weight = ?, target_date = ?, goal_set_at = datetime('now'), initial_weight_at_goal = ?, updated_at = datetime('now')
+		SET target_weight = ?, target_date = ?, goal_set_at = ?, initial_weight_at_goal = ?, updated_at = datetime('now')
 		WHERE id = ?
 	`,
 		buildKey(QuerySetWeightGoal, DialectPostgres): `
 		UPDATE users
-		SET target_weight = $1, target_date = $2, goal_set_at = NOW(), initial_weight_at_goal = $3, updated_at = NOW()
-		WHERE id = $4
+		SET target_weight = $1, target_date = $2, goal_set_at = $3, initial_weight_at_goal = $4, updated_at = NOW()
+		WHERE id = $5
+	`,
+
+		// Changes the target of an existing goal; the start date and the initial weight stay as they were
+		buildKey(QueryUpdateWeightGoal, DialectSQLite): `
+		UPDATE users
+		SET target_weight = ?, target_date = ?, updated_at = datetime('now')
+		WHERE id = ? AND goal_set_at IS NOT NULL
+	`,
+		buildKey(QueryUpdateWeightGoal, DialectPostgres): `
+		UPDATE users
+		SET target_weight = $1, target_date = $2, updated_at = NOW()
+		WHERE id = $3 AND goal_set_at IS NOT NULL
 	`,
 
 		buildKey(QueryClearWeightGoal, DialectSQLite): `
@@ -230,6 +244,21 @@ func getQueries() map[string]string {
 		SELECT id, user_id, weight, recorded_at, created_at
 		FROM weight_history
 		WHERE user_id = $1
+		ORDER BY recorded_at DESC
+		LIMIT 1
+	`,
+
+		buildKey(QueryGetLatestWeightHistoryOnOrBefore, DialectSQLite): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = ? AND substr(recorded_at, 1, 10) <= ?
+		ORDER BY recorded_at DESC
+		LIMIT 1
+	`,
+		buildKey(QueryGetLatestWeightHistoryOnOrBefore, DialectPostgres): `
+		SELECT id, user_id, weight, recorded_at, created_at
+		FROM weight_history
+		WHERE user_id = $1 AND DATE(recorded_at) <= $2
 		ORDER BY recorded_at DESC
 		LIMIT 1
 	`,

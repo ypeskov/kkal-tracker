@@ -37,6 +37,9 @@ type ProfileResponse struct {
 type WeightGoalRequest struct {
 	TargetWeight float64 `json:"target_weight" validate:"required,min=30,max=300"`
 	TargetDate   *string `json:"target_date" validate:"omitempty"` // Format: YYYY-MM-DD, optional
+	// StartDate is the day the goal counts from (YYYY-MM-DD). A new goal without it starts today;
+	// an existing goal without it keeps its start
+	StartDate *string `json:"start_date" validate:"omitempty"`
 }
 
 // WeightGoalResponse represents the weight goal progress data
@@ -44,6 +47,7 @@ type WeightGoalResponse struct {
 	TargetWeight        float64    `json:"target_weight"`
 	TargetDate          *time.Time `json:"target_date,omitempty"`
 	GoalSetAt           time.Time  `json:"goal_set_at"`
+	StartDate           string     `json:"start_date"` // Calendar day of GoalSetAt (YYYY-MM-DD), what the form edits
 	InitialWeightAtGoal float64    `json:"initial_weight_at_goal"`
 	CurrentWeight       float64    `json:"current_weight"`
 	ProgressPercent     float64    `json:"progress_percent"`     // 0-100

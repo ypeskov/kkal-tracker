@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"ypeskov/kkal-tracker/internal/models"
 )
@@ -297,10 +298,11 @@ func (r *UserRepositoryImpl) Delete(userID int) error {
 }
 
 // SetWeightGoal sets a weight goal for the user
-func (r *UserRepositoryImpl) SetWeightGoal(userID int, targetWeight float64, targetDate *string, initialWeight float64) error {
+func (r *UserRepositoryImpl) SetWeightGoal(userID int, targetWeight float64, targetDate *string, startedAt time.Time, initialWeight float64) error {
 	r.logger.Debug("Setting weight goal",
 		slog.Int("user_id", userID),
 		slog.Float64("target_weight", targetWeight),
+		slog.Time("started_at", startedAt),
 		slog.Float64("initial_weight", initialWeight))
 
 	query, err := r.sqlLoader.Load(QuerySetWeightGoal)
@@ -308,7 +310,7 @@ func (r *UserRepositoryImpl) SetWeightGoal(userID int, targetWeight float64, tar
 		return err
 	}
 
-	result, err := r.db.Exec(query, targetWeight, targetDate, initialWeight, userID)
+	result, err := r.db.Exec(query, targetWeight, targetDate, startedAt, initialWeight, userID)
 	if err != nil {
 		r.logger.Error("Failed to set weight goal", "error", err, "user_id", userID)
 		return err
@@ -325,6 +327,37 @@ func (r *UserRepositoryImpl) SetWeightGoal(userID int, targetWeight float64, tar
 	}
 
 	r.logger.Info("Weight goal set successfully", "user_id", userID)
+	return nil
+}
+
+// UpdateWeightGoal changes the target of an existing goal; goal_set_at and initial_weight_at_goal stay untouched
+func (r *UserRepositoryImpl) UpdateWeightGoal(userID int, targetWeight float64, targetDate *string) error {
+	r.logger.Debug("Updating weight goal",
+		slog.Int("user_id", userID),
+		slog.Float64("target_weight", targetWeight))
+
+	query, err := r.sqlLoader.Load(QueryUpdateWeightGoal)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.Exec(query, targetWeight, targetDate, userID)
+	if err != nil {
+		r.logger.Error("Failed to update weight goal", "error", err, "user_id", userID)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		r.logger.Warn("No goal updated (user not found or goal not set)", "user_id", userID)
+		return ErrNotFound
+	}
+
+	r.logger.Info("Weight goal updated successfully", "user_id", userID)
 	return nil
 }
 

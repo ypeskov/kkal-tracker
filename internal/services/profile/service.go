@@ -12,18 +12,19 @@ import (
 
 // Constants for weight goal calculations
 const (
-	KcalPerKg             = 7700.0 // Calories per kg of body weight
-	SafeWeeklyLossKg      = 0.5    // Safe rate: 0.5 kg per week
-	MaxDailyDeficit       = 1000.0 // Maximum recommended daily deficit
-	MinDailyCaloriesMale  = 1500.0 // Minimum daily intake for men
+	KcalPerKg              = 7700.0 // Calories per kg of body weight
+	SafeWeeklyLossKg       = 0.5    // Safe rate: 0.5 kg per week
+	MaxDailyDeficit        = 1000.0 // Maximum recommended daily deficit
+	MinDailyCaloriesMale   = 1500.0 // Minimum daily intake for men
 	MinDailyCaloriesFemale = 1200.0 // Minimum daily intake for women
 )
 
 var (
-	ErrNoWeightData     = errors.New("no weight data available")
-	ErrInvalidGoal      = errors.New("invalid weight goal")
-	ErrGoalNotSet       = errors.New("weight goal is not set")
-	ErrTargetDateInPast = errors.New("target date must be in the future")
+	ErrNoWeightData      = errors.New("no weight data available")
+	ErrInvalidGoal       = errors.New("invalid weight goal")
+	ErrGoalNotSet        = errors.New("weight goal is not set")
+	ErrTargetDateInPast  = errors.New("target date must be in the future")
+	ErrStartDateInFuture = errors.New("start date must not be in the future")
 )
 
 type Service struct {
@@ -124,37 +125,100 @@ func (s *Service) SetWeightGoal(userID int, req *WeightGoalRequest) error {
 	s.logger.Debug("SetWeightGoal called", "user_id", userID, "target_weight", req.TargetWeight)
 
 	// Validate target date if provided
+	var targetDate *time.Time
 	if req.TargetDate != nil && *req.TargetDate != "" {
-		targetDate, err := time.Parse("2006-01-02", *req.TargetDate)
+		parsed, err := time.Parse("2006-01-02", *req.TargetDate)
 		if err != nil {
 			s.logger.Error("Invalid target date format", "user_id", userID, "error", err)
 			return ErrInvalidGoal
 		}
-		if targetDate.Before(time.Now().Truncate(24 * time.Hour)) {
+		if parsed.Before(time.Now().Truncate(24 * time.Hour)) {
 			s.logger.Error("Target date is in the past", "user_id", userID)
 			return ErrTargetDateInPast
 		}
+		targetDate = &parsed
 	}
 
-	// Get current weight
-	latestWeight, err := s.weightHistRepo.GetLatestByUserID(userID)
+	// Validate start date if provided: a calendar day, not after today (the client's today may be
+	// a day ahead of the server's UTC day) and before the target date
+	var startDate *time.Time
+	if req.StartDate != nil && *req.StartDate != "" {
+		parsed, err := time.Parse("2006-01-02", *req.StartDate)
+		if err != nil {
+			s.logger.Error("Invalid start date format", "user_id", userID, "error", err)
+			return ErrInvalidGoal
+		}
+		if parsed.After(time.Now().UTC().Truncate(24*time.Hour).AddDate(0, 0, 1)) {
+			s.logger.Error("Start date is in the future", "user_id", userID)
+			return ErrStartDateInFuture
+		}
+		if targetDate != nil && !parsed.Before(*targetDate) {
+			s.logger.Error("Start date is not before the target date", "user_id", userID)
+			return ErrInvalidGoal
+		}
+		startDate = &parsed
+	}
+
+	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
-		s.logger.Error("Failed to get latest weight", "user_id", userID, "error", err)
-		return ErrNoWeightData
-	}
-	if latestWeight == nil {
-		s.logger.Error("No weight data available", "user_id", userID)
-		return ErrNoWeightData
+		s.logger.Error("Failed to get user", "user_id", userID, "error", err)
+		return err
 	}
 
-	// Set the goal
-	if err := s.userRepo.SetWeightGoal(userID, req.TargetWeight, req.TargetDate, latestWeight.Weight); err != nil {
+	// An existing goal is edited in place unless its start day changes: the start date and the initial
+	// weight are kept, so the progress keeps counting from the day the goal was set
+	hasGoal := user.GoalSetAt != nil && user.InitialWeightAtGoal != nil
+	if hasGoal && (startDate == nil || startDate.Format("2006-01-02") == user.GoalSetAt.UTC().Format("2006-01-02")) {
+		if err := s.userRepo.UpdateWeightGoal(userID, req.TargetWeight, req.TargetDate); err != nil {
+			s.logger.Error("Failed to update weight goal", "user_id", userID, "error", err)
+			return err
+		}
+		s.logger.Info("Weight goal updated successfully", "user_id", userID, "target_weight", req.TargetWeight)
+		return nil
+	}
+
+	// The goal starts from the weight recorded on its start day (today unless a date was given)
+	startedAt := time.Now()
+	if startDate != nil {
+		startedAt = *startDate
+	}
+	initialWeight, err := s.weightOnOrBefore(userID, startedAt)
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.SetWeightGoal(userID, req.TargetWeight, req.TargetDate, startedAt, initialWeight); err != nil {
 		s.logger.Error("Failed to set weight goal", "user_id", userID, "error", err)
 		return err
 	}
 
-	s.logger.Info("Weight goal set successfully", "user_id", userID, "target_weight", req.TargetWeight)
+	s.logger.Info("Weight goal set successfully", "user_id", userID, "target_weight", req.TargetWeight, "started_at", startedAt)
 	return nil
+}
+
+// weightOnOrBefore returns the last weight recorded on the given day or earlier; if nothing was recorded
+// by then, the earliest entry of the user (the first one after that day)
+func (s *Service) weightOnOrBefore(userID int, day time.Time) (float64, error) {
+	entry, err := s.weightHistRepo.GetLatestByUserIDOnOrBefore(userID, day.UTC().Format("2006-01-02"))
+	if err != nil {
+		s.logger.Error("Failed to get weight on the start day", "user_id", userID, "error", err)
+		return 0, ErrNoWeightData
+	}
+	if entry != nil {
+		return entry.Weight, nil
+	}
+
+	history, err := s.weightHistRepo.GetByUserID(userID)
+	if err != nil {
+		s.logger.Error("Failed to get weight history", "user_id", userID, "error", err)
+		return 0, ErrNoWeightData
+	}
+	if len(history) == 0 {
+		s.logger.Error("No weight data available", "user_id", userID)
+		return 0, ErrNoWeightData
+	}
+	// GetByUserID is ordered from the latest to the earliest entry
+	return history[len(history)-1].Weight, nil
 }
 
 // ClearWeightGoal clears the weight goal for the user
@@ -236,6 +300,7 @@ func (s *Service) GetWeightGoalProgress(userID int) (*WeightGoalResponse, error)
 		TargetWeight:        targetWeight,
 		TargetDate:          user.TargetDate,
 		GoalSetAt:           *user.GoalSetAt,
+		StartDate:           user.GoalSetAt.UTC().Format("2006-01-02"),
 		InitialWeightAtGoal: initialWeight,
 		CurrentWeight:       currentWeight,
 		ProgressPercent:     math.Round(progressPercent*10) / 10, // Round to 1 decimal

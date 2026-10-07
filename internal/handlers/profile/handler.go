@@ -105,6 +105,9 @@ func (h *Handler) SetWeightGoal(c *echo.Context) error {
 		if errors.Is(err, profileservice.ErrTargetDateInPast) {
 			return echo.NewHTTPError(http.StatusBadRequest, "Target date must be in the future")
 		}
+		if errors.Is(err, profileservice.ErrStartDateInFuture) {
+			return echo.NewHTTPError(http.StatusBadRequest, "Start date must not be in the future")
+		}
 		if errors.Is(err, profileservice.ErrInvalidGoal) {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid goal parameters")
 		}

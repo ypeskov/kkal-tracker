@@ -16,7 +16,10 @@ type UserRepository interface {
 	AddWeightEntry(userID int, weight float64) error
 	ActivateUser(userID int) error
 	Delete(userID int) error
-	SetWeightGoal(userID int, targetWeight float64, targetDate *string, initialWeight float64) error
+	// SetWeightGoal starts a goal: startedAt and initialWeight are the point the progress is measured from
+	SetWeightGoal(userID int, targetWeight float64, targetDate *string, startedAt time.Time, initialWeight float64) error
+	// UpdateWeightGoal changes the target of an existing goal, keeping its start date and initial weight
+	UpdateWeightGoal(userID int, targetWeight float64, targetDate *string) error
 	ClearWeightGoal(userID int) error
 }
 
@@ -39,6 +42,8 @@ type WeightHistoryRepository interface {
 	GetByUserID(userID int) ([]*models.WeightHistory, error)
 	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.WeightHistory, error)
 	GetLatestByUserID(userID int) (*models.WeightHistory, error)
+	// GetLatestByUserIDOnOrBefore returns the last entry recorded on the given day (YYYY-MM-DD) or earlier, nil if there is none
+	GetLatestByUserIDOnOrBefore(userID int, date string) (*models.WeightHistory, error)
 	Create(userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
 	Update(id, userID int, weight float64, recordedAt *time.Time) (*models.WeightHistory, error)
 	Delete(id, userID int) error
