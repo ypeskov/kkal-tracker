@@ -10,6 +10,7 @@ import WeightDisplay from '@/components/WeightDisplay';
 import WeightGoalForm from '@/components/WeightGoalForm';
 import i18n from '@/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,6 +38,15 @@ export default function Profile() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const { hash } = useLocation();
+
+  // Scroll to the section named by the URL hash (e.g. "#goal" from the dashboard's manage link);
+  // the router scrolls on navigation, this also covers a page opened directly with the hash
+  useEffect(() => {
+    if (hash) {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [hash]);
 
   // Fetch profile data
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
@@ -336,8 +346,8 @@ export default function Profile() {
         </div>
       </form>
 
-      {/* Weight Goal Group - Outside of profile form to avoid nested forms */}
-      <div className="mt-6">
+      {/* Weight Goal Group - Outside of profile form to avoid nested forms; "#goal" is the anchor of the dashboard's manage link */}
+      <div id="goal" className="mt-6 scroll-mt-4">
         <ProfileFormSection title={t('weightGoal.title')}>
           <WeightGoalForm
             currentWeight={weightHistory && weightHistory.length > 0
@@ -385,7 +395,7 @@ export default function Profile() {
               {healthMetrics?.bmr ? (
                 <>
                   <div className="text-2xl font-bold text-green-600">{Math.round(healthMetrics.bmr)}</div>
-                  <div className="text-xs text-gray-500 mt-1">{t('common.kcal')}/day</div>
+                  <div className="text-xs text-gray-500 mt-1">{t('common.kcalPerDay')}</div>
                 </>
               ) : (
                 <div className="text-sm text-gray-500 mt-2">
@@ -408,7 +418,7 @@ export default function Profile() {
                 <>
                   <div className="text-2xl font-bold text-purple-600">{Math.round(healthMetrics.tdee)}</div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {t('common.kcal')}/day ({healthMetrics.activity_level ? t(`profile.activityLevels.${healthMetrics.activity_level}`) : t('profile.activityLevels.sedentary')})
+                    {t('common.kcalPerDay')} ({healthMetrics.activity_level ? t(`profile.activityLevels.${healthMetrics.activity_level}`) : t('profile.activityLevels.sedentary')})
                   </div>
                 </>
               ) : (

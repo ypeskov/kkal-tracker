@@ -35,6 +35,7 @@ export default function WeightGoalCard() {
         headerAction={
           <Link
             to="/profile"
+            hash="goal"
             className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
           >
             {t('weightGoal.manage')}

@@ -1,6 +1,7 @@
 import { profileService } from '@/api/profile';
+import { weightService } from '@/api/weight';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, format } from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import { AlertTriangle, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,10 +12,27 @@ interface WeightGoalFormProps {
   onSuccess?: () => void;
 }
 
+// The weight history is loaded in windows of this many days ending on the start date,
+// so moving the date within the window does not hit the server again
+const WEIGHT_WINDOW_DAYS = 90;
+
+interface DateRange {
+  from: string;
+  to: string;
+}
+
+const windowEndingOn = (date: string): DateRange => ({
+  from: format(subDays(new Date(date), WEIGHT_WINDOW_DAYS), 'yyyy-MM-dd'),
+  to: date,
+});
+
 export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const [startDate, setStartDate] = useState(today);
+  const [weightWindow, setWeightWindow] = useState<DateRange>(() => windowEndingOn(today));
   const [targetWeight, setTargetWeight] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [noDeadline, setNoDeadline] = useState(true);
@@ -26,6 +44,26 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
     queryKey: ['weightGoalProgress'],
     queryFn: profileService.getWeightGoalProgress,
   });
+
+  // Weight entries of the window around the start date; refetched only when the date leaves the window
+  const { data: windowEntries } = useQuery({
+    queryKey: ['weightHistory', weightWindow.from, weightWindow.to],
+    queryFn: () => weightService.getWeightHistory(weightWindow.from, weightWindow.to),
+    enabled: showForm || !goalProgress,
+  });
+
+  // Changes the start date and loads another window when the date falls outside the current one
+  const changeStartDate = (date: string) => {
+    setStartDate(date);
+    if (date && (date < weightWindow.from || date > weightWindow.to)) {
+      setWeightWindow(windowEndingOn(date));
+    }
+  };
+
+  // The last weight recorded on the start date or before it (within the loaded window)
+  const weightOnStartDate = windowEntries
+    ?.filter((entry) => entry.recorded_at.slice(0, 10) <= startDate)
+    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))[0]?.weight;
 
   // Set weight goal mutation
   const setGoalMutation = useMutation({
@@ -48,6 +86,7 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weightGoalProgress'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      changeStartDate(today);
       setTargetWeight('');
       setTargetDate('');
       setNoDeadline(true);
@@ -61,6 +100,7 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
   // Initialize form with existing goal data
   useEffect(() => {
     if (goalProgress) {
+      changeStartDate(goalProgress.start_date);
       setTargetWeight(goalProgress.target_weight.toString());
       if (goalProgress.target_date) {
         setTargetDate(format(new Date(goalProgress.target_date), 'yyyy-MM-dd'));
@@ -81,9 +121,15 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
       return;
     }
 
+    if (!startDate) {
+      setError(t('weightGoal.invalidStartDate'));
+      return;
+    }
+
     setGoalMutation.mutate({
       target_weight: weight,
       target_date: noDeadline ? undefined : targetDate || undefined,
+      start_date: startDate,
     });
   };
 
@@ -184,30 +230,45 @@ export default function WeightGoalForm({ currentWeight, onSuccess }: WeightGoalF
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Start Date: the day the progress counts from */}
+          <div>
+            <label htmlFor="goalStartDate" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('weightGoal.startDate')} *
+            </label>
+            <input
+              type="date"
+              id="goalStartDate"
+              value={startDate}
+              onChange={(e) => changeStartDate(e.target.value)}
+              max={today}
+              title={t('weightGoal.startDateHint')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {weightOnStartDate !== undefined
+                ? t('weightGoal.weightOnStartDate', { weight: weightOnStartDate.toFixed(1) })
+                : t('weightGoal.noWeightOnStartDate')}
+            </p>
+          </div>
+
           {/* Target Weight */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('weightGoal.targetWeight')} (kg) *
+              {t('weightGoal.targetWeight')} ({t('common.kg')}) *
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.1"
-                min="30"
-                max="300"
-                value={targetWeight}
-                onChange={(e) => setTargetWeight(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder={t('weightGoal.enterTarget')}
-                required
-              />
-              {currentWeight && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                  {t('weightGoal.currentIs', { weight: currentWeight.toFixed(1) })}
-                </span>
-              )}
-            </div>
+            <input
+              type="number"
+              step="0.1"
+              min="30"
+              max="300"
+              value={targetWeight}
+              onChange={(e) => setTargetWeight(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder={t('weightGoal.enterTarget')}
+              required
+            />
           </div>
 
           {/* Target Date */}

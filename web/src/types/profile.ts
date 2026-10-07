@@ -32,12 +32,14 @@ export interface ProfileUpdateRequest {
 export interface WeightGoalRequest {
     target_weight: number;
     target_date?: string; // Format: YYYY-MM-DD, optional
+    start_date?: string; // Format: YYYY-MM-DD; the day the goal counts from, today when omitted for a new goal
 }
 
 export interface WeightGoalProgress {
     target_weight: number;
     target_date?: string;
     goal_set_at: string;
+    start_date: string; // Calendar day of goal_set_at, YYYY-MM-DD
     initial_weight_at_goal: number;
     current_weight: number;
     progress_percent: number;
