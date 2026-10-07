@@ -49,5 +49,11 @@ export interface WeightGoalProgress {
     daily_deficit_needed?: number;
     estimated_completion?: string;
     is_gaining: boolean;
+    // Least-squares line through the weigh-ins since the start: start_weight + kg_per_day * days since start_date.
+    // Absent until there is a weigh-in after the start day
+    trend?: {
+        start_weight: number;
+        kg_per_day: number;
+    };
 }
 

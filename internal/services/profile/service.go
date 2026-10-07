@@ -221,6 +221,50 @@ func (s *Service) weightOnOrBefore(userID int, day time.Time) (float64, error) {
 	return history[len(history)-1].Weight, nil
 }
 
+// weightTrend fits a least-squares line through the initial weight on the start day and every weigh-in after
+// that day, with x in calendar days since the start. Returns nil when there is no weigh-in after the start day
+func (s *Service) weightTrend(userID int, goalSetAt time.Time, initialWeight float64) (*WeightTrend, error) {
+	startDay := goalSetAt.UTC().Truncate(24 * time.Hour)
+	entries, err := s.weightHistRepo.GetByUserIDAndDateRange(userID,
+		startDay.AddDate(0, 0, 1).Format("2006-01-02"), "9999-12-31")
+	if err != nil {
+		s.logger.Error("Failed to get weight history for the trend", "user_id", userID, "error", err)
+		return nil, err
+	}
+	if len(entries) == 0 {
+		return nil, nil
+	}
+
+	xs := []float64{0}
+	ys := []float64{initialWeight}
+	for _, entry := range entries {
+		day := entry.RecordedAt.UTC().Truncate(24 * time.Hour)
+		xs = append(xs, math.Round(day.Sub(startDay).Hours()/24))
+		ys = append(ys, entry.Weight)
+	}
+
+	var meanX, meanY float64
+	for i := range xs {
+		meanX += xs[i]
+		meanY += ys[i]
+	}
+	n := float64(len(xs))
+	meanX /= n
+	meanY /= n
+
+	var covariance, variance float64
+	for i := range xs {
+		covariance += (xs[i] - meanX) * (ys[i] - meanY)
+		variance += (xs[i] - meanX) * (xs[i] - meanX)
+	}
+	if variance == 0 {
+		return nil, nil
+	}
+
+	slope := covariance / variance
+	return &WeightTrend{StartWeight: meanY - slope*meanX, KgPerDay: slope}, nil
+}
+
 // ClearWeightGoal clears the weight goal for the user
 func (s *Service) ClearWeightGoal(userID int) error {
 	s.logger.Debug("ClearWeightGoal called", "user_id", userID)
@@ -308,6 +352,12 @@ func (s *Service) GetWeightGoalProgress(userID int) (*WeightGoalResponse, error)
 		WeightLost:          math.Round(weightLost*100) / 100,    // Round to 2 decimals
 		IsGaining:           isGaining,
 	}
+
+	trend, err := s.weightTrend(userID, *user.GoalSetAt, initialWeight)
+	if err != nil {
+		return nil, err
+	}
+	response.Trend = trend
 
 	// Calculate days remaining and daily deficit if target date is set
 	if user.TargetDate != nil {

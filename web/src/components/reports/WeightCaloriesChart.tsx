@@ -28,9 +28,8 @@ ChartJS.register(
 interface GoalData {
   targetWeight: number;
   targetDate?: string;
-  goalSetAt: string;
-  initialWeightAtGoal: number;
-  currentWeight: number;
+  startDate: string; // YYYY-MM-DD
+  trend?: { startWeight: number; kgPerDay: number }; // Fitted through all weigh-ins since startDate
 }
 
 interface WeightCaloriesChartProps {
@@ -79,30 +78,16 @@ export default function WeightCaloriesChart({
   const weightMap = new Map(weightData.map(d => [d.date, d.weight]));
   const calorieMap = new Map(calorieData.map(d => [d.date, d.calories]));
 
-  // Calculate trajectory based on average weight change rate
+  // Trend line from the goal start, fitted on the server through all weigh-ins since then
   const calculateTrajectory = () => {
-    if (!goalData || sortedDates.length === 0) return null;
+    const trend = goalData?.trend;
+    if (!goalData || !trend || sortedDates.length === 0) return null;
 
-    const goalStartDate = new Date(goalData.goalSetAt);
-    const today = new Date();
-    const daysSinceGoalStart = differenceInDays(today, goalStartDate);
-
-    if (daysSinceGoalStart <= 0) return null;
-
-    // Calculate average daily change based on actual progress
-    const weightChange = goalData.currentWeight - goalData.initialWeightAtGoal;
-    const avgDailyChange = weightChange / daysSinceGoalStart;
-
-    // Generate trajectory points for each date in the chart
+    const goalStartDate = new Date(goalData.startDate);
     return sortedDates.map(dateStr => {
-      const date = new Date(dateStr);
-      const daysFromGoalStart = differenceInDays(date, goalStartDate);
-
+      const daysFromGoalStart = differenceInDays(new Date(dateStr), goalStartDate);
       if (daysFromGoalStart < 0) return null;
-
-      // Project weight based on average rate
-      const projectedWeight = goalData.initialWeightAtGoal + (avgDailyChange * daysFromGoalStart);
-      return projectedWeight;
+      return trend.startWeight + trend.kgPerDay * daysFromGoalStart;
     });
   };
 

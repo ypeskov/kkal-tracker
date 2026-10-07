@@ -44,17 +44,25 @@ type WeightGoalRequest struct {
 
 // WeightGoalResponse represents the weight goal progress data
 type WeightGoalResponse struct {
-	TargetWeight        float64    `json:"target_weight"`
-	TargetDate          *time.Time `json:"target_date,omitempty"`
-	GoalSetAt           time.Time  `json:"goal_set_at"`
-	StartDate           string     `json:"start_date"` // Calendar day of GoalSetAt (YYYY-MM-DD), what the form edits
-	InitialWeightAtGoal float64    `json:"initial_weight_at_goal"`
-	CurrentWeight       float64    `json:"current_weight"`
-	ProgressPercent     float64    `json:"progress_percent"`     // 0-100
-	WeightToGo          float64    `json:"weight_to_go"`         // Remaining weight to lose/gain
-	WeightLost          float64    `json:"weight_lost"`          // Weight already lost/gained
-	DaysRemaining       *int       `json:"days_remaining"`       // Days until target date (if set)
-	DailyDeficitNeeded  *float64   `json:"daily_deficit_needed"` // Required daily deficit (if target date set)
-	EstimatedCompletion *time.Time `json:"estimated_completion"` // If no target date, estimated at 0.5kg/week
-	IsGaining           bool       `json:"is_gaining"`           // True if gaining weight, false if losing
+	TargetWeight        float64      `json:"target_weight"`
+	TargetDate          *time.Time   `json:"target_date,omitempty"`
+	GoalSetAt           time.Time    `json:"goal_set_at"`
+	StartDate           string       `json:"start_date"` // Calendar day of GoalSetAt (YYYY-MM-DD), what the form edits
+	InitialWeightAtGoal float64      `json:"initial_weight_at_goal"`
+	CurrentWeight       float64      `json:"current_weight"`
+	ProgressPercent     float64      `json:"progress_percent"`     // 0-100
+	WeightToGo          float64      `json:"weight_to_go"`         // Remaining weight to lose/gain
+	WeightLost          float64      `json:"weight_lost"`          // Weight already lost/gained
+	DaysRemaining       *int         `json:"days_remaining"`       // Days until target date (if set)
+	DailyDeficitNeeded  *float64     `json:"daily_deficit_needed"` // Required daily deficit (if target date set)
+	EstimatedCompletion *time.Time   `json:"estimated_completion"` // If no target date, estimated at 0.5kg/week
+	IsGaining           bool         `json:"is_gaining"`           // True if gaining weight, false if losing
+	Trend               *WeightTrend `json:"trend,omitempty"`      // Absent until there is a weigh-in after the start day
+}
+
+// WeightTrend is the least-squares line through the weigh-ins since the goal start:
+// weight(day) = StartWeight + KgPerDay * days since StartDate
+type WeightTrend struct {
+	StartWeight float64 `json:"start_weight"`
+	KgPerDay    float64 `json:"kg_per_day"`
 }

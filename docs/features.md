@@ -7,7 +7,8 @@
 - **Weight Management**: weight history over time with charts
 - **Weight Goals**: target weight with optional target date and a start date, progress with visual indicators.
   Editing a goal keeps its start date and initial weight unless the start date is changed; the initial weight is the
-  latest weight on or before the start date
+  latest weight on or before the start date. The report chart shows a trend line: a least-squares fit through the
+  initial weight and every weigh-in after the start day (`trend` in the goal progress), extended to the target date
 - **Health Metrics**: BMI, BMR, TDEE based on the user profile (age, gender, activity level)
 - **Ingredient Database**: global ingredients with multilingual names and nutritional data
 - **User Profiles**: personal settings, preferences, gender, activity level

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math"
 	"net/http"
 	"testing"
 	"time"
@@ -67,6 +68,43 @@ func TestWeightGoalStartDate(t *testing.T) {
 		map[string]any{"target_weight": 71.0, "start_date": today, "target_date": today}, nil)
 	client.expect(http.StatusBadRequest, http.MethodPut, "/api/profile/goal",
 		map[string]any{"target_weight": 71.0, "start_date": "not-a-date"}, nil)
+}
+
+func TestWeightGoalTrend(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "goal-trend@example.com")
+
+	for _, entry := range []struct {
+		weight float64
+		date   string
+	}{{82, "2026-01-10"}, {80.5, "2026-01-15"}, {79, "2026-01-20"}, {78.4, "2026-01-25"}} {
+		client.expect(http.StatusCreated, http.MethodPost, "/api/weight",
+			map[string]any{"weight": entry.weight, "recorded_at": entry.date}, nil)
+	}
+
+	type trendResponse struct {
+		Trend *struct {
+			StartWeight float64 `json:"start_weight"`
+			KgPerDay    float64 `json:"kg_per_day"`
+		} `json:"trend"`
+	}
+
+	// The line goes through all weigh-ins since the start (80.5, 79, 78.4 on days 0, 5, 10), not just the last one;
+	// the weigh-in before the start is ignored
+	var goal trendResponse
+	client.expect(http.StatusOK, http.MethodPut, "/api/profile/goal",
+		map[string]any{"target_weight": 70.0, "start_date": "2026-01-15"}, &goal)
+	if goal.Trend == nil || math.Abs(goal.Trend.KgPerDay+0.21) > 1e-9 || math.Abs(goal.Trend.StartWeight-80.35) > 1e-9 {
+		t.Fatalf("trend = %+v, want 80.35 kg at the start and -0.21 kg/day", goal.Trend)
+	}
+
+	// No weigh-in after the start day: nothing to draw a trend from
+	var fresh trendResponse
+	client.expect(http.StatusOK, http.MethodPut, "/api/profile/goal",
+		map[string]any{"target_weight": 70.0, "start_date": "2026-01-25"}, &fresh)
+	if fresh.Trend != nil {
+		t.Errorf("trend = %+v, want none without weigh-ins after the start", fresh.Trend)
+	}
 }
 
 func TestWeightGoalEditKeepsStart(t *testing.T) {

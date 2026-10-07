@@ -280,9 +280,11 @@ export default function Report() {
                   goalData={goalProgress ? {
                     targetWeight: goalProgress.target_weight,
                     targetDate: goalProgress.target_date,
-                    goalSetAt: goalProgress.goal_set_at,
-                    initialWeightAtGoal: goalProgress.initial_weight_at_goal,
-                    currentWeight: goalProgress.current_weight,
+                    startDate: goalProgress.start_date,
+                    trend: goalProgress.trend && {
+                      startWeight: goalProgress.trend.start_weight,
+                      kgPerDay: goalProgress.trend.kg_per_day,
+                    },
                   } : undefined}
                 />
               )}
