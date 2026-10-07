@@ -13,6 +13,7 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DEPLOY_ENV="${SCRIPT_DIR}/.deploy.env"
 DEPLOYMENT_YAML="${SCRIPT_DIR}/kubernetes/base/deployment.yaml"
+VERSION_FILE="${SCRIPT_DIR}/version.txt"
 IMAGE_NAME="ypeskov/kcal-tracker"
 
 # ─── Load config ──────────────────────────────────────────────────────────────
@@ -40,8 +41,6 @@ PLATFORM="${PLATFORM:-}"
 
 # ─── Defaults ─────────────────────────────────────────────────────────────────
 TAG=""
-SKIP_BUILD=false
-SKIP_K8S=false
 SKIP_DEPLOY=false
 DRY_RUN=false
 
@@ -51,23 +50,23 @@ show_help() {
 Usage: $(basename "$0") --tag=TAG [OPTIONS]
 
 Automated deployment pipeline for Kkal Tracker.
+Production is built only from master: develop is merged into master first,
+then the image is built from the master checkout.
 
 Performs the full cycle:
-  1. Validate git state (on develop, clean tree)
-  2. Build & push Docker image to Docker Hub
-  3. Update k8s deployment manifest with new image tag
-  4. Commit version.txt + deployment.yaml, push develop
-  5. Merge develop → master, push master
-  6. SSH to server, git pull, kubectl apply
+  1. Validate git state (on develop, clean tree, develop and master in sync with origin)
+  2. Write the version to version.txt and the k8s deployment manifest, commit on develop, push develop
+  3. Merge develop → master, push master
+  4. Build & push the Docker image from master
+  5. SSH to server, git pull (master), kubectl apply
+  6. Back on develop
 
 REQUIRED:
     --tag=TAG         Version tag (e.g., 5.5.0)
 
 OPTIONS:
     --help            Show this help message
-    --skip-build      Skip Docker build & push (steps 2-5)
-    --skip-k8s        Skip k8s manifest update (step 3-4)
-    --skip-deploy     Skip server deployment (step 6)
+    --skip-deploy     Stop after the image is pushed (step 5 is skipped)
     --dry-run         Show what would be done without executing
     --platform=PLAT   Override Docker platform (default: host architecture)
 
@@ -99,14 +98,6 @@ while [ $# -gt 0 ]; do
             PLATFORM="${1#--platform=}"
             shift
             ;;
-        --skip-build)
-            SKIP_BUILD=true
-            shift
-            ;;
-        --skip-k8s)
-            SKIP_K8S=true
-            shift
-            ;;
         --skip-deploy)
             SKIP_DEPLOY=true
             shift
@@ -130,6 +121,11 @@ if [ -z "$TAG" ]; then
     exit 1
 fi
 
+if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo -e "${RED}Error: tag must look like X.Y.Z (got '${TAG}')${NC}"
+    exit 1
+fi
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 STEP_NUM=0
 
@@ -147,11 +143,23 @@ warn() {
     echo -e "  ${YELLOW}⚠${NC} $1"
 }
 
+fail() {
+    echo -e "${RED}Error: $1${NC}"
+    exit 1
+}
+
 run() {
     if [ "$DRY_RUN" = true ]; then
         echo -e "  ${YELLOW}[dry-run]${NC} $*"
     else
         "$@"
+    fi
+}
+
+# Whatever happens after the checkout of master, finish on develop
+return_to_develop() {
+    if [ "$(git -C "$SCRIPT_DIR" branch --show-current)" = "master" ]; then
+        git -C "$SCRIPT_DIR" checkout -q develop || warn "Could not switch back to develop"
     fi
 }
 
@@ -167,8 +175,6 @@ echo -e "  Tag:      ${GREEN}${TAG}${NC}"
 echo -e "  Image:    ${IMAGE_NAME}:${TAG}"
 [ -n "$PLATFORM" ] && echo -e "  Platform: ${PLATFORM}"
 echo -e "  Server:   ${SSH_HOST}"
-[ "$SKIP_BUILD" = true ]  && warn "Skipping build"
-[ "$SKIP_K8S" = true ]    && warn "Skipping k8s manifest update"
 [ "$SKIP_DEPLOY" = true ] && warn "Skipping server deploy"
 [ "$DRY_RUN" = true ]     && warn "DRY RUN — no changes will be made"
 echo ""
@@ -179,94 +185,106 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+cd "$SCRIPT_DIR"
+
 # ─── Step 1: Validate git state ──────────────────────────────────────────────
 step "Validating git state"
 
-cd "$SCRIPT_DIR"
-
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" != "develop" ]; then
-    echo -e "${RED}Error: Must be on 'develop' branch (currently on '${CURRENT_BRANCH}')${NC}"
-    exit 1
+    fail "Must be on 'develop' branch (currently on '${CURRENT_BRANCH}')"
 fi
 info "On branch: develop"
 
-if [ "$SKIP_BUILD" = false ]; then
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo -e "${RED}Error: Working tree has uncommitted changes. Commit or stash them first.${NC}"
-        exit 1
-    fi
-    info "Working tree is clean"
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    fail "Working tree has uncommitted changes. Commit or stash them first."
+fi
+info "Working tree is clean"
+
+git fetch -q origin develop master
+if [ -n "$(git log --oneline develop..origin/develop)" ]; then
+    fail "origin/develop has commits that are not in the local develop. Pull first."
+fi
+if [ -n "$(git log --oneline master..origin/master)" ]; then
+    fail "origin/master has commits that are not in the local master. Pull first."
+fi
+if [ -n "$(git log --oneline develop..master)" ]; then
+    fail "master has commits that are not in develop. Merge master into develop first."
+fi
+info "develop and master are in sync with origin"
+
+if git rev-parse -q --verify "refs/tags/v${TAG}" > /dev/null; then
+    fail "Tag v${TAG} already exists"
 fi
 
-# ─── Step 2: Build & push Docker image ───────────────────────────────────────
-if [ "$SKIP_BUILD" = false ]; then
-    step "Building and pushing Docker image (${TAG})"
-    cd "$SCRIPT_DIR"
-    run ./build-and-push.sh "$TAG" --push $PLATFORM_FLAG
-    info "Image pushed: ${IMAGE_NAME}:${TAG}"
+# ─── Step 2: Version commit on develop ───────────────────────────────────────
+step "Writing version ${TAG}, committing on develop, pushing develop"
+
+if [ "$DRY_RUN" = true ]; then
+    echo -e "  ${YELLOW}[dry-run]${NC} version.txt <- v${TAG}; deployment.yaml image <- ${IMAGE_NAME}:${TAG}"
+else
+    echo "v${TAG}" > "$VERSION_FILE"
+    sed -i.bak "s|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${TAG}|" "$DEPLOYMENT_YAML"
+    rm -f "${DEPLOYMENT_YAML}.bak"
 fi
 
-# ─── Step 3: Update k8s deployment manifest ──────────────────────────────────
-if [ "$SKIP_K8S" = false ]; then
-    step "Updating k8s deployment manifest"
-    cd "$SCRIPT_DIR"
-    if [ "$DRY_RUN" = true ]; then
-        echo -e "  ${YELLOW}[dry-run]${NC} sed update deployment.yaml image to ${IMAGE_NAME}:${TAG}"
-    else
-        sed -i.bak "s|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${TAG}|" "$DEPLOYMENT_YAML"
-        rm -f "${DEPLOYMENT_YAML}.bak"
-    fi
-    info "deployment.yaml updated to ${IMAGE_NAME}:${TAG}"
+run git add "$VERSION_FILE" "$DEPLOYMENT_YAML"
+if [ "$DRY_RUN" = false ] && git diff --cached --quiet; then
+    fail "version.txt and deployment.yaml already say ${TAG}; nothing to release"
 fi
+run git commit -q -m "v${TAG}"
+run git push -q origin develop
+info "Pushed to develop"
 
-# ─── Step 4: Commit & push develop ───────────────────────────────────────────
-if [ "$SKIP_BUILD" = false ] || [ "$SKIP_K8S" = false ]; then
-    step "Committing changes and pushing develop"
-    cd "$SCRIPT_DIR"
+# ─── Step 3: Merge develop → master ──────────────────────────────────────────
+step "Merging develop → master, pushing master"
 
-    FILES_TO_ADD=()
-    [ "$SKIP_BUILD" = false ] && FILES_TO_ADD+=("version.txt")
-    [ "$SKIP_K8S" = false ]   && FILES_TO_ADD+=("kubernetes/base/deployment.yaml")
+trap return_to_develop EXIT
+run git checkout -q master
+run git merge -q --no-edit develop
+run git push -q origin master
+info "Merged and pushed to master"
 
-    run git add "${FILES_TO_ADD[@]}"
-    if git diff --cached --quiet 2>/dev/null; then
-        warn "No changes to commit"
-    else
-        run git commit -m "v${TAG}"
-        run git push origin develop
-        info "Pushed to develop"
-    fi
+# ─── Step 4: Build & push the Docker image from master ───────────────────────
+step "Building and pushing Docker image ${IMAGE_NAME}:${TAG} from master"
+
+run ./build-and-push.sh "$TAG" --push $PLATFORM_FLAG
+# build-and-push.sh rewrites version.txt with the same content; nothing may be left behind
+if [ "$DRY_RUN" = false ] && ! git diff --quiet; then
+    fail "The build changed tracked files on master: $(git diff --name-only | tr '\n' ' ')"
 fi
+run git tag "v${TAG}"
+run git push -q origin "v${TAG}"
+info "Image pushed, master tagged v${TAG}"
 
-# ─── Step 5: Merge develop → master ──────────────────────────────────────────
-if [ "$SKIP_BUILD" = false ] || [ "$SKIP_K8S" = false ] || [ "$SKIP_DEPLOY" = false ]; then
-    step "Merging develop → master"
-    run git checkout master
-    run git merge develop --no-edit
-    run git push origin master
-    run git checkout develop
-    info "Merged and pushed to master, back on develop"
-fi
-
-# ─── Step 6: Deploy to server ────────────────────────────────────────────────
+# ─── Step 5: Deploy to server ────────────────────────────────────────────────
 if [ "$SKIP_DEPLOY" = false ]; then
     step "Deploying to server (${SSH_HOST})"
     run ssh "$SSH_HOST" "bash -l -c '
 set -euo pipefail
 export KUBECONFIG=\${KUBECONFIG:-/home/kuber/.kube/config}
-echo \"Pulling latest changes...\"
 cd ${K8S_REPO_SERVER}
-git pull
+if [ \"\$(git branch --show-current)\" != master ]; then
+    echo \"The server repo is not on master\" >&2
+    exit 1
+fi
+echo \"Pulling master...\"
+git pull -q
 
 echo \"Applying k8s manifests...\"
 kubectl apply -k kubernetes/overlays/prod
 
 echo \"Checking rollout status...\"
-kubectl rollout status deployment/kkal-tracker -n default --timeout=120s || true
+kubectl rollout status deployment/kkal-tracker -n default --timeout=120s
 '"
     info "Deployed to server"
 fi
+
+# ─── Step 6: Back on develop ─────────────────────────────────────────────────
+step "Returning to develop"
+run git checkout -q develop
+trap - EXIT
+info "On branch: develop"
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 echo ""
