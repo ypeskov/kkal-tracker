@@ -50,23 +50,28 @@ show_help() {
 Usage: $(basename "$0") --tag=TAG [OPTIONS]
 
 Automated deployment pipeline for Kkal Tracker.
-Production is built only from master: develop is merged into master first,
-then the image is built from the master checkout.
+Production is built only from master, and nothing is pushed to git before the
+artifact it describes exists: the image is pushed before the version commit,
+the version commit before the deploy.
 
 Performs the full cycle:
   1. Validate git state (on develop, clean tree, develop and master in sync with origin)
-  2. Write the version to version.txt and the k8s deployment manifest, commit on develop, push develop
-  3. Merge develop → master, push master
-  4. Build & push the Docker image from master
-  5. SSH to server, git pull (master), kubectl apply
-  6. Back on develop
+  2. Push develop
+  3. Merge develop into master locally (not pushed yet)
+  4. Build & push the Docker image from the master checkout
+     (on failure master is reset to origin/master and nothing has left the machine)
+  5. Write the version to version.txt and the k8s deployment manifest, commit vX.Y.Z on master,
+     tag it, push master and the tag
+  6. Merge master back into develop, push develop
+  7. SSH to server, git pull (master), kubectl apply
+  8. Back on develop
 
 REQUIRED:
     --tag=TAG         Version tag (e.g., 5.5.0)
 
 OPTIONS:
     --help            Show this help message
-    --skip-deploy     Stop after the image is pushed (step 5 is skipped)
+    --skip-deploy     Do everything except the server deploy (step 7)
     --dry-run         Show what would be done without executing
     --platform=PLAT   Override Docker platform (default: host architecture)
 
@@ -156,9 +161,17 @@ run() {
     fi
 }
 
-# Whatever happens after the checkout of master, finish on develop
+# Whatever happens after the checkout of master, finish on develop. Until master is pushed
+# (MASTER_PUSHED), the local merge and the version commit are discarded, so a failed build
+# leaves master exactly as on origin and the same tag can be released again
+MASTER_PUSHED=false
 return_to_develop() {
     if [ "$(git -C "$SCRIPT_DIR" branch --show-current)" = "master" ]; then
+        if [ "$MASTER_PUSHED" = false ] && [ "$DRY_RUN" = false ]; then
+            warn "Resetting local master to origin/master"
+            git -C "$SCRIPT_DIR" tag -d "v${TAG}" > /dev/null 2>&1 || true
+            git -C "$SCRIPT_DIR" reset -q --hard origin/master
+        fi
         git -C "$SCRIPT_DIR" checkout -q develop || warn "Could not switch back to develop"
     fi
 }
@@ -216,10 +229,30 @@ info "develop and master are in sync with origin"
 if git rev-parse -q --verify "refs/tags/v${TAG}" > /dev/null; then
     fail "Tag v${TAG} already exists"
 fi
+if [ "$(cat "$VERSION_FILE")" = "v${TAG}" ]; then
+    fail "version.txt already says v${TAG}; pick the next version"
+fi
+info "Version v${TAG} is new"
 
-# ─── Step 2: Version commit on develop ───────────────────────────────────────
-step "Writing version ${TAG}, committing on develop, pushing develop"
+# ─── Step 2: Push develop ────────────────────────────────────────────────────
+step "Pushing develop"
+run git push -q origin develop
+info "Pushed to develop"
 
+# ─── Step 3: Merge develop → master (locally) ────────────────────────────────
+step "Merging develop → master (not pushed yet)"
+trap return_to_develop EXIT
+run git checkout -q master
+run git merge -q --no-edit develop
+info "master = develop, nothing pushed"
+
+# ─── Step 4: Build & push the Docker image from master ───────────────────────
+step "Building and pushing Docker image ${IMAGE_NAME}:${TAG} from master"
+run ./build-and-push.sh "$TAG" --push $PLATFORM_FLAG
+info "Image pushed: ${IMAGE_NAME}:${TAG}"
+
+# ─── Step 5: Version commit on master ────────────────────────────────────────
+step "Writing version ${TAG}, committing on master, pushing master"
 if [ "$DRY_RUN" = true ]; then
     echo -e "  ${YELLOW}[dry-run]${NC} version.txt <- v${TAG}; deployment.yaml image <- ${IMAGE_NAME}:${TAG}"
 else
@@ -227,37 +260,22 @@ else
     sed -i.bak "s|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${TAG}|" "$DEPLOYMENT_YAML"
     rm -f "${DEPLOYMENT_YAML}.bak"
 fi
-
 run git add "$VERSION_FILE" "$DEPLOYMENT_YAML"
-if [ "$DRY_RUN" = false ] && git diff --cached --quiet; then
-    fail "version.txt and deployment.yaml already say ${TAG}; nothing to release"
-fi
 run git commit -q -m "v${TAG}"
-run git push -q origin develop
-info "Pushed to develop"
-
-# ─── Step 3: Merge develop → master ──────────────────────────────────────────
-step "Merging develop → master, pushing master"
-
-trap return_to_develop EXIT
-run git checkout -q master
-run git merge -q --no-edit develop
-run git push -q origin master
-info "Merged and pushed to master"
-
-# ─── Step 4: Build & push the Docker image from master ───────────────────────
-step "Building and pushing Docker image ${IMAGE_NAME}:${TAG} from master"
-
-run ./build-and-push.sh "$TAG" --push $PLATFORM_FLAG
-# build-and-push.sh rewrites version.txt with the same content; nothing may be left behind
-if [ "$DRY_RUN" = false ] && ! git diff --quiet; then
-    fail "The build changed tracked files on master: $(git diff --name-only | tr '\n' ' ')"
-fi
 run git tag "v${TAG}"
-run git push -q origin "v${TAG}"
-info "Image pushed, master tagged v${TAG}"
+run git push -q origin master "v${TAG}"
+MASTER_PUSHED=true
+info "Pushed master, tagged v${TAG}"
 
-# ─── Step 5: Deploy to server ────────────────────────────────────────────────
+# ─── Step 6: Sync develop with the version ───────────────────────────────────
+step "Merging master → develop, pushing develop"
+run git checkout -q develop
+trap - EXIT
+run git merge -q --no-edit master
+run git push -q origin develop
+info "develop has v${TAG}"
+
+# ─── Step 7: Deploy to server ────────────────────────────────────────────────
 if [ "$SKIP_DEPLOY" = false ]; then
     step "Deploying to server (${SSH_HOST})"
     run ssh "$SSH_HOST" "bash -l -c '
@@ -279,12 +297,6 @@ kubectl rollout status deployment/kkal-tracker -n default --timeout=120s
 '"
     info "Deployed to server"
 fi
-
-# ─── Step 6: Back on develop ─────────────────────────────────────────────────
-step "Returning to develop"
-run git checkout -q develop
-trap - EXIT
-info "On branch: develop"
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 echo ""
