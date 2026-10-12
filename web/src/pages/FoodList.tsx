@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ingredientService, Ingredient, CreateIngredientData, UpdateIngredientData } from '@/api/ingredients';
+import {
+  ingredientService,
+  DuplicateIngredientError,
+  Ingredient,
+  CreateIngredientData,
+  UpdateIngredientData,
+} from '@/api/ingredients';
 import EditIngredientModal from '@/components/EditIngredientModal';
 import AddIngredientModal from '@/components/AddIngredientModal';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
@@ -57,6 +63,16 @@ export default function FoodList() {
     },
   });
 
+  // Inline message for a failed create/update: names the existing ingredient on a duplicate name,
+  // a generic save error otherwise (the server's response text is never shown)
+  const saveErrorMessage = (error: Error | null): string | null => {
+    if (!error) return null;
+    if (error instanceof DuplicateIngredientError) {
+      return t('foodList.duplicateName', { name: error.existing.name });
+    }
+    return t('foodList.saveError');
+  };
+
   // Filter ingredients based on search text and sort by name
   const filteredIngredients = ingredients
     .filter(ingredient =>
@@ -65,11 +81,13 @@ export default function FoodList() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleRowClick = (ingredient: Ingredient) => {
+    updateMutation.reset();
     setSelectedIngredient(ingredient);
     setIsEditModalOpen(true);
   };
 
   const handleAddNew = () => {
+    createMutation.reset();
     setIsAddModalOpen(true);
   };
 
@@ -138,8 +156,13 @@ export default function FoodList() {
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCancel={() => {
+            updateMutation.reset();
             setIsEditModalOpen(false);
             setSelectedIngredient(null);
+          }}
+          errorMessage={saveErrorMessage(updateMutation.error)}
+          onNameChange={() => {
+            if (updateMutation.isError) updateMutation.reset();
           }}
           isUpdating={updateMutation.isPending}
           isDeleting={deleteMutation.isPending}
@@ -149,7 +172,14 @@ export default function FoodList() {
       {isAddModalOpen && (
         <AddIngredientModal
           onCreate={handleCreate}
-          onCancel={() => setIsAddModalOpen(false)}
+          onCancel={() => {
+            createMutation.reset();
+            setIsAddModalOpen(false);
+          }}
+          errorMessage={saveErrorMessage(createMutation.error)}
+          onNameChange={() => {
+            if (createMutation.isError) createMutation.reset();
+          }}
           isCreating={createMutation.isPending}
         />
       )}

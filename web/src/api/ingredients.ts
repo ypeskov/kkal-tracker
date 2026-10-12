@@ -26,6 +26,49 @@ export interface UpdateIngredientData {
   proteins?: number
 }
 
+// Thrown on HTTP 409: another ingredient of the user already has this name (compared ignoring case, spacing and ё/е)
+export class DuplicateIngredientError extends Error {
+  readonly existing: Ingredient
+
+  constructor(existing: Ingredient) {
+    super('An ingredient with this name already exists')
+    this.name = 'DuplicateIngredientError'
+    this.existing = existing
+  }
+}
+
+// Thrown on any other non-OK response; keeps the status, never the server's response text
+export class IngredientRequestError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'IngredientRequestError'
+    this.status = status
+  }
+}
+
+const isIngredient = (value: unknown): value is Ingredient =>
+  typeof value === 'object' && value !== null &&
+  typeof (value as Ingredient).id === 'number' && typeof (value as Ingredient).name === 'string'
+
+// Builds the error for a failed create/update: a DuplicateIngredientError for a well-formed 409 body,
+// otherwise an IngredientRequestError with the status and the given fallback message
+const toSaveError = async (response: Response, fallback: string): Promise<Error> => {
+  if (response.status === 409) {
+    try {
+      const body: unknown = await response.json()
+      const existing = (body as { existing_ingredient?: unknown } | null)?.existing_ingredient
+      if (isIngredient(existing)) {
+        return new DuplicateIngredientError(existing)
+      }
+    } catch {
+      // Malformed body: fall through to the generic error
+    }
+  }
+  return new IngredientRequestError(response.status, fallback)
+}
+
 class IngredientService {
   private getAuthHeaders = () => {
     const token = sessionStorage.getItem('token')
@@ -161,8 +204,7 @@ class IngredientService {
       })
 
       if (!response.ok) {
-        const error = await response.text()
-        throw new Error(error || 'Failed to create ingredient')
+        throw await toSaveError(response, 'Failed to create ingredient')
       }
 
       const newIngredient = await response.json()
@@ -187,8 +229,7 @@ class IngredientService {
       })
 
       if (!response.ok) {
-        const error = await response.text()
-        throw new Error(error || 'Failed to update ingredient')
+        throw await toSaveError(response, 'Failed to update ingredient')
       }
 
       const updatedIngredient = await response.json()

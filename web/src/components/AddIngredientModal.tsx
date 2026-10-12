@@ -7,12 +7,18 @@ import CalculatorInput from './CalculatorInput';
 interface AddIngredientModalProps {
   onCreate: (data: CreateIngredientData) => void;
   onCancel: () => void;
+  // Inline save error (duplicate name or generic), null when there is none
+  errorMessage: string | null;
+  // Called on every edit of the name field, so that the page can hide the save error
+  onNameChange: () => void;
   isCreating: boolean;
 }
 
 export default function AddIngredientModal({
   onCreate,
   onCancel,
+  errorMessage,
+  onNameChange,
   isCreating
 }: AddIngredientModalProps) {
   const { t } = useTranslation();
@@ -56,7 +62,10 @@ export default function AddIngredientModal({
               id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                onNameChange();
+              }}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               autoFocus
@@ -110,6 +119,12 @@ export default function AddIngredientModal({
               />
             </div>
           </div>
+
+          {errorMessage && (
+            <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMessage}
+            </div>
+          )}
 
           <div className="flex justify-center items-center mt-8 pt-5 border-t border-gray-200">
             <div className="flex gap-3">

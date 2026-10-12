@@ -81,7 +81,9 @@
     "editIngredient": "Edit Ingredient",
     "addNewIngredient": "Add New Ingredient",
     "confirmDelete": "Are you sure you want to delete \"{{foodName}}\"? This action cannot be undone.",
-    "optional": "Optional"
+    "optional": "Optional",
+    "duplicateName": "An ingredient named \"{{name}}\" already exists",
+    "saveError": "Could not save the ingredient. Please try again."
   },
   "report": {
     "title": "Reports",
