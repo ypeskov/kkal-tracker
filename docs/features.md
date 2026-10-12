@@ -32,7 +32,17 @@
   - Time-limited (N days) or permanent keys
   - `X-API-Key` header authentication for the `/api/v1` endpoints
   - A key gives full access to the user's data, both read and write (there are no scopes)
+  - Every skill download (Settings → AI) creates a key named `Claude skill YYYY-MM-DD HH:MM UTC` without expiry;
+    earlier keys are never revoked automatically and are deleted on the API Keys tab
 - **Food Logging API for AI agents**: an agent (e.g. voice dictation through a skill from `skills/`) stores meals via `/api/v1`
+  - Settings → AI downloads the `kkal-tracker-food-log` skill as a zip ready to upload to Claude: the server creates a
+    new API key, puts it into the skill's `api_key` file and points the skill at its `APP_URL`
+    (`POST /api/skills/food-log/download`). The development server (`ENVIRONMENT=development`) gives the
+    `kkal-tracker-food-log-dev` variant, so the dev and prod skills can be installed side by side
+  - The AI tab explains the skill and shows the install steps for claude.ai (code execution and network access to the
+    site's own domain, Settings → Capabilities → Skills → Upload skill) and Claude Code (unzip into
+    `~/.claude/skills/`), the note that every download adds a key, and a warning that the zip holds a secret key.
+    The file name comes from `Content-Disposition`; a 429 shows a "try again in a minute" message
   - The agent reads the whole ingredient list (`GET /api/v1/ingredients`, with usage statistics) and matches foods itself
   - `POST /api/v1/food` takes a meal as a list of items: `ingredient_id` for an existing ingredient or `new_ingredient`
     for a new one. The server never matches or creates ingredients by name on its own

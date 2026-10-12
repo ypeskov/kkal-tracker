@@ -15,7 +15,8 @@ tmp_dir = "tmp"
   full_bin = ""
   include_dir = []
   include_ext = ["go", "tsx", "ts", "html", "css", "js", "json"]
-  include_file = []
+  # Skill files embedded into the binary (skills/embed.go); md/py are not in include_ext to skip doc edits
+  include_file = ["skills/kkal-tracker-food-log/SKILL.md", "skills/kkal-tracker-food-log/scripts/kkal_client.py"]
   kill_delay = "0s"
   log = "build-errors.log"
   poll = false

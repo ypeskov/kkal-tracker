@@ -20,6 +20,7 @@ import (
 	metricshandler "ypeskov/kkal-tracker/internal/handlers/metrics"
 	"ypeskov/kkal-tracker/internal/handlers/profile"
 	reportshandler "ypeskov/kkal-tracker/internal/handlers/reports"
+	skillhandler "ypeskov/kkal-tracker/internal/handlers/skill"
 	"ypeskov/kkal-tracker/internal/handlers/static"
 	weighthandler "ypeskov/kkal-tracker/internal/handlers/weight"
 	"ypeskov/kkal-tracker/internal/middleware"
@@ -34,6 +35,7 @@ import (
 	metricsservice "ypeskov/kkal-tracker/internal/services/metrics"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
+	skillservice "ypeskov/kkal-tracker/internal/services/skill"
 	weightservice "ypeskov/kkal-tracker/internal/services/weight"
 
 	"github.com/labstack/echo/v5"
@@ -123,6 +125,7 @@ func (s *Server) Start() *http.Server {
 	aiSvc := aiservice.New(s.config, s.logger)
 	exportSvc := exportservice.New(calorieService, weightService, emailService, s.logger)
 	apiKeySvc := apikeyservice.New(s.apiKeyRepo, s.logger)
+	skillSvc := skillservice.New(s.config, apiKeySvc, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
@@ -134,6 +137,7 @@ func (s *Server) Start() *http.Server {
 	aiHandler := aihandler.New(aiSvc, calorieService, weightService, s.userRepo, s.logger)
 	exportHandler := exporthandler.New(exportSvc, s.userRepo, s.logger)
 	apiKeyHandler := apikeyhandler.New(apiKeySvc, s.logger)
+	skillHandler := skillhandler.New(skillSvc, s.logger)
 	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeySvc, s.logger)
 	apiDataHandler := apidatahandler.New(calorieService, weightService, ingredientService, s.logger)
 
@@ -179,7 +183,7 @@ func (s *Server) Start() *http.Server {
 
 	// AI routes require authentication and strict rate limiting
 	// Rate: 2 requests per minute (1 request every 30 seconds) to control AI costs
-	aiRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(2.0/60.0))
+	aiRateLimiter := echomiddleware.RateLimiter(echomiddleware.NewRateLimiterMemoryStore(2.0 / 60.0))
 	aiGroup := apiGroup.Group("/ai", authMiddleware.RequireAuth, aiRateLimiter)
 	aiHandler.RegisterRoutes(aiGroup)
 
@@ -190,6 +194,11 @@ func (s *Server) Start() *http.Server {
 	// API key management routes (JWT auth - user manages their keys)
 	apiKeysGroup := apiGroup.Group("/api-keys", authMiddleware.RequireAuth)
 	apiKeyHandler.RegisterRoutes(apiKeysGroup)
+
+	// Agent skill downloads (JWT auth): each one creates an API key, so they are rate limited per user
+	skillRateLimiter := newUserRateLimiter(s.logger, "skill-download", skillDownloadRateBurst, skillDownloadRateInterval)
+	skillsGroup := apiGroup.Group("/skills", authMiddleware.RequireAuth, skillRateLimiter)
+	skillHandler.RegisterRoutes(skillsGroup)
 
 	// External data API (API key auth, rate limited: 60 req/min with a burst for multi-step clients)
 	// The limiter runs before the API key check so that requests with invalid keys are limited too

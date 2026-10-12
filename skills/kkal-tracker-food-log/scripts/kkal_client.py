@@ -23,8 +23,9 @@ import urllib.parse
 import urllib.request
 
 # --- Configuration -----------------------------------------------------------
-# Create the key in Kkal Tracker: Settings -> API Keys. Put it into a file named "api_key"
-# in the skill folder (next to SKILL.md) or paste it here.
+# The skill downloaded from Kkal Tracker (Settings -> AI -> Download skill) is ready to use: its key is in
+# the file named "api_key" in the skill folder (next to SKILL.md). Otherwise create a key in Kkal Tracker
+# (Settings -> API Keys) and put it into that file or paste it here.
 # The environment variables KKAL_API_KEY and KKAL_BASE_URL take precedence.
 DEFAULT_BASE_URL = "https://kcal.peskov.info"
 API_KEY = "XXXXXXXXX"
@@ -60,7 +61,8 @@ def fail(message):
 def request(method, path, body=None):
     """Send a request and return (status, parsed JSON or None)."""
     if not API_KEY or API_KEY == API_KEY_PLACEHOLDER:
-        fail("API key is not configured. Create one in Kkal Tracker (Settings -> API Keys) "
+        fail("API key is not configured. Download the ready-to-use skill in Kkal Tracker (Settings -> AI -> "
+             "Download skill) and install it in place of this one, or create a key in Settings -> API Keys "
              f"and save it to {API_KEY_FILE} or set KKAL_API_KEY.")
 
     headers = {"X-API-Key": API_KEY, "Accept": "application/json"}

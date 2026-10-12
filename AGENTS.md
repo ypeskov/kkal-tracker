@@ -16,6 +16,7 @@ make watch                 # dev server with Air live reload (see the dev-server
 make build                 # frontend + backend; make build-frontend builds only web/dist
 make migrate-up            # also: migrate-down, migrate-status, migrate-create NAME=...
 make seed                  # seed ingredients; seed-clean re-seeds (dev only)
+make skill-dev             # regenerate skills/kkal-tracker-food-log-dev after editing the production skill
 go vet ./... && go test ./...                          # tests need web/dist: run make build-frontend first
 cd web && npx tsc --noEmit -p tsconfig.app.json && npm run lint
 ```
@@ -38,7 +39,9 @@ migrated SQLite database with a fake SMTP server (register → activation → lo
 - **CSP** (`internal/server/security.go`): scripts only from the own origin, no inline scripts, no `eval`. Do not add
   inline `<script>`, external script/style/font hosts or eval-based code without updating the policy
 - **Secrets**: API keys never go to the repository (skills hold the `XXXXXXXXX` placeholder, real keys live in
-  git-ignored `api_key` files); `.env` / `.env.secret` exist only locally and on the server
+  git-ignored `api_key` files, also excluded from the Docker build context by `.dockerignore`; users get a key into a
+  skill through the Settings → AI download, never by embedding `api_key`); `.env` / `.env.secret` exist only locally
+  and on the server
 - **Frontend**: Tailwind utilities only, every user-facing string through `t()` in all 4 locales, units too
   (`common.kg`, `common.kcalPerDay`). Layout and component patterns: the `frontend-style` skill
 - **API**: all routes under `/api`; list in [`docs/api.md`](docs/api.md)

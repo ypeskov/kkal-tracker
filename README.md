@@ -195,6 +195,7 @@ All endpoints are under `/api`. Unknown `/api` paths answer with 404, they never
 | `GET /api/ai/status`, `POST /api/ai/analyze` | AI insights |
 | `POST /api/export` | Export to Excel: download or email |
 | `GET, POST /api/api-keys`, `POST /api/api-keys/:id/revoke`, `DELETE /api/api-keys/:id` | API key management |
+| `POST /api/skills/food-log/download` | Food logging agent skill as a zip with a new API key (5, then 1/min per user) |
 
 Rate limits per IP: `/api/auth/*` 5 requests per second; registration 3 attempts, then one per 20 minutes; `/api/ai/*` 2 requests per minute.
 
@@ -241,7 +242,8 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 `skills/` contains ready-made skills that let an AI agent log food through the external API, for example from voice dictation.
 
 - `kkal-tracker-food-log/` is the production skill: `SKILL.md` and the client `scripts/kkal_client.py` (Python standard library only).
-- `kkal-tracker-food-log-dev/` is the same skill pointed at the development server. It is generated, do not edit it by hand: change the production skill and run `python3 skills/sync_dev_skill.py`.
+- `kkal-tracker-food-log-dev/` is the same skill pointed at the development server. It is generated, do not edit it by hand: change the production skill and run `make skill-dev` (`go run ./cmd/skillgen [URL]`, default `https://dev-kcal.peskov.info`). A test fails when the committed copy is out of date.
+- Users get a configured skill from **Settings → AI → Download skill**: a zip ready to upload to Claude, with a new API key in its `api_key` file and the server's `APP_URL` as the base URL (the `-dev` variant on a server with `ENVIRONMENT=development`). The two production skill files are embedded into the binary (`skills/embed.go`).
 - The client takes the key from the `KKAL_API_KEY` variable or from the git-ignored `api_key` file in the skill folder; `KKAL_BASE_URL` overrides the server address. The scripts in the repository hold only the `XXXXXXXXX` placeholder.
 
 ## Project Structure
@@ -250,7 +252,8 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 cmd/
 ├── web/           # Web server
 ├── migrate/       # Migration runner
-└── seed/          # Database seeding, SQL files in sql/
+├── seed/          # Database seeding, SQL files in sql/
+└── skillgen/      # Regenerates the dev agent skill (make skill-dev)
 internal/
 ├── auth/          # JWT tokens
 ├── config/        # Configuration from the environment

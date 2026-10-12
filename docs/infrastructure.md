@@ -4,10 +4,14 @@
 1. The frontend builds to `web/dist/` (Vite); Go embeds it via `web/embed.go` (`//go:embed`)
 2. A single binary serves both the API and the static files
 3. Air (`.air.toml`) watches go, tsx, ts, html, css, js, json; excludes `web/dist`, `web/node_modules`, `tmp`, `bin`,
-   `data` and `web/package-lock.json` (npm install touches it on every build). Build errors go to `tmp/build-errors.log`
+   `data` and `web/package-lock.json` (npm install touches it on every build). Build errors go to `tmp/build-errors.log`.
+   It also watches the two skill files embedded into the binary (`include_file`: `skills/kkal-tracker-food-log/SKILL.md`
+   and `scripts/kkal_client.py`), without watching every `.md`/`.py` file
 
 ## Docker
 - `Dockerfile`: multi-stage (node → golang → distroless static, non-root); no `.env` in the image
+- `.dockerignore` excludes `skills/*/api_key`: real skill keys on the build host never reach the build context (the
+  binary embeds only the listed skill files anyway)
 - `build-and-push.sh TAG [--push] [--platform=PLATFORM]`: always `--no-cache`, removes `web/dist/` first, tags `TAG`
   and `latest`, writes `vTAG` to `version.txt`. Called by `deploy.sh`; production images are built only from `master`
 - Image: `ypeskov/kcal-tracker`. Build for the host architecture, without `--platform`
@@ -41,7 +45,8 @@ See `.env.sample`. The main ones:
 PORT=8080
 JWT_SECRET=...                 # unset ENVIRONMENT means production: a strong JWT_SECRET (32+ chars) is then required
 LOG_LEVEL=debug
-ENVIRONMENT=development
+ENVIRONMENT=development        # also makes Settings → AI download the -dev variant of the agent skill
+APP_URL=https://...            # public URL: activation links, CORS origin, base URL of the downloaded skill (no trailing /)
 # TRUSTED_PROXIES=10.42.0.0/16 # CIDR ranges whose X-Forwarded-For is trusted (default: loopback and private networks)
 DATABASE_PATH=./data/app.db
 OPENAI_API_KEY=sk-...          # AI providers are activated when their keys are set; OPENAI_BASE_URL is optional

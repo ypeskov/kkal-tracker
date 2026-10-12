@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"embed"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -89,6 +91,55 @@ func TestNewRateLimiter(t *testing.T) {
 	}
 	if code := request("203.0.113.8:1234"); code != http.StatusOK {
 		t.Errorf("request from another IP: status = %d, want %d", code, http.StatusOK)
+	}
+}
+
+func TestNewUserRateLimiter(t *testing.T) {
+	var logs bytes.Buffer
+	e := echo.New()
+	e.IPExtractor = echo.ExtractIPDirect()
+	e.GET("/", func(c *echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	}, func(next echo.HandlerFunc) echo.HandlerFunc {
+		// Stands in for RequireAuth
+		return func(c *echo.Context) error {
+			if userID := c.Request().Header.Get("X-Test-User"); userID != "" {
+				id, _ := strconv.Atoi(userID)
+				c.Set("user_id", id)
+			}
+			return next(c)
+		}
+	}, newUserRateLimiter(slog.New(slog.NewTextHandler(&logs, nil)), "test", 2, time.Hour))
+
+	request := func(userID string) int {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.RemoteAddr = "203.0.113.7:1234"
+		if userID != "" {
+			req.Header.Set("X-Test-User", userID)
+		}
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	for i := 1; i <= 2; i++ {
+		if code := request("7"); code != http.StatusOK {
+			t.Fatalf("request %d within burst: status = %d, want %d", i, code, http.StatusOK)
+		}
+	}
+	if code := request("7"); code != http.StatusTooManyRequests {
+		t.Errorf("request over burst: status = %d, want %d", code, http.StatusTooManyRequests)
+	}
+	if !strings.Contains(logs.String(), "user_id=7") {
+		t.Errorf("denied request log %q does not name the user", logs.String())
+	}
+	// The same IP with another user has its own bucket
+	if code := request("8"); code != http.StatusOK {
+		t.Errorf("request of another user: status = %d, want %d", code, http.StatusOK)
+	}
+	// Without an authenticated user the limiter fails closed
+	if code := request(""); code != http.StatusInternalServerError {
+		t.Errorf("request without a user: status = %d, want %d", code, http.StatusInternalServerError)
 	}
 }
 

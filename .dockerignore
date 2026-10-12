@@ -6,3 +6,5 @@ data
 **/.env.secret
 .env.*
 .deploy.env
+# Real API keys of the agent skills (git-ignored, but present on the build host)
+skills/*/api_key

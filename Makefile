@@ -1,7 +1,7 @@
 BINARY_NAME=kkal-tracker
 WEB_DIR=web
 
-.PHONY: build run clean dev install-deps build-frontend watch migrate-up migrate-down migrate-status migrate-create seed
+.PHONY: build run clean dev install-deps build-frontend watch migrate-up migrate-down migrate-status migrate-create seed skill-dev
 
 build: build-frontend
 	@echo "Building..."
@@ -94,5 +94,8 @@ seed-clean:
 	@sqlite3 ./data/app.db "DELETE FROM global_ingredients; DELETE FROM global_ingredient_names;"
 	@go run cmd/seed/main.go
 
+# Agent skills: regenerate skills/kkal-tracker-food-log-dev from the production skill (optional URL=http://HOST:PORT)
+skill-dev:
+	@go run ./cmd/skillgen $(URL)
 
 .DEFAULT_GOAL := build

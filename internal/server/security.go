@@ -1,9 +1,11 @@
 package server
 
 import (
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -28,6 +30,10 @@ const (
 	// so a short burst is allowed, then one request per second per IP
 	apiV1RateBurst    = 20
 	apiV1RateInterval = time.Second
+
+	// Skill download: every download creates an API key, so 5 at once, then one per minute per user
+	skillDownloadRateBurst    = 5
+	skillDownloadRateInterval = time.Minute
 
 	minRateLimiterExpiry = 3 * time.Minute
 
@@ -71,17 +77,42 @@ func newIPExtractor(trustedProxies []*net.IPNet) echo.IPExtractor {
 // NOTE: The in-memory store is per-instance. If scaling to multiple replicas,
 // switch to a distributed store (e.g., Redis) for effective rate limiting.
 func newRateLimiter(logger *slog.Logger, name string, burst int, interval time.Duration) echo.MiddlewareFunc {
+	return rateLimiter(logger, name, burst, interval, "remote_ip", func(c *echo.Context) (string, error) {
+		return c.RealIP(), nil
+	})
+}
+
+// newUserRateLimiter is newRateLimiter keyed by the authenticated user instead of the client IP:
+// the load balancer hides client addresses, so a per-IP limit would be shared by all users.
+// It must run after RequireAuth.
+func newUserRateLimiter(logger *slog.Logger, name string, burst int, interval time.Duration) echo.MiddlewareFunc {
+	return rateLimiter(logger, name, burst, interval, "user_id", func(c *echo.Context) (string, error) {
+		userID, ok := c.Get("user_id").(int)
+		if !ok {
+			return "", errors.New("no authenticated user")
+		}
+		return strconv.Itoa(userID), nil
+	})
+}
+
+func rateLimiter(logger *slog.Logger, name string, burst int, interval time.Duration, identifierName string,
+	identify echomiddleware.Extractor) echo.MiddlewareFunc {
 	// Keep a visitor at least until its bucket is full again, otherwise cleanup would reset the limit early
 	expiresIn := max(time.Duration(burst)*interval, minRateLimiterExpiry)
 
 	return echomiddleware.RateLimiterWithConfig(echomiddleware.RateLimiterConfig{
+		IdentifierExtractor: identify,
 		Store: echomiddleware.NewRateLimiterMemoryStoreWithConfig(echomiddleware.RateLimiterMemoryStoreConfig{
 			Rate:      1 / interval.Seconds(),
 			Burst:     burst,
 			ExpiresIn: expiresIn,
 		}),
+		ErrorHandler: func(c *echo.Context, err error) error {
+			logger.Error("Rate limiter cannot identify the client", "limiter", name, "error", err, "path", c.Path())
+			return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+		},
 		DenyHandler: func(c *echo.Context, identifier string, err error) error {
-			logger.Warn("Rate limit exceeded", "limiter", name, "remote_ip", identifier, "path", c.Path())
+			logger.Warn("Rate limit exceeded", "limiter", name, identifierName, identifier, "path", c.Path())
 			return echo.NewHTTPError(http.StatusTooManyRequests, "Too many requests, please try again later")
 		},
 	})

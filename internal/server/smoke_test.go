@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"mime/multipart"
 	"net"
@@ -181,8 +182,12 @@ func (c *smokeClient) expect(wantStatus int, method, path string, body, out any)
 // newSmokeEnvironment starts the server on a fresh migrated SQLite database with a fake SMTP server
 func newSmokeEnvironment(t *testing.T) (*smokeClient, *fakeSMTPServer) {
 	t.Helper()
+	return newSmokeEnvironmentWith(t, discardLogger(), nil)
+}
 
-	logger := discardLogger()
+// newSmokeEnvironmentWith is newSmokeEnvironment with the given logger and configuration changes (configure may be nil)
+func newSmokeEnvironmentWith(t *testing.T, logger *slog.Logger, configure func(*config.Config)) (*smokeClient, *fakeSMTPServer) {
+	t.Helper()
 
 	db, err := database.New(filepath.Join(t.TempDir(), "app.db"), logger)
 	if err != nil {
@@ -209,6 +214,9 @@ func newSmokeEnvironment(t *testing.T) (*smokeClient, *fakeSMTPServer) {
 		SMTPUser:     "user",
 		SMTPPassword: "password",
 		SMTPFrom:     "noreply@example.com",
+	}
+	if configure != nil {
+		configure(cfg)
 	}
 	// The real embedded frontend (requires web/dist): API errors must not be replaced by its index page
 	srv := New(cfg, logger, db, web.StaticFiles).Start()
@@ -351,6 +359,15 @@ func TestSmokeUserJourney(t *testing.T) {
 	attachment := exportAttachment(t, smtpServer.lastMessage(t))
 	if !bytes.HasPrefix(attachment, []byte("PK")) {
 		t.Error("emailed export attachment is not an XLSX (zip) file")
+	}
+
+	// --- Agent skill: the downloaded zip carries a working API key
+	skillDownload := client.expect(http.StatusOK, http.MethodPost, "/api/skills/food-log/download", nil, nil)
+	if !bytes.HasPrefix(skillDownload.Body.Bytes(), []byte("PK")) {
+		t.Error("downloaded skill is not a zip file")
+	}
+	if disposition := skillDownload.Header().Get("Content-Disposition"); !strings.Contains(disposition, "kkal-tracker-food-log.zip") {
+		t.Errorf("skill download Content-Disposition = %q", disposition)
 	}
 
 	// --- Cleanup through the API: delete what was created

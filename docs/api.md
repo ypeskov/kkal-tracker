@@ -27,6 +27,17 @@ All routes are under `/api`.
   - `GET /api/api-keys` - list the user's keys (prefixes only)
   - `POST /api/api-keys/:id/revoke` - revoke a key
   - `DELETE /api/api-keys/:id` - delete a key
+- `POST /api/skills/food-log/download` - the food logging agent skill as a ready-to-install zip (JWT auth, no request
+  body). **Every call creates a new API key** of the user: name `Claude skill YYYY-MM-DD HH:MM UTC`, no expiry; earlier
+  keys stay active. Rate limited per user: 5 downloads at once, then 1 per minute
+  - 200: body is the zip; headers `Content-Type: application/zip`,
+    `Content-Disposition: attachment; filename="<skill>.zip"`, `Cache-Control: no-store`. `<skill>` is
+    `kkal-tracker-food-log`, or `kkal-tracker-food-log-dev` on a server with `ENVIRONMENT=development`
+  - Zip: one folder `<skill>/` with `SKILL.md`, `scripts/kkal_client.py` (both pointed at `APP_URL`) and `api_key` (the
+    new key plus a newline); nothing else
+  - 401 `{"message": ...}` without or with an invalid JWT (no key is created); 429
+    `{"message": "Too many requests, please try again later"}` over the limit; 500
+    `{"message": "Failed to prepare the skill"}` on any internal failure (a key created for a failed download is deleted)
 - `/api/v1/*` - external API (`X-API-Key` header, rate limited per IP: burst of 20, then 1 req/sec)
   - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
   - `GET /api/v1/ingredients` - all user ingredients with `times_used` and `last_used`
