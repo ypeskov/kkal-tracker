@@ -1,8 +1,12 @@
 package ingredient
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	"log/slog"
 
+	"ypeskov/kkal-tracker/internal/food"
 	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/repositories"
 )
@@ -67,10 +71,17 @@ func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
+	if err := s.checkDuplicateName(req.UserID, req.Name, nil); err != nil {
+		return nil, err
+	}
+
 	ingredient, err := s.ingredientRepo.CreateUserIngredient(
 		req.UserID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
 	)
 	if err != nil {
+		if duplicateErr := s.duplicateAfterWriteError(req.UserID, req.Name, 0, err); duplicateErr != nil {
+			return nil, duplicateErr
+		}
 		s.logger.Error("Failed to create user ingredient", "error", err, "user_id", req.UserID, "name", req.Name)
 		return nil, err
 	}
@@ -79,6 +90,8 @@ func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIn
 	return ingredient, nil
 }
 
+// UpdateIngredient replaces all values of a user ingredient (nil nutrients are cleared).
+// A missing or foreign ingredient is sql.ErrNoRows.
 func (s *Service) UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIngredient, error) {
 	s.logger.Debug("UpdateIngredient called", "user_id", req.UserID, "ingredient_id", req.IngredientID, "name", req.Name, "kcal_per_100g", req.KcalPer100g)
 
@@ -87,16 +100,146 @@ func (s *Service) UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	ingredient, err := s.ingredientRepo.UpdateUserIngredient(
-		req.UserID, req.IngredientID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
-	)
+	current, err := s.getOwnIngredient(req.UserID, req.IngredientID)
 	if err != nil {
-		s.logger.Error("Failed to update user ingredient", "error", err, "user_id", req.UserID, "ingredient_id", req.IngredientID)
 		return nil, err
 	}
 
-	s.logger.Debug("UpdateIngredient completed successfully", "user_id", req.UserID, "ingredient_id", req.IngredientID, "name", req.Name)
+	return s.saveIngredient(current, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+}
+
+// PatchIngredient changes only the sent values of a user ingredient. Sent values are checked against the sanity
+// limits of package food, the name is cleaned like the name of a new ingredient of a meal. Values that are not sent
+// are kept as they are, even outside the limits. A missing or foreign ingredient is sql.ErrNoRows.
+func (s *Service) PatchIngredient(req *PatchIngredientRequest) (*models.UserIngredient, error) {
+	s.logger.Debug("PatchIngredient called", "user_id", req.UserID, "ingredient_id", req.IngredientID)
+
+	name, err := validatePatchRequest(req)
+	if err != nil {
+		s.logger.Debug("PatchIngredient failed - validation error", "user_id", req.UserID, "ingredient_id", req.IngredientID, "error", err)
+		return nil, err
+	}
+
+	current, err := s.getOwnIngredient(req.UserID, req.IngredientID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Name == nil {
+		name = current.Name
+	}
+	kcalPer100g := current.KcalPer100g
+	if req.KcalPer100g != nil {
+		kcalPer100g = *req.KcalPer100g
+	}
+	fats, carbs, proteins := current.Fats, current.Carbs, current.Proteins
+	if req.Fats != nil {
+		fats = req.Fats
+	}
+	if req.Carbs != nil {
+		carbs = req.Carbs
+	}
+	if req.Proteins != nil {
+		proteins = req.Proteins
+	}
+
+	return s.saveIngredient(current, name, kcalPer100g, fats, carbs, proteins)
+}
+
+// getOwnIngredient reads the ingredient that is about to change. A missing or foreign ingredient is sql.ErrNoRows.
+func (s *Service) getOwnIngredient(userID, ingredientID int) (*models.UserIngredient, error) {
+	ingredient, err := s.ingredientRepo.GetUserIngredientByID(userID, ingredientID)
+	if errors.Is(err, sql.ErrNoRows) {
+		s.logger.Debug("Ingredient not found", "user_id", userID, "ingredient_id", ingredientID)
+		return nil, sql.ErrNoRows
+	}
+	if err != nil {
+		s.logger.Error("Failed to get user ingredient by ID", "error", err, "user_id", userID, "ingredient_id", ingredientID)
+		return nil, err
+	}
 	return ingredient, nil
+}
+
+// saveIngredient writes the new values of an existing ingredient after the duplicate-name check
+func (s *Service) saveIngredient(current *models.UserIngredient, name string, kcalPer100g float64,
+	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	if err := s.checkDuplicateName(current.UserID, name, current); err != nil {
+		return nil, err
+	}
+
+	ingredient, err := s.ingredientRepo.UpdateUserIngredient(current.UserID, current.ID, name, kcalPer100g, fats, carbs, proteins)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Deleted between the read and the write
+		return nil, sql.ErrNoRows
+	}
+	if err != nil {
+		if duplicateErr := s.duplicateAfterWriteError(current.UserID, name, current.ID, err); duplicateErr != nil {
+			return nil, duplicateErr
+		}
+		s.logger.Error("Failed to update user ingredient", "error", err, "user_id", current.UserID, "ingredient_id", current.ID)
+		return nil, err
+	}
+
+	s.logger.Info("User ingredient updated", "user_id", current.UserID, "ingredient_id", current.ID,
+		"name", ingredient.Name, "kcal_per_100g", ingredient.KcalPer100g)
+	return ingredient, nil
+}
+
+// checkDuplicateName is the duplicate-name rule of the ingredient list: a name must not match (normalized) the name
+// of another ingredient of the same user. current is nil for a new ingredient. An existing ingredient is checked only
+// when its normalized name changes, so that a case-only rename, or editing an ingredient that already has
+// a near-duplicate from before the rule, is allowed.
+func (s *Service) checkDuplicateName(userID int, name string, current *models.UserIngredient) error {
+	excludeID := 0
+	if current != nil {
+		if food.NormalizeName(current.Name) == food.NormalizeName(name) {
+			return nil
+		}
+		excludeID = current.ID
+	}
+
+	normalized := food.NormalizeName(name)
+	existing, err := s.findOtherIngredient(userID, excludeID, func(other string) bool {
+		return food.NormalizeName(other) == normalized
+	})
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		s.logger.Debug("Duplicate ingredient name", "user_id", userID, "ingredient_id", excludeID, "existing_ingredient_id", existing.ID)
+		return &DuplicateIngredientError{Existing: existing}
+	}
+	return nil
+}
+
+// duplicateAfterWriteError explains a failed write: when another ingredient has exactly the written name (it was
+// added concurrently after the check, or it is a near-duplicate from before the rule), the failure is the unique index
+// on the name, which compares the exact text, and is reported as a duplicate. Returns nil otherwise: a near-duplicate
+// cannot make the write fail, so any other failure stays an internal error.
+func (s *Service) duplicateAfterWriteError(userID int, name string, excludeID int, writeErr error) error {
+	existing, err := s.findOtherIngredient(userID, excludeID, func(other string) bool { return other == name })
+	if err != nil || existing == nil {
+		return nil
+	}
+	s.logger.Debug("Ingredient write failed on a duplicate name", "error", writeErr, "user_id", userID,
+		"ingredient_id", excludeID, "existing_ingredient_id", existing.ID)
+	return &DuplicateIngredientError{Existing: existing}
+}
+
+// findOtherIngredient returns an ingredient of the user other than excludeID whose name matches, or nil
+func (s *Service) findOtherIngredient(userID, excludeID int, matches func(name string) bool) (*models.UserIngredient, error) {
+	ingredients, err := s.ingredientRepo.GetAllUserIngredients(userID)
+	if err != nil {
+		s.logger.Error("Failed to get user ingredients", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	for _, ingredient := range ingredients {
+		if ingredient.ID != excludeID && matches(ingredient.Name) {
+			return ingredient, nil
+		}
+	}
+	return nil, nil
 }
 
 func (s *Service) DeleteIngredient(userID, ingredientID int) error {
@@ -129,6 +272,37 @@ func (s *Service) validateCreateRequest(req *CreateIngredientRequest) error {
 		return ErrInvalidNutritionValue
 	}
 	return nil
+}
+
+// validatePatchRequest checks the sent values and returns the cleaned name (empty when the name is not sent)
+func validatePatchRequest(req *PatchIngredientRequest) (string, error) {
+	if req.Name == nil && req.KcalPer100g == nil && req.Fats == nil && req.Carbs == nil && req.Proteins == nil {
+		return "", &ValidationError{Message: "nothing to change: send name, kcal_per_100g, fats, carbs or proteins"}
+	}
+
+	var name string
+	if req.Name != nil {
+		name = food.CleanName(*req.Name)
+		if name == "" {
+			return "", &ValidationError{Message: "name must not be empty"}
+		}
+		if food.NameTooLong(name) {
+			return "", &ValidationError{Message: fmt.Sprintf("name must be at most %d characters", food.MaxNameLength)}
+		}
+	}
+	if req.KcalPer100g != nil && !food.ValidKcalPer100g(*req.KcalPer100g) {
+		return "", &ValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)}
+	}
+	nutrients := []struct {
+		field string
+		value *float64
+	}{{"fats", req.Fats}, {"carbs", req.Carbs}, {"proteins", req.Proteins}}
+	for _, n := range nutrients {
+		if n.value != nil && !food.ValidNutrientPer100g(*n.value) {
+			return "", &ValidationError{Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)}
+		}
+	}
+	return name, nil
 }
 
 func (s *Service) validateUpdateRequest(req *UpdateIngredientRequest) error {

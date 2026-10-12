@@ -7,6 +7,8 @@ Commands:
   entries [--from --to]    list diary entries with their IDs (default: today, UTC)
   edit ENTRY_ID [...]      change the weight, ingredient, calories or time of a diary entry
   delete ENTRY_ID          delete a diary entry
+  edit-ingredient ID [...] correct the name, calories or nutrients of an ingredient in the list
+  delete-ingredient ID     delete an ingredient from the list (diary entries stay)
 
 Every command prints the HTTP status on failure and exits with code 1.
 """
@@ -108,6 +110,15 @@ def number(value):
     return f"{value:g}"
 
 
+def expect_ingredient_change(status, payload, ok_status):
+    """Like expect, but tells a missing ingredient from an older server without the ingredient routes."""
+    not_found = isinstance(payload, dict) and payload.get("message") == "Ingredient not found"
+    if status in (404, 405) and not not_found:
+        fail(f"HTTP {status}: the server probably does not support editing or deleting ingredients yet "
+             "(an older server version). Nothing was changed.")
+    expect(status, payload, ok_status)
+
+
 def cmd_ingredients(args):
     status, payload = request("GET", "/ingredients")
     expect(status, payload, 200)
@@ -167,6 +178,29 @@ def cmd_delete(args):
     print(f"Entry {args.entry_id} deleted")
 
 
+def cmd_edit_ingredient(args):
+    changes = {
+        "name": args.name,
+        "kcal_per_100g": args.kcal,
+        "fats": args.fats,
+        "carbs": args.carbs,
+        "proteins": args.proteins,
+    }
+    changes = {field: value for field, value in changes.items() if value is not None}
+    if not changes:
+        fail("Nothing to change: pass --name, --kcal, --fats, --carbs or --proteins")
+
+    status, payload = request("PUT", f"/ingredients/{args.ingredient_id}", changes)
+    expect_ingredient_change(status, payload, 200)
+    print_json(payload)
+
+
+def cmd_delete_ingredient(args):
+    status, payload = request("DELETE", f"/ingredients/{args.ingredient_id}")
+    expect_ingredient_change(status, payload, 204)
+    print(f"Ingredient {args.ingredient_id} deleted")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Kkal Tracker food API client")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -195,6 +229,24 @@ def main():
     delete = commands.add_parser("delete", help="delete a diary entry")
     delete.add_argument("entry_id", type=int)
     delete.set_defaults(func=cmd_delete)
+
+    edit_ingredient = commands.add_parser(
+        "edit-ingredient",
+        help="correct an ingredient of the list for all future entries; logged entries do not change")
+    edit_ingredient.add_argument("ingredient_id", type=int)
+    edit_ingredient.add_argument("--name", help="new name")
+    edit_ingredient.add_argument("--kcal", type=float,
+                                 help="calories per 100 g of the ingredient, for all future entries "
+                                      "(unlike 'edit --kcal', which changes one entry only)")
+    edit_ingredient.add_argument("--fats", type=float, help="fats, grams per 100 g")
+    edit_ingredient.add_argument("--carbs", type=float, help="carbohydrates, grams per 100 g")
+    edit_ingredient.add_argument("--proteins", type=float, help="proteins, grams per 100 g")
+    edit_ingredient.set_defaults(func=cmd_edit_ingredient)
+
+    delete_ingredient = commands.add_parser(
+        "delete-ingredient", help="delete an ingredient from the list; logged entries stay, no undo")
+    delete_ingredient.add_argument("ingredient_id", type=int)
+    delete_ingredient.set_defaults(func=cmd_delete_ingredient)
 
     args = parser.parse_args()
     args.func(args)

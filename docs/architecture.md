@@ -21,6 +21,7 @@ internal/
   auth/                 # JWT token management
   config/               # configuration from the environment
   database/             # SQLite connection, migration helpers
+  food/                 # food value limits and food name cleaning/normalization shared by the calorie and ingredient services
   handlers/<domain>/    # HTTP handlers
   i18n/                 # backend translator with embedded locale files
   logger/               # slog setup
@@ -48,7 +49,7 @@ docs/                   # reference docs
 data/                   # local SQLite database (git-ignored)
 tmp/                    # Air output, logs (git-ignored)
 ```
-Domains (handlers and services): ai, apidata (external `/api/v1`: data export, ingredient list, food logging),
+Domains (handlers and services): ai, apidata (external `/api/v1`: data export, ingredient list and its editing, food logging),
 apikey, auth, calorie(s), email, export, ingredient(s), languages, metrics, profile (incl. weight goals), reports,
 static (embedded frontend), weight.
 

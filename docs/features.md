@@ -10,7 +10,14 @@
   latest weight on or before the start date. The report chart shows a trend line: a least-squares fit through the
   initial weight and every weigh-in after the start day (`trend` in the goal progress), extended to the target date
 - **Health Metrics**: BMI, BMR, TDEE based on the user profile (age, gender, activity level)
-- **Ingredient Database**: global ingredients with multilingual names and nutritional data
+- **Ingredient Database**: global ingredients with multilingual names and nutritional data, copied into the user's
+  own list on registration and managed on the Food List page
+  - Ingredient names are unique per user ignoring case, spacing, invisible characters and `ё`/`е`: creating or renaming
+    an ingredient to such a name on the Food List page (`POST` / `PUT /api/ingredients`) or through the API
+    (`/api/v1`) is rejected with 409 and the existing ingredient; the Food List modal stays open with the input kept
+    and names the existing ingredient (other save failures show a generic error there). A case-only rename of the ingredient itself is
+    allowed; near-duplicates that existed before the rule are kept. Adding a diary entry on the website
+    (`POST /api/calories`) still creates or updates its ingredient by the exact name, so it can add a near-duplicate
 - **User Profiles**: personal settings, preferences, gender, activity level
 - **Reports & Analytics**: calorie and weight trends
 - **AI Insights**: AI-powered nutrition and weight analysis with personalized recommendations
@@ -35,6 +42,11 @@
   - A meal is atomic (all items or none); calories are calculated on the server
   - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, time),
     `DELETE /api/v1/food/:id` removes it
+  - The agent can correct ingredients of the list (`PUT /api/v1/ingredients/:id`, only the sent fields change) and
+    delete them (`DELETE /api/v1/ingredients/:id`)
+  - Diary entries keep their own copy of the food name, calories and macros: editing or deleting an ingredient does not
+    change logged entries. `PUT /api/v1/food/:id {"ingredient_id": <same id>}` copies the corrected values into an entry.
+    Usage statistics are matched by name, so a renamed ingredient starts from `times_used: 0`
 - **Email Service**: activation emails and export delivery
 - **Internationalization**: en_US, uk_UA, ru_UA, bg_BG with a language switcher, frontend and backend
 - **Integrated Calculator**: built into every numeric input (weight, calories, macros), see the `frontend-style` skill

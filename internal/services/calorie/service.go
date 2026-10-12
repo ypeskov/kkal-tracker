@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
+	"ypeskov/kkal-tracker/internal/food"
 	"ypeskov/kkal-tracker/internal/models"
 	"ypeskov/kkal-tracker/internal/repositories"
 )
@@ -19,12 +17,9 @@ const (
 	// MaxMealItems limits the number of foods in one meal request
 	MaxMealItems = 50
 
-	// Sanity limits for meal items: they catch unit mix-ups (kilograms instead of grams,
-	// calories of the whole portion instead of calories per 100 g). Pure fat has 900 kcal per 100 g.
-	maxItemWeight      = 10000.0
-	maxKcalPer100g     = 900.0
-	maxNutrientPer100g = 100.0
-	maxFoodNameLength  = 200
+	// Sanity limit for the weight of a meal item: it catches kilograms mistaken for grams.
+	// The limits of calorie and nutrient values are shared with the ingredient list (package food).
+	maxItemWeight = 10000.0
 )
 
 type Service struct {
@@ -121,7 +116,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 	ingredientsByName := make(map[string]*models.UserIngredient, len(ingredients))
 	for _, ingredient := range ingredients {
 		ingredientsByID[ingredient.ID] = ingredient
-		ingredientsByName[normalizeFoodName(ingredient.Name)] = ingredient
+		ingredientsByName[food.NormalizeName(ingredient.Name)] = ingredient
 	}
 
 	entries := make([]models.NewMealEntry, 0, len(req.Items))
@@ -149,14 +144,14 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			}
 			kcalPer100g := ingredient.KcalPer100g
 			if item.KcalPer100g != nil {
-				if !validKcalPer100g(*item.KcalPer100g) {
-					return nil, itemError(i, "kcal_per_100g must be between 0 and %g", maxKcalPer100g)
+				if !food.ValidKcalPer100g(*item.KcalPer100g) {
+					return nil, itemError(i, "kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)
 				}
 				kcalPer100g = *item.KcalPer100g
-			} else if !validKcalPer100g(kcalPer100g) {
+			} else if !food.ValidKcalPer100g(kcalPer100g) {
 				// The ingredient list accepts any value, the diary must not get a nonsensical calorie count from it
 				return nil, itemError(i, "ingredient %q has %g kcal per 100 g, expected a value between 0 and %g; send kcal_per_100g to override it",
-					ingredient.Name, kcalPer100g, maxKcalPer100g)
+					ingredient.Name, kcalPer100g, food.MaxKcalPer100g)
 			}
 			ingredientIDs[i] = &ingredient.ID
 			entry = models.NewMealEntry{
@@ -171,29 +166,29 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			if item.KcalPer100g != nil {
 				return nil, itemError(i, "kcal_per_100g of a new food belongs inside new_ingredient")
 			}
-			food := item.NewIngredient
-			name := cleanFoodName(food.Name)
+			newFood := item.NewIngredient
+			name := food.CleanName(newFood.Name)
 			if name == "" {
 				return nil, itemError(i, "new_ingredient.name is required")
 			}
-			if utf8.RuneCountInString(name) > maxFoodNameLength {
-				return nil, itemError(i, "new_ingredient.name must be at most %d characters", maxFoodNameLength)
+			if food.NameTooLong(name) {
+				return nil, itemError(i, "new_ingredient.name must be at most %d characters", food.MaxNameLength)
 			}
-			if !validKcalPer100g(food.KcalPer100g) {
-				return nil, itemError(i, "new_ingredient.kcal_per_100g must be between 0 and %g", maxKcalPer100g)
+			if !food.ValidKcalPer100g(newFood.KcalPer100g) {
+				return nil, itemError(i, "new_ingredient.kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)
 			}
 			nutrients := []struct {
 				field string
 				value *float64
-			}{{"fats", food.Fats}, {"carbs", food.Carbs}, {"proteins", food.Proteins}}
+			}{{"fats", newFood.Fats}, {"carbs", newFood.Carbs}, {"proteins", newFood.Proteins}}
 			for _, n := range nutrients {
-				if n.value != nil && (*n.value < 0 || *n.value > maxNutrientPer100g) {
-					return nil, itemError(i, "new_ingredient.%s must be between 0 and %g (grams per 100 g)", n.field, maxNutrientPer100g)
+				if n.value != nil && !food.ValidNutrientPer100g(*n.value) {
+					return nil, itemError(i, "new_ingredient.%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)
 				}
 			}
 
 			if !item.OneOff {
-				normalized := normalizeFoodName(name)
+				normalized := food.NormalizeName(name)
 				if existing, ok := ingredientsByName[normalized]; ok {
 					return nil, &DuplicateIngredientError{Index: i, Existing: existing}
 				}
@@ -204,10 +199,10 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			}
 			entry = models.NewMealEntry{
 				Food:             name,
-				KcalPer100g:      food.KcalPer100g,
-				Fats:             food.Fats,
-				Carbs:            food.Carbs,
-				Proteins:         food.Proteins,
+				KcalPer100g:      newFood.KcalPer100g,
+				Fats:             newFood.Fats,
+				Carbs:            newFood.Carbs,
+				Proteins:         newFood.Proteins,
 				SaveAsIngredient: !item.OneOff,
 			}
 
@@ -287,10 +282,10 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 			s.logger.Error("Failed to get user ingredient", "error", err, "user_id", req.UserID, "ingredient_id", *req.IngredientID)
 			return nil, err
 		}
-		if req.KcalPer100g == nil && !validKcalPer100g(ingredient.KcalPer100g) {
+		if req.KcalPer100g == nil && !food.ValidKcalPer100g(ingredient.KcalPer100g) {
 			return nil, &EntryValidationError{Message: fmt.Sprintf(
 				"ingredient %q has %g kcal per 100 g, expected a value between 0 and %g; send kcal_per_100g to override it",
-				ingredient.Name, ingredient.KcalPer100g, maxKcalPer100g)}
+				ingredient.Name, ingredient.KcalPer100g, food.MaxKcalPer100g)}
 		}
 		entry.Food = ingredient.Name
 		entry.KcalPer100g = ingredient.KcalPer100g
@@ -299,8 +294,8 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 		entry.Proteins = ingredient.Proteins
 	}
 	if req.KcalPer100g != nil {
-		if !validKcalPer100g(*req.KcalPer100g) {
-			return nil, &EntryValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", maxKcalPer100g)}
+		if !food.ValidKcalPer100g(*req.KcalPer100g) {
+			return nil, &EntryValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)}
 		}
 		entry.KcalPer100g = *req.KcalPer100g
 	}
@@ -342,32 +337,8 @@ func validItemWeight(weight float64) bool {
 	return weight > 0 && weight <= maxItemWeight
 }
 
-func validKcalPer100g(kcalPer100g float64) bool {
-	return kcalPer100g >= 0 && kcalPer100g <= maxKcalPer100g
-}
-
 func entryCalories(weight, kcalPer100g float64) int {
 	return int(math.Round(weight * kcalPer100g / 100))
-}
-
-// cleanFoodName drops invisible characters (control and format ones, e.g. a zero-width space)
-// and collapses whitespace, so that two names that look the same are the same
-func cleanFoodName(name string) string {
-	visible := strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) {
-			return ' '
-		}
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
-			return -1
-		}
-		return r
-	}, name)
-	return strings.Join(strings.Fields(visible), " ")
-}
-
-// normalizeFoodName makes food names comparable: case, extra spaces and the Russian "ё" are ignored
-func normalizeFoodName(name string) string {
-	return strings.ReplaceAll(strings.ToLower(cleanFoodName(name)), "ё", "е")
 }
 
 func itemError(index int, format string, args ...any) *MealItemError {

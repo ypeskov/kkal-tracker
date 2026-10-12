@@ -9,5 +9,6 @@ type Servicer interface {
 	GetIngredientByID(userID, ingredientID int) (*models.UserIngredient, error)
 	CreateIngredient(req *CreateIngredientRequest) (*models.UserIngredient, error)
 	UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIngredient, error)
+	PatchIngredient(req *PatchIngredientRequest) (*models.UserIngredient, error)
 	DeleteIngredient(userID, ingredientID int) error
 }

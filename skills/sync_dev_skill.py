@@ -25,7 +25,8 @@ DEV_DESCRIPTION = (
     "not to the real diary. Use it ONLY when the current message itself names the dev or test "
     'tracker — "запиши на дев", "в тестовый трекер", "на тестовый сервер", "log it to dev". The mention is '
     "required in every request — an earlier dev request in the same conversation does not carry over. "
-    "The one exception is editing or deleting an entry that this dev copy created, which is always done here. "
+    "The one exception is editing or deleting an entry that this dev copy created, or an ingredient from "
+    "its ingredient list, which is always done here. "
     'For every other '
     '"I ate X" / "запиши еду" request use the regular kkal-tracker-food-log skill instead.'
 )

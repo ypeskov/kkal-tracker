@@ -1,6 +1,7 @@
 package apidata
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -58,6 +59,8 @@ func New(calorieService calorieservice.Servicer, weightService weightservice.Ser
 func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/data", h.GetData)
 	g.GET("/ingredients", h.GetIngredients)
+	g.PUT("/ingredients/:id", h.UpdateIngredient)
+	g.DELETE("/ingredients/:id", h.DeleteIngredient)
 	g.POST("/food", h.CreateFood)
 	g.PUT("/food/:id", h.UpdateFood)
 	g.DELETE("/food/:id", h.DeleteFood)
@@ -132,6 +135,71 @@ func (h *Handler) GetIngredients(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+// UpdateIngredient corrects an ingredient of the list: its name, calorie value or nutrients.
+// Diary entries keep their own copy of the values and do not change.
+func (h *Handler) UpdateIngredient(c *echo.Context) error {
+	userID := c.Get("user_id").(int)
+
+	ingredientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
+	}
+
+	var req UpdateIngredientRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	ingredient, err := h.ingredientService.PatchIngredient(&ingredientservice.PatchIngredientRequest{
+		IngredientID: ingredientID,
+		UserID:       userID,
+		Name:         req.Name,
+		KcalPer100g:  req.KcalPer100g,
+		Fats:         req.Fats,
+		Carbs:        req.Carbs,
+		Proteins:     req.Proteins,
+	})
+	if err != nil {
+		var validationErr *ingredientservice.ValidationError
+		var duplicateErr *ingredientservice.DuplicateIngredientError
+		switch {
+		case errors.As(err, &validationErr):
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
+		case errors.As(err, &duplicateErr):
+			return c.JSON(http.StatusConflict, IngredientNameConflictResponse{
+				Message:            duplicateErr.Error(),
+				ExistingIngredient: mapIngredient(duplicateErr.Existing),
+			})
+		case errors.Is(err, sql.ErrNoRows):
+			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		}
+		h.logger.Error("Failed to update ingredient", "error", err, "user_id", userID, "ingredient_id", ingredientID)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update ingredient")
+	}
+
+	return c.JSON(http.StatusOK, UpdateIngredientResponse{Ingredient: mapIngredient(ingredient)})
+}
+
+// DeleteIngredient removes an ingredient from the list. Diary entries based on it stay as they are.
+func (h *Handler) DeleteIngredient(c *echo.Context) error {
+	userID := c.Get("user_id").(int)
+
+	ingredientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ingredient ID")
+	}
+
+	if err := h.ingredientService.DeleteIngredient(userID, ingredientID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		}
+		h.logger.Error("Failed to delete ingredient", "error", err, "user_id", userID, "ingredient_id", ingredientID)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete ingredient")
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 // CreateFood stores one meal. All items are saved together or not at all.

@@ -1,6 +1,6 @@
 ---
 name: kkal-tracker-food-log
-description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to correct a recorded entry (weight, food, calories, time), to undo or delete one, and to check what is already logged today. The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here. This is the default for food logging — the "-dev" copy is only for a message that itself names the dev or test tracker, and an earlier dev request in the conversation does not carry over. Edit or delete an entry with the copy that created it.
+description: Record what the user ate or drank into their Kkal Tracker food diary (kcal.peskov.info) through its API. Use this skill whenever the user tells you what they ate, dictates a meal or a snack, lists foods with weights, or asks to log, add, write down or save food or calories — including casual or voice-dictated phrasings like "я съел 200 грамм курицы и помидор", "запиши обед", "на завтрак было…", "добавь в дневник", "log my lunch", "I had two eggs and toast". Also use it to correct a recorded entry (weight, food, calories, time), to undo or delete one, to check what is already logged today, and to fix or remove a food in the user's ingredient list ("исправь в справочнике", "у этого продукта на самом деле 260 ккал", "удали из справочника"). The user does not need to mention Kkal Tracker by name — any "I ate X" or "запиши еду" request routes here. This is the default for food logging — the "-dev" copy is only for a message that itself names the dev or test tracker, and an earlier dev request in the conversation does not carry over. Edit or delete an entry with the copy that created it, and an ingredient with the copy whose list it came from.
 ---
 
 # Kkal Tracker: food diary logging
@@ -15,7 +15,8 @@ Two copies of this skill can be installed: the regular one writes to the real di
 
 - **Logging food** — every message is routed on its own. It goes to dev only when that message itself names the dev or test tracker ("запиши на дев", "в тестовый трекер", "log it to dev"). A dev request earlier in the conversation does not carry over: a following "добавь ещё кофе" without the word goes to the real diary, even in the middle of a testing session.
 - **Editing and deleting** — these follow the entry, not the wording. Use the copy that created the entry, however the request is phrased; replies of the dev copy start with `[DEV]`, so the conversation shows where each entry went. Entry IDs are separate on each server and the same number can belong to a different, real entry on the other one, so an edit or delete sent to the wrong server silently damages an unrelated entry.
-- If you cannot tell where an entry was created, find it with `entries` before changing anything, and ask the user when it is still unclear.
+- **Ingredients** follow the same rule: ingredient IDs are separate on each server too. Edit or delete an ingredient with the copy whose `ingredients` list it came from.
+- If you cannot tell where an entry or an ingredient came from, find it with `entries` or `ingredients` before changing anything, and ask the user when it is still unclear.
 
 ## API basics
 
@@ -32,6 +33,8 @@ python scripts/kkal_client.py entries                # today's diary entries wit
 python scripts/kkal_client.py entries --from 2026-03-01 --to 2026-03-07
 python scripts/kkal_client.py edit 12345 --weight 150   # correct an entry
 python scripts/kkal_client.py delete 12345           # delete an entry
+python scripts/kkal_client.py edit-ingredient 94 --kcal 260   # correct an ingredient of the list
+python scripts/kkal_client.py delete-ingredient 94   # delete an ingredient of the list
 ```
 
 ## Workflow
@@ -71,7 +74,7 @@ Decide like this:
 - **Several plausible matches with noticeably different calories and no clear favourite** → ask one short question listing the candidates. A wrong pick here silently corrupts the diary.
 - **No match** → it is a new food, see the next step.
 
-If the user states a calorie value for a known food that differs from the list ("этот хлеб 260 ккал"), keep the `ingredient_id` and add `kcal_per_100g` to the item: it overrides the value for this entry only.
+If the user states a calorie value for a known food that differs from the list ("этот хлеб 260 ккал"), keep the `ingredient_id` and add `kcal_per_100g` to the item: it overrides the value for this entry only. Offer in one line of the reply to update the value in the ingredient list as well, and change the list only after the user agrees (see "Correcting the ingredient list"). When the user points at the product itself ("у этого хлеба на самом деле 260 ккал", "он всегда 260"), correct the ingredient first with `edit-ingredient` and then log it without an override.
 
 ### 4. New foods
 
@@ -103,7 +106,7 @@ If the user only knows the total calories ("ужин в ресторане пр�
 - Send all foods of the meal together. The request is atomic: if one item is rejected, nothing is saved, so you can fix the item and resend the whole meal without creating duplicates.
 - `meal_datetime` is optional. Omit it when the user is logging what they just ate. Set it (with the user's UTC offset) when they name a time: "на завтрак в 8", "вчера вечером".
 - The server calculates the calories itself from weight and calories per 100 g — do not send totals.
-- Limits: weight up to 10000 g, `kcal_per_100g` 0–900, macros 0–100 g per 100 g, up to 50 items.
+- Limits: weight up to 10000 g, `kcal_per_100g` 0–900, macros 0–100 g per 100 g, up to 50 items. The same calorie and macro limits apply to `edit-ingredient`.
 
 The response lists the stored entries (with `id`, the resolved `food` name and `calories`), `total_calories` of this meal and `day_total_calories` for the diary day.
 
@@ -141,16 +144,46 @@ Use the entry `id` from the `add` response. If you no longer have it (another co
 
   The options can be combined. `--ingredient-id` takes the name, calories and nutrients from that ingredient and keeps the weight.
 - **The right food is not in the ingredient list** → `edit` cannot create ingredients. Delete the entry and `add` it again as a new food, passing the original `meal_datetime` so the entry does not move to the current time.
-- **Undo** ("отмени", "удали последнее", "это было не то") → `delete` each entry `id`.
-- Ingredients created by mistake cannot be removed through this API; tell the user to delete them on the Food List page of the website.
+- **Undo** ("отмени", "удали последнее", "это было не то") → `delete` each entry `id`. Undoing an entry never deletes its ingredient, even one you have just created.
+- **An ingredient created by mistake** (a duplicate, a food that should have been one-off) → `delete-ingredient` when the user asks for it; **a wrong estimate or a typo** in an ingredient → `edit-ingredient`. See the next section.
 
 After a correction, tell the user what the entry looks like now and the new day total.
 
+### Correcting the ingredient list
+
+Diary entries keep their own copy of the food name, calories and macros. Changing or deleting an ingredient never changes entries that are already in the diary; only entries logged afterwards use the new values.
+
+**Edit the ingredient or override one entry.**
+
+- **Edit the ingredient** (`edit-ingredient`) only when the user points at the product or the list: "в справочнике", "на самом деле", "всегда" ("у этого продукта на самом деле 260 ккал", "в справочнике неправильно", "он всегда 260"), or asks to fix a typo in a name or a bad estimate of an ingredient you created.
+- **Otherwise override the value for the entry only** — `kcal_per_100g` on the item or `edit --kcal` — as before, e.g. "этот хлеб 260 ккал" while logging. Offer in one line of the reply to update the list as well, and change the list only after the user agrees.
+
+```bash
+python scripts/kkal_client.py edit-ingredient 94 --kcal 260
+python scripts/kkal_client.py edit-ingredient 94 --name "Хлеб ржаной" --fats 1.2 --carbs 48 --proteins 8.5
+```
+
+`edit-ingredient` changes only the options you pass and keeps the rest. A macro cannot be reset to "unknown"; send `0` if it really is zero.
+
+- **Logged entries.** Refresh only the entries of the current conversation that the correction is clearly about (e.g. the meal you just logged with the wrong value): `edit ENTRY_ID --ingredient-id <the same ingredient id>` copies the corrected name, calories and macros into the entry and keeps its weight and time. Leave older entries as they are unless the user asks to update them.
+- **Renaming** resets `times_used` and `last_used` of the ingredient (the statistics are matched by name, and old entries keep the old name), so you lose the habit signal used for matching. Rename only when the user asks or the name is clearly wrong.
+- **Reply** with the change, old → new values, and the entries you refreshed, if any.
+
+**Delete an ingredient only on the user's explicit request** ("удали из справочника", "убери этот продукт из списка"). Never delete one as a side effect of undoing an entry or to tidy up the list on your own initiative. Tell the user that diary entries with this food stay as they are and still count, and that deletion cannot be undone through the API (the food would have to be created again, with a new ID).
+
+```bash
+python scripts/kkal_client.py delete-ingredient 94
+```
+
 ## Error handling
 
-- `409` → a new ingredient has the same name as an existing one (case, spacing and "ё/е" are ignored). The response contains `existing_ingredient` and `item_index`: replace that item's `new_ingredient` with the `ingredient_id` and resend the whole meal. Nothing was saved.
-- `400` → the message names the item (`items[2]: …`) and the problem. Fix it and resend the whole meal. Nothing was saved.
+- `409` on `add` → a new ingredient has the same name as an existing one (case, spacing and "ё/е" are ignored). The response contains `existing_ingredient` and `item_index`: replace that item's `new_ingredient` with the `ingredient_id` and resend the whole meal. Nothing was saved.
+- `409` on `edit-ingredient` → another ingredient already has that name; `existing_ingredient` shows it. Nothing was changed. Tell the user and ask whether to keep both under different names or to use the existing one; do not delete or merge anything on your own.
+- `400` on `add` → the message names the item (`items[2]: …`) and the problem. Fix it and resend the whole meal. Nothing was saved.
+- `400` on `edit` or `edit-ingredient` → the message names the field and the limit. Nothing was changed.
 - `404` on `edit` or `delete` → there is no such entry (already deleted, or a wrong ID). Check with `entries`.
+- `404` on `edit-ingredient` or `delete-ingredient` → there is no such ingredient (already deleted, a wrong ID, or an ID from the other server). Fetch `ingredients` again.
+- The client says the server probably does not support editing or deleting ingredients yet → the server is an older version. Tell the user, do not retry; nothing was changed.
 - `401` → the API key was rejected. Tell the user, do not retry.
 - `429` → rate limited. Wait a few seconds and retry once.
 - `5xx`, timeout or network error on `add` → the meal may have been saved anyway. Run `entries` and look for it before resending; a blind retry is how a meal gets logged twice.

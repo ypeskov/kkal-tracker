@@ -9,7 +9,10 @@ All routes are under `/api`.
   - `GET /api/auth/activate/:token` - activate the account from the email link
   - `GET /api/auth/me` - current user (requires auth)
 - `/api/calories/*` - calorie entry CRUD (GET, POST, PUT /:id, DELETE /:id)
-- `/api/ingredients/*` - ingredient management (GET, GET /:id, POST, PUT /:id, DELETE /:id)
+- `/api/ingredients/*` - ingredient management (GET, GET /:id, POST, PUT /:id, DELETE /:id); `PUT` replaces all
+  values (nutrients that are not sent are cleared). `POST` and `PUT /:id` return 409
+  `{message, existing_ingredient}` (`existing_ingredient` in the shape of `GET /:id`) when the user already has another
+  ingredient with the same name, ignoring case, spacing, invisible characters and `ё`/`е`
 - `/api/weight/*` - weight history (GET, POST, PUT /:id, DELETE /:id)
 - `/api/profile` - user profile (GET, PUT)
 - `/api/profile/goal` - weight goal (GET progress, PUT set, DELETE clear)
@@ -31,3 +34,9 @@ All routes are under `/api`.
   - `PUT /api/v1/food/:id` - change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, meal_datetime?}`;
     fields that are not sent keep their values, calories are recalculated
   - `DELETE /api/v1/food/:id` - delete a food entry
+  - `PUT /api/v1/ingredients/:id` - change an ingredient of the list: `{name?, kcal_per_100g?, fats?, carbs?, proteins?}`;
+    fields that are not sent (or `null`) keep their values, the sent ones are checked against the limits of `POST /food`
+    (`kcal_per_100g` 0–900, macros 0–100, name up to 200 characters after cleaning). Returns `{ingredient}`;
+    409 `{message, existing_ingredient}` when another ingredient of the user has the same name (ignoring case, spacing,
+    invisible characters and `ё`/`е`), 404 for a missing or foreign ingredient. Diary entries do not change
+  - `DELETE /api/v1/ingredients/:id` - delete an ingredient of the list (204); diary entries stay

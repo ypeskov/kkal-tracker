@@ -87,3 +87,22 @@ type UpdateFoodResponse struct {
 	Day              string `json:"day"`
 	DayTotalCalories *int   `json:"day_total_calories,omitempty"`
 }
+
+// UpdateIngredientRequest changes an ingredient of the list; fields that are not sent (or null) keep their values
+type UpdateIngredientRequest struct {
+	Name        *string  `json:"name"`
+	KcalPer100g *float64 `json:"kcal_per_100g"`
+	Fats        *float64 `json:"fats"`
+	Carbs       *float64 `json:"carbs"`
+	Proteins    *float64 `json:"proteins"`
+}
+
+type UpdateIngredientResponse struct {
+	Ingredient IngredientInfo `json:"ingredient"`
+}
+
+// IngredientNameConflictResponse points to the ingredient that already has the requested name
+type IngredientNameConflictResponse struct {
+	Message            string         `json:"message"`
+	ExistingIngredient IngredientInfo `json:"existing_ingredient"`
+}

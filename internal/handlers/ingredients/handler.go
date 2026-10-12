@@ -2,10 +2,12 @@ package ingredients
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"ypeskov/kkal-tracker/internal/models"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 
 	"github.com/labstack/echo/v5"
@@ -37,6 +39,13 @@ type UpdateRequest struct {
 	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
 	Carbs       *float64 `json:"carbs,omitempty" validate:"omitempty,min=0"`
 	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
+}
+
+// DuplicateNameResponse is the 409 answer to a create or rename to a name the user already has
+// (ignoring case, spacing and "ё"/"е"): the client shows which ingredient has it
+type DuplicateNameResponse struct {
+	Message            string                 `json:"message"`
+	ExistingIngredient *models.UserIngredient `json:"existing_ingredient"`
 }
 
 // GetAllIngredients Get all user ingredients for session storage caching
@@ -104,7 +113,11 @@ func (h *Handler) CreateIngredient(c *echo.Context) error {
 
 	ingredient, err := h.ingredientService.CreateIngredient(serviceReq)
 	if err != nil {
-		h.logger.Error("Failed to create user ingredient", "error", err)
+		var duplicateErr *ingredientservice.DuplicateIngredientError
+		if errors.As(err, &duplicateErr) {
+			return c.JSON(http.StatusConflict, duplicateNameResponse(duplicateErr))
+		}
+		h.logger.Error("Failed to create user ingredient", "error", err, "user_id", userID)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -145,10 +158,14 @@ func (h *Handler) UpdateIngredient(c *echo.Context) error {
 
 	ingredient, err := h.ingredientService.UpdateIngredient(serviceReq)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		var duplicateErr *ingredientservice.DuplicateIngredientError
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		case errors.As(err, &duplicateErr):
+			return c.JSON(http.StatusConflict, duplicateNameResponse(duplicateErr))
 		}
-		h.logger.Error("Failed to update user ingredient", "error", err)
+		h.logger.Error("Failed to update user ingredient", "error", err, "user_id", userID, "ingredient_id", ingredientID)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -177,6 +194,10 @@ func (h *Handler) DeleteIngredient(c *echo.Context) error {
 
 	h.logger.Debug("DeleteIngredient successful", "user_id", userID, "ingredient_id", ingredientID)
 	return c.NoContent(http.StatusNoContent)
+}
+
+func duplicateNameResponse(err *ingredientservice.DuplicateIngredientError) DuplicateNameResponse {
+	return DuplicateNameResponse{Message: err.Error(), ExistingIngredient: err.Existing}
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group) {
