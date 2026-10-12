@@ -277,6 +277,25 @@
         "paramFrom": "from: start date (YYYY-MM-DD)",
         "paramTo": "to: end date (YYYY-MM-DD)"
       }
+    },
+    "ai": {
+      "tab": "AI",
+      "title": "Food logging with Claude",
+      "description": "Download a skill for Claude: tell Claude what you ate, by text or voice, and it records it in your food diary, matching the foods to your ingredient list.",
+      "download": "Download skill",
+      "preparing": "Preparing…",
+      "keyNote": "Each download creates a new API key. Keys from earlier downloads stay active; you can delete them on the API Keys tab.",
+      "install": {
+        "title": "How to install in Claude (claude.ai)",
+        "step1": "In Claude, open Settings → Capabilities, enable code execution and allow network access to <code>{{domain}}</code>.",
+        "step2": "In Settings → Capabilities → Skills, click Upload skill and choose the downloaded zip file.",
+        "step3": "In a chat, tell Claude what you ate.",
+        "claudeCode": "Claude Code: unzip the archive into <code>{{path}}</code>."
+      },
+      "warning": "The zip file contains a secret key that gives full read and write access to your diary. Do not share it. If it leaks, delete the key on the API Keys tab and download the skill again.",
+      "downloadSuccess": "Skill downloaded. A new API key was created.",
+      "error": "Could not prepare the skill. Please try again.",
+      "tooManyRequests": "Too many downloads. Please try again in a minute."
     }
   },
   "ai": {

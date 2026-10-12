@@ -1,6 +1,7 @@
 import { exportService, ExportDataType, DeliveryType } from '@/api/export';
 import { profileService } from '@/api/profile';
 import NotificationPopup from '@/components/NotificationPopup';
+import { downloadBlob } from '@/utils/download';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
 import { useState } from 'react';
@@ -33,7 +34,7 @@ export default function ExportTab() {
     onSuccess: (data) => {
       if (data instanceof Blob) {
         const filename = `kkal-export-${dateFrom}-to-${dateTo}.xlsx`;
-        exportService.downloadBlob(data, filename);
+        downloadBlob(data, filename);
         setNotification({ type: 'success', message: t('settings.export.downloadSuccess') });
       } else {
         setNotification({ type: 'success', message: t('settings.export.emailSuccess') });
