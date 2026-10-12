@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // repoSkillsDir is the skills/ folder of the repository, relative to this package
@@ -100,6 +101,28 @@ func TestFrontmatterNameOfBothVariants(t *testing.T) {
 		}
 		if err := ValidateName(name); err != nil {
 			t.Errorf("development=%v: %v", development, err)
+		}
+	}
+}
+
+// Agent skill uploads reject a description longer than 1024 characters.
+func TestDescriptionLengthOfBothVariants(t *testing.T) {
+	const maxDescriptionLength = 1024
+	for _, development := range []bool{false, true} {
+		rendered := mustRender(t, development, ProductionURL)
+
+		var description string
+		for line := range strings.SplitSeq(fileContent(t, rendered, SkillFile), "\n") {
+			if after, ok := strings.CutPrefix(line, "description: "); ok {
+				description = after
+				break
+			}
+		}
+		if description == "" {
+			t.Fatalf("development=%v: no description in the frontmatter", development)
+		}
+		if n := utf8.RuneCountInString(description); n > maxDescriptionLength {
+			t.Errorf("development=%v: description has %d characters, at most %d allowed", development, n, maxDescriptionLength)
 		}
 	}
 }
