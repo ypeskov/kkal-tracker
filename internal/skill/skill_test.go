@@ -2,15 +2,16 @@ package skill
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"unicode/utf8"
 )
 
-// repoSkillsDir is the skills/ folder of the repository, relative to this package
-var repoSkillsDir = filepath.Join("..", "..", "skills")
+const (
+	// developmentURL is the base URL of the development server
+	developmentURL = "https://dev-kcal.peskov.info"
+	testKey        = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+)
 
 func mustRender(t *testing.T, development bool, baseURL string) *Skill {
 	t.Helper()
@@ -60,7 +61,7 @@ func TestRenderSubstitutesTheBaseURL(t *testing.T) {
 		if !strings.Contains(client, `DEFAULT_BASE_URL = "https://example.test"`+"\n") {
 			t.Errorf("development=%v: client has no DEFAULT_BASE_URL with the trimmed URL", development)
 		}
-		if !strings.Contains(client, `API_KEY = "XXXXXXXXX"`+"\n") {
+		if !strings.Contains(client, `API_KEY = "API_KEY_HERE"`+"\n") {
 			t.Errorf("development=%v: client lost the API key placeholder", development)
 		}
 		if strings.Contains(skillText, "`"+ProductionURL+"`") || strings.Contains(client, `"`+ProductionURL+`"`) {
@@ -70,7 +71,7 @@ func TestRenderSubstitutesTheBaseURL(t *testing.T) {
 }
 
 func TestRenderDevelopmentVariant(t *testing.T) {
-	rendered := mustRender(t, true, DevelopmentURL)
+	rendered := mustRender(t, true, developmentURL)
 	skillText := fileContent(t, rendered, SkillFile)
 
 	if rendered.Name != DevelopmentName {
@@ -85,6 +86,9 @@ func TestRenderDevelopmentVariant(t *testing.T) {
 		if !strings.Contains(skillText, part) {
 			t.Errorf("dev SKILL.md does not contain %q", part)
 		}
+	}
+	if client := fileContent(t, rendered, ClientFile); !strings.Contains(client, `DEFAULT_BASE_URL = "https://dev-kcal.peskov.info"`+"\n") {
+		t.Error("dev client does not point at the development server")
 	}
 }
 
@@ -141,21 +145,6 @@ func TestValidateName(t *testing.T) {
 	}
 }
 
-// The committed dev copy must be the generator output: edit the production skill and run `make skill-dev`
-func TestCommittedDevCopyIsUpToDate(t *testing.T) {
-	rendered := mustRender(t, true, DevelopmentURL)
-
-	for _, file := range rendered.Files {
-		committed, err := os.ReadFile(filepath.Join(repoSkillsDir, DevelopmentName, filepath.FromSlash(file.Path)))
-		if err != nil {
-			t.Fatalf("failed to read the committed dev copy: %v", err)
-		}
-		if string(committed) != string(file.Content) {
-			t.Errorf("skills/%s/%s is out of date: run `make skill-dev`", DevelopmentName, file.Path)
-		}
-	}
-}
-
 func TestRenderRejectsInvalidBaseURL(t *testing.T) {
 	for _, baseURL := range []string{
 		"", "/", "kcal.peskov.info", "ftp://kcal.peskov.info", "https://", "https://user:pass@kcal.peskov.info",
@@ -172,6 +161,7 @@ func TestRenderRequiresEveryAnchorExactlyOnce(t *testing.T) {
 	src := Embedded()
 	baseURLLine := "- Base URL: `" + ProductionURL + "`"
 	defaultURL := `DEFAULT_BASE_URL = "` + ProductionURL + `"`
+	keyLine := `API_KEY = "API_KEY_HERE"`
 
 	tests := []struct {
 		name        string
@@ -191,6 +181,14 @@ func TestRenderRequiresEveryAnchorExactlyOnce(t *testing.T) {
 		{"DEFAULT_BASE_URL missing",
 			Source{Skill: src.Skill, Client: strings.Replace(src.Client, defaultURL, `DEFAULT_BASE_URL = ""`, 1)}, false},
 		{"DEFAULT_BASE_URL twice", Source{Skill: src.Skill, Client: src.Client + defaultURL + "\n"}, true},
+		{"API key line missing",
+			Source{Skill: src.Skill, Client: strings.Replace(src.Client, keyLine, `API_KEY = ""`, 1)}, false},
+		{"API key line twice", Source{Skill: src.Skill, Client: src.Client + keyLine + "\n"}, false},
+		{"placeholder outside the key line",
+			Source{Skill: src.Skill, Client: src.Client + "# replace API_KEY_HERE\n"}, true},
+		{"placeholder only outside the key line", Source{Skill: src.Skill,
+			Client: strings.Replace(src.Client, keyLine, `API_KEY = "x"  # API_KEY_HERE`, 1)}, false},
+		{"placeholder in SKILL.md", Source{Skill: src.Skill + "Paste the key over API_KEY_HERE.\n", Client: src.Client}, false},
 		{"production name changed",
 			Source{Skill: strings.Replace(src.Skill, "name: "+ProductionName, "name: Food Log", 1), Client: src.Client}, false},
 	}
@@ -207,29 +205,85 @@ func TestRenderRequiresEveryAnchorExactlyOnce(t *testing.T) {
 	}
 }
 
-func TestWriteDirKeepsOtherFiles(t *testing.T) {
-	dir := t.TempDir()
-	const keyFile = "local key\n"
-	if err := os.WriteFile(filepath.Join(dir, "api_key"), []byte(keyFile), 0o600); err != nil {
-		t.Fatal(err)
+func TestTemplateHoldsTheKeyPlaceholderOnce(t *testing.T) {
+	src := Embedded()
+	if n := strings.Count(src.Client, APIKeyPlaceholder); n != 1 || !strings.Contains(src.Client, `API_KEY = "API_KEY_HERE"`+"\n") {
+		t.Errorf("template client has %d placeholders, want exactly one, in the API_KEY line", n)
 	}
+	if strings.Contains(src.Skill, APIKeyPlaceholder) {
+		t.Error("SKILL.md contains the key placeholder")
+	}
+}
 
-	rendered := mustRender(t, true, "http://192.0.2.10:8080")
-	if err := rendered.WriteDir(dir); err != nil {
-		t.Fatalf("WriteDir: %v", err)
-	}
+func TestWithAPIKeyPutsTheKeyIntoTheClient(t *testing.T) {
+	for _, development := range []bool{false, true} {
+		rendered := mustRender(t, development, "https://example.test")
+		withKey, err := rendered.WithAPIKey(testKey)
+		if err != nil {
+			t.Fatalf("development=%v: WithAPIKey: %v", development, err)
+		}
 
-	if content, _ := os.ReadFile(filepath.Join(dir, "api_key")); string(content) != keyFile {
-		t.Errorf("api_key was changed: %q", content)
-	}
-	for _, file := range rendered.Files {
-		written, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(file.Path)))
-		if err != nil || string(written) != string(file.Content) {
-			t.Errorf("%s was not written correctly: %v", file.Path, err)
+		if withKey.Name != rendered.Name || len(withKey.Files) != len(rendered.Files) {
+			t.Fatalf("development=%v: skill with key = %s with %d files, want %s with %d",
+				development, withKey.Name, len(withKey.Files), rendered.Name, len(rendered.Files))
+		}
+		client := fileContent(t, withKey, ClientFile)
+		if !strings.Contains(client, `API_KEY = "`+testKey+`"`+"\n") || strings.Contains(client, APIKeyPlaceholder) {
+			t.Errorf("development=%v: client does not hold exactly the key in place of the placeholder", development)
+		}
+		if strings.Replace(client, testKey, APIKeyPlaceholder, 1) != fileContent(t, rendered, ClientFile) {
+			t.Errorf("development=%v: the key substitution changed more than the key", development)
+		}
+		if fileContent(t, withKey, SkillFile) != fileContent(t, rendered, SkillFile) {
+			t.Errorf("development=%v: the key substitution changed SKILL.md", development)
+		}
+		// The rendered skill itself stays a template
+		if !strings.Contains(fileContent(t, rendered, ClientFile), `API_KEY = "API_KEY_HERE"`) {
+			t.Errorf("development=%v: WithAPIKey changed the rendered skill", development)
 		}
 	}
-	entries, _ := os.ReadDir(dir)
-	if len(entries) != 3 {
-		t.Errorf("dir has %d entries, want api_key, SKILL.md and scripts/", len(entries))
+}
+
+func TestWithAPIKeyRejectsInvalidKeys(t *testing.T) {
+	rendered := mustRender(t, false, ProductionURL)
+	for name, key := range map[string]string{
+		"empty":     "",
+		"63 chars":  testKey[1:],
+		"65 chars":  testKey + "0",
+		"uppercase": strings.ToUpper(testKey),
+		"quote":     `0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"+`,
+		"newline":   testKey[:32] + "\n" + testKey[33:],
+		"non-hex":   strings.Repeat("g", 64),
+	} {
+		withKey, err := rendered.WithAPIKey(key)
+		if !errors.Is(err, ErrInvalidAPIKey) || withKey != nil {
+			t.Errorf("%s: WithAPIKey = %v, %v; want ErrInvalidAPIKey", name, withKey, err)
+			continue
+		}
+		if key != "" && strings.Contains(err.Error(), key) {
+			t.Errorf("%s: the error contains the key", name)
+		}
+	}
+}
+
+func TestWithAPIKeyRequiresTheKeyLineOnce(t *testing.T) {
+	keyLine := `API_KEY = "API_KEY_HERE"`
+	for name, client := range map[string]string{
+		"key line missing": strings.Replace(Embedded().Client, keyLine, `API_KEY = ""`, 1),
+		"key line twice":   Embedded().Client + keyLine + "\n",
+	} {
+		// A skill built by hand: Render would already reject such a client
+		broken := &Skill{Name: ProductionName, Files: []File{{Path: ClientFile, Content: []byte(client)}}}
+		withKey, err := broken.WithAPIKey(testKey)
+		if !errors.Is(err, ErrSourceLayout) || withKey != nil {
+			t.Errorf("%s: WithAPIKey = %v, %v; want ErrSourceLayout", name, withKey, err)
+		} else if strings.Contains(err.Error(), testKey) {
+			t.Errorf("%s: the error contains the key", name)
+		}
+	}
+
+	noClient := &Skill{Name: ProductionName, Files: []File{{Path: SkillFile, Content: []byte(Embedded().Skill)}}}
+	if _, err := noClient.WithAPIKey(testKey); !errors.Is(err, ErrSourceLayout) {
+		t.Errorf("skill without a client: error = %v, want ErrSourceLayout", err)
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// The embed directives must name single files: a directory or a pattern would pick up the git-ignored api_key
+// The embed directives must name single files: a directory or a pattern would pick up stray files (a git-ignored api_key)
 func TestEmbedListsFilesExplicitly(t *testing.T) {
 	source, err := os.ReadFile("embed.go")
 	if err != nil {

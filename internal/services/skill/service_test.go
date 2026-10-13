@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/fs"
 	"log/slog"
 	"strings"
 	"testing"
@@ -26,12 +27,13 @@ type fakeAPIKeyService struct {
 
 	keys      map[int]*models.APIKey
 	nextID    int
+	rawKey    string
 	createErr error
 	deleteErr error
 }
 
 func newFakeAPIKeyService() *fakeAPIKeyService {
-	return &fakeAPIKeyService{keys: make(map[int]*models.APIKey), nextID: 1}
+	return &fakeAPIKeyService{keys: make(map[int]*models.APIKey), nextID: 1, rawKey: testRawKey}
 }
 
 func (f *fakeAPIKeyService) CreateKey(userID int, name string, expiryDays *int) (*models.APIKey, string, error) {
@@ -41,10 +43,10 @@ func (f *fakeAPIKeyService) CreateKey(userID int, name string, expiryDays *int) 
 	if expiryDays != nil {
 		return nil, "", errors.New("skill keys must not expire")
 	}
-	key := &models.APIKey{ID: f.nextID, UserID: userID, Name: name, KeyPrefix: testRawKey[:8]}
+	key := &models.APIKey{ID: f.nextID, UserID: userID, Name: name, KeyPrefix: f.rawKey[:min(8, len(f.rawKey))]}
 	f.keys[key.ID] = key
 	f.nextID++
-	return key, testRawKey, nil
+	return key, f.rawKey, nil
 }
 
 func (f *fakeAPIKeyService) DeleteKey(id, userID int) error {
@@ -116,34 +118,34 @@ func TestDownloadFoodLog(t *testing.T) {
 			}
 
 			files := unzip(t, download.Content)
-			if len(files) != 3 {
-				t.Errorf("zip entries = %d, want 3", len(files))
+			if len(files) != 2 {
+				t.Errorf("zip entries = %d, want SKILL.md and the client only", len(files))
 			}
-			want, err := skillfiles.Render(skillfiles.Embedded(), tt.environment == "development", tt.appURL)
+			rendered, err := skillfiles.Render(skillfiles.Embedded(), tt.environment == "development", tt.appURL)
 			if err != nil {
 				t.Fatal(err)
 			}
+			want, err := rendered.WithAPIKey(testRawKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// The client holds the key: only its owner may read it once unpacked
+			wantModes := map[string]fs.FileMode{skillfiles.SkillFile: 0o644, skillfiles.ClientFile: 0o600}
 			for _, file := range want.Files {
 				entry := files[tt.wantName+"/"+file.Path]
 				if entry == nil {
 					t.Fatalf("zip has no %s/%s", tt.wantName, file.Path)
 				}
 				if readZipFile(t, entry) != string(file.Content) {
-					t.Errorf("%s differs from the rendered skill", entry.Name)
+					t.Errorf("%s differs from the rendered skill with the key", entry.Name)
 				}
-				if entry.Mode().Perm() != 0o644 {
-					t.Errorf("%s mode = %v, want 0644", entry.Name, entry.Mode())
+				if entry.Mode().Perm() != wantModes[file.Path] || !entry.Mode().IsRegular() {
+					t.Errorf("%s mode = %v, want %v", entry.Name, entry.Mode(), wantModes[file.Path])
 				}
 			}
-			keyEntry := files[tt.wantName+"/api_key"]
-			if keyEntry == nil {
-				t.Fatalf("zip has no %s/api_key", tt.wantName)
-			}
-			if readZipFile(t, keyEntry) != testRawKey+"\n" {
-				t.Error("api_key does not hold the new key plus a newline")
-			}
-			if keyEntry.Mode().Perm() != 0o600 {
-				t.Errorf("api_key mode = %v, want 0600", keyEntry.Mode())
+			client := readZipFile(t, files[tt.wantName+"/"+skillfiles.ClientFile])
+			if !strings.Contains(client, `API_KEY = "`+testRawKey+`"`+"\n") || strings.Contains(client, skillfiles.APIKeyPlaceholder) {
+				t.Error("the client does not hold the new key in place of the placeholder")
 			}
 
 			if len(keys.keys) != 1 || keys.keys[1].UserID != 7 || keys.keys[1].Name != "Claude skill 2026-10-12 12:04 UTC" {
@@ -177,6 +179,33 @@ func TestDownloadFoodLogDeletesTheKeyWhenZippingFails(t *testing.T) {
 	}
 }
 
+// The template was checked before the key was created, so only a key of an unexpected format can fail the
+// substitution, e.g. uppercase hex from a changed key generator
+func TestDownloadFoodLogDeletesTheKeyWhenTheSubstitutionFails(t *testing.T) {
+	keys := newFakeAPIKeyService()
+	keys.rawKey = strings.ToUpper(testRawKey)
+	var logs bytes.Buffer
+	s := newTestService(&config.Config{AppURL: "https://kcal.example.test"}, keys, &logs)
+
+	download, err := s.DownloadFoodLog(7)
+	if !errors.Is(err, skillfiles.ErrInvalidAPIKey) || download != nil {
+		t.Fatalf("DownloadFoodLog = %v, %v; want ErrInvalidAPIKey", download, err)
+	}
+	if len(keys.keys) != 0 {
+		t.Errorf("keys left after a failed substitution: %+v", keys.keys)
+	}
+	for _, text := range []string{err.Error(), logs.String()} {
+		if strings.Contains(text, keys.rawKey) || strings.Contains(text, keys.rawKey[8:]) {
+			t.Errorf("the raw key leaked: %s", text)
+		}
+	}
+	for _, part := range []string{"level=WARN", "Deleted the API key", "user_id=7", "api_key_id=1"} {
+		if !strings.Contains(logs.String(), part) {
+			t.Errorf("log %q does not contain %q", logs.String(), part)
+		}
+	}
+}
+
 func TestDownloadFoodLogLogsAFailedKeyCleanup(t *testing.T) {
 	keys := newFakeAPIKeyService()
 	keys.deleteErr = errors.New("database is locked")
@@ -202,6 +231,10 @@ func TestDownloadFoodLogFailsWithoutCreatingAKey(t *testing.T) {
 	}{
 		{"invalid base URL", "localhost:8080", skillfiles.Embedded()},
 		{"broken source", "https://kcal.example.test", skillfiles.Source{Skill: "# no frontmatter\n"}},
+		{"key line missing", "https://kcal.example.test", skillfiles.Source{Skill: skillfiles.Embedded().Skill,
+			Client: strings.Replace(skillfiles.Embedded().Client, `API_KEY = "API_KEY_HERE"`, `API_KEY = ""`, 1)}},
+		{"key line twice", "https://kcal.example.test", skillfiles.Source{Skill: skillfiles.Embedded().Skill,
+			Client: skillfiles.Embedded().Client + `API_KEY = "API_KEY_HERE"` + "\n"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

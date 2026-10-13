@@ -10,8 +10,9 @@
 
 ## Docker
 - `Dockerfile`: multi-stage (node → golang → distroless static, non-root); no `.env` in the image
-- `.dockerignore` excludes `skills/*/api_key`: real skill keys on the build host never reach the build context (the
-  binary embeds only the listed skill files anyway)
+- `.dockerignore` excludes `skills/*/api_key` as a safety net: the repository no longer uses `api_key` files (the key
+  goes into the client at download), but a stray one from an old setup must not reach the build context. The binary
+  embeds only the two listed skill files anyway
 - `build-and-push.sh TAG [--push] [--platform=PLATFORM]`: always `--no-cache`, removes `web/dist/` first, tags `TAG`
   and `latest`, writes `vTAG` to `version.txt`. Called by `deploy.sh`; production images are built only from `master`
 - Image: `ypeskov/kcal-tracker`. Build for the host architecture, without `--platform`

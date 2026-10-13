@@ -36,9 +36,13 @@
     earlier keys are never revoked automatically and are deleted on the API Keys tab
 - **Food Logging API for AI agents**: an agent (e.g. voice dictation through a skill from `skills/`) stores meals via `/api/v1`
   - Settings → AI downloads the `kkal-tracker-food-log` skill as a zip ready to upload to Claude: the server creates a
-    new API key, puts it into the skill's `api_key` file and points the skill at its `APP_URL`
-    (`POST /api/skills/food-log/download`). The development server (`ENVIRONMENT=development`) gives the
-    `kkal-tracker-food-log-dev` variant, so the dev and prod skills can be installed side by side
+    new API key, puts it into the skill's client script `scripts/kkal_client.py` (mode 0600 in the zip) and points the
+    skill at its `APP_URL` (`POST /api/skills/food-log/download`). The repository holds only the template; the
+    development server (`ENVIRONMENT=development`) generates the `kkal-tracker-food-log-dev` variant at download, so the
+    dev and prod skills can be installed side by side
+  - After logging a meal the skill replies with the items and a table of calories, fats, carbs and proteins (columns
+    Ккал, Ж, У, Б) for the meal and for the day. Calories come from the server, the grams from the client command
+    `totals`, which adds up the entries of the diary day and checks them against the server's calorie totals
   - The AI tab explains the skill and shows the install steps for claude.ai (code execution and network access to the
     site's own domain, Settings → Capabilities → Skills → Upload skill) and Claude Code (unzip into
     `~/.claude/skills/`), the note that every download adds a key, and a warning that the zip holds a secret key.
@@ -50,7 +54,9 @@
     the existing ingredient
   - `one_off: true` writes a new food to the diary without adding it to the ingredient list (restaurant dishes etc.)
   - A meal is atomic (all items or none); calories are calculated on the server
-  - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, time),
+  - Per-entry overrides: an `ingredient_id` item, or `PUT /api/v1/food/:id`, can set `kcal_per_100g`, `fats`, `carbs`
+    and `proteins` for this entry only (e.g. values from a label); the ingredient stays as it is
+  - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, macros, time),
     `DELETE /api/v1/food/:id` removes it
   - The agent can correct ingredients of the list (`PUT /api/v1/ingredients/:id`, only the sent fields change) and
     delete them (`DELETE /api/v1/ingredients/:id`)

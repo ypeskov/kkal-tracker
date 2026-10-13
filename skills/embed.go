@@ -1,7 +1,7 @@
-// Package skills embeds the sources of the production food logging skill into the binary.
+// Package skills embeds the template of the food logging skill into the binary.
 //
-// The files are listed one by one on purpose: a directory embed would also pick up the
-// git-ignored api_key file, which holds a real key on development machines.
+// The files are listed one by one on purpose: a directory embed would also pick up stray files, such as
+// a git-ignored api_key file of an old setup that may hold a real key.
 package skills
 
 import _ "embed"

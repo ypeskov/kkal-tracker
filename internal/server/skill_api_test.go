@@ -4,7 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
+	"io/fs"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,6 +20,7 @@ import (
 
 	"ypeskov/kkal-tracker/internal/auth"
 	"ypeskov/kkal-tracker/internal/config"
+	skillfiles "ypeskov/kkal-tracker/internal/skill"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v5"
@@ -86,11 +89,14 @@ func downloadSkill(t *testing.T, client *smokeClient) (*httptest.ResponseRecorde
 	return rec, files
 }
 
-// skillKey checks the zip layout of the skill and returns the API key from its api_key file
+// clientKeyLine is the API key line of a downloaded client
+var clientKeyLine = regexp.MustCompile(`(?m)^API_KEY = "([0-9a-f]{64})"$`)
+
+// skillKey checks the zip layout of the skill and returns the API key from its client
 func skillKey(t *testing.T, files map[string]string, skillName string) string {
 	t.Helper()
 
-	want := []string{skillName + "/SKILL.md", skillName + "/api_key", skillName + "/scripts/kkal_client.py"}
+	want := []string{skillName + "/SKILL.md", skillName + "/scripts/kkal_client.py"}
 	var got []string
 	for name := range files {
 		got = append(got, name)
@@ -100,12 +106,26 @@ func skillKey(t *testing.T, files map[string]string, skillName string) string {
 		t.Fatalf("zip entries = %q, want exactly %q", got, want)
 	}
 
-	content := files[skillName+"/api_key"]
-	key := strings.TrimSuffix(content, "\n")
-	if !regexp.MustCompile(`^[0-9a-f]{64}$`).MatchString(key) || content != key+"\n" {
-		t.Fatal("api_key is not a 64-character hex key followed by a newline")
+	client := files[skillName+"/scripts/kkal_client.py"]
+	matches := clientKeyLine.FindAllStringSubmatch(client, -1)
+	if len(matches) != 1 || strings.Contains(client, skillfiles.APIKeyPlaceholder) {
+		t.Fatal(`the client does not have exactly one API_KEY = "<64 hex>" line in place of the placeholder`)
 	}
-	return key
+	return matches[0][1]
+}
+
+// zipModes returns the permission bits of the files of a downloaded zip by name
+func zipModes(t *testing.T, content []byte) map[string]fs.FileMode {
+	t.Helper()
+	reader, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	if err != nil {
+		t.Fatalf("the downloaded skill is not a zip: %v", err)
+	}
+	modes := make(map[string]fs.FileMode, len(reader.File))
+	for _, file := range reader.File {
+		modes[file.Name] = file.Mode().Perm()
+	}
+	return modes
 }
 
 // withKey switches the client to API key auth and returns a function that restores the JWT
@@ -177,14 +197,12 @@ func TestSkillDownloadInstallsAWorkingSkill(t *testing.T) {
 	const name = "kkal-tracker-food-log"
 	key := skillKey(t, files, name)
 
-	// The skill points at APP_URL, the client keeps the placeholder
+	// The skill points at APP_URL
 	if !strings.Contains(files[name+"/SKILL.md"], "- Base URL: `http://localhost:8080`\n") {
 		t.Error("SKILL.md does not point at APP_URL")
 	}
-	pyClient := files[name+"/scripts/kkal_client.py"]
-	if !strings.Contains(pyClient, `DEFAULT_BASE_URL = "http://localhost:8080"`+"\n") ||
-		!strings.Contains(pyClient, `API_KEY = "XXXXXXXXX"`+"\n") {
-		t.Error("kkal_client.py does not point at APP_URL or lost the key placeholder")
+	if !strings.Contains(files[name+"/scripts/kkal_client.py"], `DEFAULT_BASE_URL = "http://localhost:8080"`+"\n") {
+		t.Error("kkal_client.py does not point at APP_URL")
 	}
 
 	// The key works on the external API and reaches only A's data
@@ -251,9 +269,24 @@ func TestSkillDownloadInstallsAWorkingSkill(t *testing.T) {
 	}
 }
 
-// With the production and the development configuration of the real servers the skill files in the zip are
-// the files of the repository byte for byte
+// devTitle is the title of the development skill with its banner
+var devTitle = regexp.MustCompile(`(?m)^# Kkal Tracker: food diary logging \(DEV\)\n\n> \*\*DEV skill\.\*\* .*Start every reply with "\[DEV\]".*\n`)
+
+// With the production and the development configuration of the real servers the skill files in the zip are the
+// template of the repository with only the generated values filled in: the API key and, for development, the base
+// URL, the name, the description and the DEV banner
 func TestSkillDownloadMatchesTheRepository(t *testing.T) {
+	const templateDir = "kkal-tracker-food-log"
+	template := make(map[string]string)
+	for _, path := range []string{"SKILL.md", "scripts/kkal_client.py"} {
+		content, err := os.ReadFile(filepath.Join("..", "..", "skills", templateDir, filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatalf("failed to read the repository template: %v", err)
+		}
+		template[path] = string(content)
+	}
+	templateLines := strings.SplitN(template["SKILL.md"], "\n", 4)
+
 	tests := []struct {
 		environment, appURL, skillName string
 	}{
@@ -272,16 +305,44 @@ func TestSkillDownloadMatchesTheRepository(t *testing.T) {
 			if got, want := rec.Header().Get(echo.HeaderContentDisposition), `attachment; filename="`+tt.skillName+`.zip"`; got != want {
 				t.Errorf("Content-Disposition = %q, want %q", got, want)
 			}
-			skillKey(t, files, tt.skillName)
+			key := skillKey(t, files, tt.skillName)
 
-			for _, path := range []string{"SKILL.md", "scripts/kkal_client.py"} {
-				committed, err := os.ReadFile(filepath.Join("..", "..", "skills", tt.skillName, filepath.FromSlash(path)))
-				if err != nil {
-					t.Fatalf("failed to read the repository copy: %v", err)
+			// The client holds the key: only its owner may read it once unpacked
+			wantModes := map[string]fs.FileMode{tt.skillName + "/SKILL.md": 0o644, tt.skillName + "/scripts/kkal_client.py": 0o600}
+			if modes := zipModes(t, rec.Body.Bytes()); !maps.Equal(modes, wantModes) {
+				t.Errorf("zip modes = %v, want %v", modes, wantModes)
+			}
+
+			skillText := files[tt.skillName+"/SKILL.md"]
+			pyClient := files[tt.skillName+"/scripts/kkal_client.py"]
+			if !strings.Contains(skillText, "- Base URL: `"+tt.appURL+"`\n") ||
+				!strings.Contains(pyClient, `DEFAULT_BASE_URL = "`+tt.appURL+`"`+"\n") {
+				t.Errorf("the files do not point at %s", tt.appURL)
+			}
+
+			// Undo the generated values: what is left must be the template byte for byte
+			pyClient = strings.Replace(pyClient, `API_KEY = "`+key+`"`, `API_KEY = "API_KEY_HERE"`, 1)
+			if tt.environment == "development" {
+				lines := strings.SplitN(skillText, "\n", 4)
+				if len(lines) != 4 || lines[1] != "name: kkal-tracker-food-log-dev" ||
+					!strings.HasPrefix(lines[2], "description: DEV/TEST copy of the Kkal Tracker food logging skill.") {
+					t.Fatalf("dev frontmatter = %q, want the dev name and description", lines[:min(3, len(lines))])
 				}
-				if files[tt.skillName+"/"+path] != string(committed) {
-					t.Errorf("%s/%s in the zip differs from the repository", tt.skillName, path)
+				lines[1], lines[2] = templateLines[1], templateLines[2]
+				skillText = strings.Join(lines, "\n")
+
+				if n := len(devTitle.FindAllString(skillText, -1)); n != 1 {
+					t.Errorf("dev SKILL.md has %d DEV titles with the [DEV] banner, want 1", n)
 				}
+				skillText = devTitle.ReplaceAllLiteralString(skillText, "# Kkal Tracker: food diary logging\n")
+				skillText = strings.Replace(skillText, tt.appURL, skillfiles.ProductionURL, 1)
+				pyClient = strings.Replace(pyClient, tt.appURL, skillfiles.ProductionURL, 1)
+			}
+			if skillText != template["SKILL.md"] {
+				t.Error("SKILL.md in the zip differs from the template by more than the generated values")
+			}
+			if pyClient != template["scripts/kkal_client.py"] {
+				t.Error("kkal_client.py in the zip differs from the template by more than the generated values")
 			}
 		})
 	}

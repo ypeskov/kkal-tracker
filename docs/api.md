@@ -33,17 +33,26 @@ All routes are under `/api`.
   - 200: body is the zip; headers `Content-Type: application/zip`,
     `Content-Disposition: attachment; filename="<skill>.zip"`, `Cache-Control: no-store`. `<skill>` is
     `kkal-tracker-food-log`, or `kkal-tracker-food-log-dev` on a server with `ENVIRONMENT=development`
-  - Zip: one folder `<skill>/` with `SKILL.md`, `scripts/kkal_client.py` (both pointed at `APP_URL`) and `api_key` (the
-    new key plus a newline); nothing else
+  - Zip: one folder `<skill>/` with exactly two files, both pointed at `APP_URL`: `SKILL.md` (mode 0644) and
+    `scripts/kkal_client.py` (mode 0600), which holds the new key in place of the `API_KEY_HERE` placeholder
   - 401 `{"message": ...}` without or with an invalid JWT (no key is created); 429
     `{"message": "Too many requests, please try again later"}` over the limit; 500
     `{"message": "Failed to prepare the skill"}` on any internal failure (a key created for a failed download is deleted)
 - `/api/v1/*` - external API (`X-API-Key` header, rate limited per IP: burst of 20, then 1 req/sec)
   - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
   - `GET /api/v1/ingredients` - all user ingredients with `times_used` and `last_used`
-  - `POST /api/v1/food` - store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`
-  - `PUT /api/v1/food/:id` - change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, meal_datetime?}`;
-    fields that are not sent keep their values, calories are recalculated
+  - `POST /api/v1/food` - store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?, fats?, carbs?, proteins?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`.
+    On an `ingredient_id` item, `kcal_per_100g` (0–900) and `fats`/`carbs`/`proteins` (grams per 100 g, 0–100) override
+    the ingredient's values for this entry only; values that are not sent are copied from the ingredient (macros may be
+    null). The ingredient does not change. Out of range → 400 `items[<i>]: <field> must be between 0 and 100 (grams per
+    100 g)`; any of these fields at the top level of a `new_ingredient` item → 400 `items[<i>]: <field> of a new food
+    belongs inside new_ingredient`. A rejected item rejects the whole meal
+  - `PUT /api/v1/food/:id` - change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, fats?, carbs?, proteins?, meal_datetime?}`;
+    fields that are not sent (or `null`) keep their values, calories are recalculated (macros do not affect them).
+    `ingredient_id` first copies the name, calories and all three macros from that ingredient, then the overrides sent
+    in the same request (`kcal_per_100g`, `fats`, `carbs`, `proteins`) are applied on top. A macro cannot be reset to
+    null, `0` means none. Same limits as `POST /food`; 400 with nothing changed on a violation or when nothing is sent.
+    Returns `{entry, day, day_total_calories?}`; the ingredient does not change
   - `DELETE /api/v1/food/:id` - delete a food entry
   - `PUT /api/v1/ingredients/:id` - change an ingredient of the list: `{name?, kcal_per_100g?, fats?, carbs?, proteins?}`;
     fields that are not sent (or `null`) keep their values, the sent ones are checked against the limits of `POST /food`

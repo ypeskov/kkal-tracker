@@ -21,8 +21,9 @@ Two copies of this skill can be installed: the regular one writes to the real di
 ## API basics
 
 - Base URL: `https://kcal.peskov.info`
-- Auth: `X-API-Key` header. The client takes the key from the `KKAL_API_KEY` environment variable, from a file named `api_key` in the skill folder (next to this file), or from the constant at the top of `scripts/kkal_client.py`. The skill downloaded from Kkal Tracker (Settings → AI → Download skill) already contains its own key in the `api_key` file. If the script says the key is not configured, ask the user to download the skill in Kkal Tracker (Settings → AI) and install it in place of this one; alternatively they can create a key in Settings → API Keys and save it to the `api_key` file.
-- Rate limit: a burst of 20 requests, then 1 request per second. A normal logging takes two calls.
+- Auth: `X-API-Key` header. The skill downloaded from Kkal Tracker (Settings → AI → Download skill) already contains its own key in `scripts/kkal_client.py`, nothing has to be configured. The `KKAL_API_KEY` environment variable overrides it, for manual checks only. If the script says the key is not configured, or a request returns `401`, ask the user to download the skill again in Kkal Tracker (Settings → AI) and install it in place of this one.
+- The key is a secret: never print, quote or show the `API_KEY` line or the key itself, and do not open `scripts/kkal_client.py` to read it. Just run the client.
+- Rate limit: a burst of 20 requests, then 1 request per second. A normal logging takes three calls: `ingredients`, `add` and `totals`.
 
 Use the bundled client, it handles the key, headers and errors:
 
@@ -31,7 +32,9 @@ python scripts/kkal_client.py ingredients            # the user's ingredient lis
 python scripts/kkal_client.py add --json '<meal>'    # store a meal (or pipe the JSON to stdin)
 python scripts/kkal_client.py entries                # today's diary entries with IDs
 python scripts/kkal_client.py entries --from 2026-03-01 --to 2026-03-07
+python scripts/kkal_client.py totals --day 2026-10-13 --meal 3622 3623 3624 --expect-meal-kcal 888 --expect-day-kcal 1640   # meal and day macros
 python scripts/kkal_client.py edit 12345 --weight 150   # correct an entry
+python scripts/kkal_client.py edit 12345 --kcal 260 --fats 3 --carbs 48 --proteins 9   # label values for this entry only
 python scripts/kkal_client.py delete 12345           # delete an entry
 python scripts/kkal_client.py edit-ingredient 94 --kcal 260   # correct an ingredient of the list
 python scripts/kkal_client.py delete-ingredient 94   # delete an ingredient of the list
@@ -74,7 +77,7 @@ Decide like this:
 - **Several plausible matches with noticeably different calories and no clear favourite** → ask one short question listing the candidates. A wrong pick here silently corrupts the diary.
 - **No match** → it is a new food, see the next step.
 
-If the user states a calorie value for a known food that differs from the list ("этот хлеб 260 ккал"), keep the `ingredient_id` and add `kcal_per_100g` to the item: it overrides the value for this entry only. Offer in one line of the reply to update the value in the ingredient list as well, and change the list only after the user agrees (see "Correcting the ingredient list"). When the user points at the product itself ("у этого хлеба на самом деле 260 ккал", "он всегда 260"), correct the ingredient first with `edit-ingredient` and then log it without an override.
+If the user states a calorie value for a known food that differs from the list ("этот хлеб 260 ккал"), keep the `ingredient_id` and add `kcal_per_100g` to the item: it overrides the value for this entry only. When they read the label values ("на упаковке 260 ккал, Ж 3, У 48, Б 9"), override the calories and the macros together: `kcal_per_100g`, `fats`, `carbs` and `proteins` (grams per 100 g) on the item. Each value you send replaces the ingredient's value for this entry only; the ones you do not send come from the ingredient. If the user gives only the calories, override only `kcal_per_100g` and say in the reply that the macros still come from the ingredient. Offer in one line of the reply to update the value in the ingredient list as well, and change the list only after the user agrees (see "Correcting the ingredient list"). When the user points at the product itself ("у этого хлеба на самом деле 260 ккал", "он всегда 260"), correct the ingredient first with `edit-ingredient` and then log it without an override.
 
 ### 4. New foods
 
@@ -96,7 +99,7 @@ If the user only knows the total calories ("ужин в ресторане пр�
   "meal_datetime": "2026-10-02T13:30:00+03:00",
   "items": [
     {"ingredient_id": 120, "weight": 200},
-    {"ingredient_id": 94, "weight": 60, "kcal_per_100g": 260},
+    {"ingredient_id": 94, "weight": 60, "kcal_per_100g": 260, "fats": 3, "carbs": 48, "proteins": 9},
     {"new_ingredient": {"name": "Сырники", "kcal_per_100g": 220, "fats": 9, "carbs": 20, "proteins": 14}, "weight": 150},
     {"new_ingredient": {"name": "Паста карбонара", "kcal_per_100g": 180, "fats": 9, "carbs": 16, "proteins": 8}, "weight": 300, "one_off": true}
   ]
@@ -106,28 +109,66 @@ If the user only knows the total calories ("ужин в ресторане пр�
 - Send all foods of the meal together. The request is atomic: if one item is rejected, nothing is saved, so you can fix the item and resend the whole meal without creating duplicates.
 - `meal_datetime` is optional. Omit it when the user is logging what they just ate. Set it (with the user's UTC offset) when they name a time: "на завтрак в 8", "вчера вечером".
 - The server calculates the calories itself from weight and calories per 100 g — do not send totals.
-- Limits: weight up to 10000 g, `kcal_per_100g` 0–900, macros 0–100 g per 100 g, up to 50 items. The same calorie and macro limits apply to `edit-ingredient`.
+- Limits: weight up to 10000 g, `kcal_per_100g` 0–900, macros 0–100 g per 100 g (in `new_ingredient` and in the per-entry overrides `fats`, `carbs`, `proteins`), up to 50 items. The same calorie and macro limits apply to `edit` and `edit-ingredient`.
 
-The response lists the stored entries (with `id`, the resolved `food` name and `calories`), `total_calories` of this meal and `day_total_calories` for the diary day.
+The response lists the stored entries (with `id`, the resolved `food` name, `calories` and the nutrients `fats`, `carbs`, `proteins` per 100 g when they are known), `total_calories` of this meal, the diary `day` the meal was counted for and `day_total_calories` for that day.
 
-### 6. Reply to the user
+### 6. Add up the macros
+
+The user wants fats, carbs and proteins next to the calories, for this meal and for the whole day. The server totals only calories, so the grams come from the diary entries. Never add up macros by hand or with your own code: run `totals`, it fetches the day and does the sums.
+
+```bash
+python scripts/kkal_client.py totals --day 2026-10-13 --meal 3622 3623 3624 --expect-meal-kcal 888 --expect-day-kcal 1640
+```
+
+- `--day` is the `day` of the `add` response, `--meal` the `id`s of the entries just stored, `--expect-meal-kcal` the `total_calories` and `--expect-day-kcal` the `day_total_calories` of the response. If the response has no `day_total_calories`, omit `--expect-day-kcal`; the day calories then come from `totals`.
+- Always pass the `day` from the response, never "today". It is the diary day the server counted `day_total_calories` for (the diary keeps days as UTC dates). It differs from today when `meal_datetime` names another day ("вчера вечером"), and UTC midnight can pass between `add` and `totals`; neither `entries` nor `totals` can guess it.
+
+The output:
+
+```json
+{
+  "day": "2026-10-13",
+  "meal": {"entry_ids": [3622, 3623, 3624], "kcal": 888, "fats": 59, "carbs": 35, "proteins": 54},
+  "day_total": {"entries": 7, "kcal": 1640, "fats": 87, "carbs": 96, "proteins": 112},
+  "missing_meal_ids": [],
+  "without_macros": [{"id": 3601, "food": "Кофе", "in_meal": false}],
+  "check": {"meal": "ok", "day": "ok"}
+}
+```
+
+- Grams are rounded to whole numbers; a nutrient that is not filled in counts as 0.
+- `check.meal` is `"mismatch"` when the meal does not add up to `total_calories` or some of its entries were not found on that day (`missing_meal_ids`). Then show the meal's calories from the server and say that the meal macros could not be calculated.
+- `check.day` is `"mismatch"` when the day does not add up to `day_total_calories`. Then show the server's `day_total_calories` and say that the day macros could not be calculated. Never show numbers that do not belong together.
+- `without_macros` lists the foods with no fats, carbs or proteins at all (`in_meal` tells whether they belong to this meal). The totals are understated by them, so name them in the reply.
+
+For questions like "сколько за сегодня?" run `totals --day <today's UTC date, the day the website shows>` without `--meal`: `meal` is then `null`, reply with the day row only.
+
+### 7. Reply to the user
 
 The user is often on voice and wants a quick confirmation, not a report. Reply in the user's language, in a few lines:
 
-- what was recorded: food, grams, calories for each item;
-- the meal total and the day total;
-- anything they should know to catch a mistake: weights you assumed, which ingredient you picked when there was a choice, new ingredients created (with the values you estimated), one-off items.
+1. What was recorded: a short list with food, grams and calories for each item.
+2. A table with this meal and the whole day. Write it as a real markdown table, **not inside a code block**, so that it renders as a table in the chat.
+   - Rows: "Приём" (this meal) and "За день" (the whole diary day).
+   - Columns, always in this order: Ккал, Ж, У, Б, that is calories, fats, carbs, proteins (К-Ж-У-Б). This is deliberately not the usual Б-Ж-У order: keep К-Ж-У-Б in every language, with the headers in the user's language.
+   - The calories are the server's `total_calories` and `day_total_calories`, the grams come from `totals`, whole numbers.
+   - A row whose check is `"mismatch"` shows the server's calories and `—` in the gram cells.
+3. Notes, so the user can catch a mistake: weights you assumed, which ingredient you picked when there was a choice, new ingredients created (with the values you estimated), one-off items, foods without macros, and any per-entry override. When only the calories were overridden, say that the macros still come from the ingredient.
 
-Example:
+Example. The list is shown in a code block only as an illustration; the table is written exactly as it should appear in the reply:
 
 ```
 Записал:
 • Свиная шея (вес сырой) — 200 г, 534 ккал
 • Помидор — 120 г, 24 ккал (вес одного помидора принял за 120 г)
-• Сырники — 150 г, 330 ккал — новый продукт в справочнике: 220 ккал/100 г, Б 14 / Ж 9 / У 20 (оценка)
-
-Приём пищи: 888 ккал. За день: 1 640 ккал.
+• Сырники — 150 г, 330 ккал — новый продукт в справочнике: 220 ккал/100 г, Ж 9 / У 20 / Б 14 (оценка)
 ```
+
+|         | Ккал  | Ж, г | У, г | Б, г |
+|---------|-------|------|------|------|
+| Приём   | 888   | 59   | 35   | 54   |
+| За день | 1 640 | 87   | 96   | 112  |
 
 ## Fixing mistakes
 
@@ -139,15 +180,19 @@ Use the entry `id` from the `add` response. If you no longer have it (another co
   python scripts/kkal_client.py edit 12345 --weight 150
   python scripts/kkal_client.py edit 12345 --ingredient-id 76          # another food from the ingredient list
   python scripts/kkal_client.py edit 12345 --kcal 260                  # calories per 100 g for this entry only
+  python scripts/kkal_client.py edit 12345 --kcal 260 --fats 3 --carbs 48 --proteins 9   # label values for this entry only
   python scripts/kkal_client.py edit 12345 --datetime 2026-10-02T13:30:00+03:00
   ```
 
-  The options can be combined. `--ingredient-id` takes the name, calories and nutrients from that ingredient and keeps the weight.
+  The options can be combined. `--ingredient-id` takes the name, calories and nutrients from that ingredient and keeps the weight; `--kcal`, `--fats`, `--carbs` and `--proteins` passed together with it are applied on top. A macro cannot be reset to "unknown"; send `0` if it really is zero.
 - **The right food is not in the ingredient list** → `edit` cannot create ingredients. Delete the entry and `add` it again as a new food, passing the original `meal_datetime` so the entry does not move to the current time.
 - **Undo** ("отмени", "удали последнее", "это было не то") → `delete` each entry `id`. Undoing an entry never deletes its ingredient, even one you have just created.
 - **An ingredient created by mistake** (a duplicate, a food that should have been one-off) → `delete-ingredient` when the user asks for it; **a wrong estimate or a typo** in an ingredient → `edit-ingredient`. See the next section.
 
-After a correction, tell the user what the entry looks like now and the new day total.
+After a correction, show the entry as it is now and the "За день" row again, in the table of step 7:
+
+- after `edit`: `totals --day <day of the edit response> --expect-day-kcal <its day_total_calories>`; the calories of the day row come from the edit response;
+- after `delete` the server returns nothing, so `totals --day <the entry's day>` is the only source of the day row. The entry's day is the `day` of the `add` or `edit` response that produced it, or the UTC date of its `meal_datetime` in `entries`.
 
 ### Correcting the ingredient list
 
@@ -156,7 +201,7 @@ Diary entries keep their own copy of the food name, calories and macros. Changin
 **Edit the ingredient or override one entry.**
 
 - **Edit the ingredient** (`edit-ingredient`) only when the user points at the product or the list: "в справочнике", "на самом деле", "всегда" ("у этого продукта на самом деле 260 ккал", "в справочнике неправильно", "он всегда 260"), or asks to fix a typo in a name or a bad estimate of an ingredient you created.
-- **Otherwise override the value for the entry only** — `kcal_per_100g` on the item or `edit --kcal` — as before, e.g. "этот хлеб 260 ккал" while logging. Offer in one line of the reply to update the list as well, and change the list only after the user agrees.
+- **Otherwise override the values for the entry only** — `kcal_per_100g`, `fats`, `carbs`, `proteins` on the item, or `edit --kcal … --fats … --carbs … --proteins …` — as before, e.g. "этот хлеб 260 ккал" or label values read while logging. Offer in one line of the reply to update the list as well, and change the list only after the user agrees.
 
 ```bash
 python scripts/kkal_client.py edit-ingredient 94 --kcal 260
@@ -184,6 +229,6 @@ python scripts/kkal_client.py delete-ingredient 94
 - `404` on `edit` or `delete` → there is no such entry (already deleted, or a wrong ID). Check with `entries`.
 - `404` on `edit-ingredient` or `delete-ingredient` → there is no such ingredient (already deleted, a wrong ID, or an ID from the other server). Fetch `ingredients` again.
 - The client says the server probably does not support editing or deleting ingredients yet → the server is an older version. Tell the user, do not retry; nothing was changed.
-- `401` → the API key was rejected. Tell the user, do not retry.
+- `401` → the API key was rejected. Do not retry; ask the user to download the skill again in Kkal Tracker (Settings → AI) and install it in place of this one.
 - `429` → rate limited. Wait a few seconds and retry once.
 - `5xx`, timeout or network error on `add` → the meal may have been saved anyway. Run `entries` and look for it before resending; a blind retry is how a meal gets logged twice.

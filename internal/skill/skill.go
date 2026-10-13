@@ -1,17 +1,14 @@
 // Package skill renders the food logging agent skill (skills/kkal-tracker-food-log) for a server.
 //
-// The production variant is the skill as it is, pointed at the server's URL. The development variant is the
-// "-dev" copy: another name and description and a DEV banner, so both can be installed in an agent side by side.
-// This is the only implementation of the dev transformation: the skill download endpoint and cmd/skillgen,
-// which writes the committed skills/kkal-tracker-food-log-dev, both use it.
+// The repository holds the template only. Rendering fills in what differs between installations: the base URL of
+// the server and, for the development variant, another name and description and a DEV banner, so both variants can
+// be installed in an agent side by side. WithAPIKey then puts the user's API key into the client.
 package skill
 
 import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -24,12 +21,14 @@ const (
 
 	// ProductionURL is the base URL written in the skill sources
 	ProductionURL = "https://kcal.peskov.info"
-	// DevelopmentURL is the base URL of the committed dev copy
-	DevelopmentURL = "https://dev-kcal.peskov.info"
 
 	// Paths of the skill files inside the skill folder
 	SkillFile  = "SKILL.md"
 	ClientFile = "scripts/kkal_client.py"
+
+	// APIKeyPlaceholder stands for the API key in the template client; only the download replaces it
+	APIKeyPlaceholder = "API_KEY_HERE"
+	apiKeyAnchor      = `API_KEY = "` + APIKeyPlaceholder + `"`
 
 	title = "# Kkal Tracker: food diary logging\n"
 
@@ -48,6 +47,10 @@ const (
 var (
 	ErrInvalidBaseURL = errors.New("base URL must be an absolute http(s) URL without credentials, query or quotes")
 	ErrSourceLayout   = errors.New("unexpected skill source layout")
+	ErrInvalidAPIKey  = errors.New("API key must be 64 lowercase hex characters")
+
+	// validAPIKey is the format of the raw keys created by the API key service
+	validAPIKey = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 	// Agent Skills name rules: lowercase letters, digits and hyphens, at most 64 characters
 	validName     = regexp.MustCompile(`^[a-z0-9-]{1,64}$`)
@@ -71,8 +74,7 @@ type File struct {
 	Content []byte
 }
 
-// Skill is a rendered skill: its name (also the folder name) and its files.
-// It never contains an api_key file.
+// Skill is a rendered skill: its name (also the folder name) and its files
 type Skill struct {
 	Name  string
 	Files []File
@@ -80,6 +82,7 @@ type Skill struct {
 
 // Render builds the production or the development variant of the skill pointed at baseURL.
 // Every anchor of the transformation must occur exactly once in the source, otherwise an error is returned.
+// The API key placeholder is checked here but stays in place: WithAPIKey replaces it.
 func Render(src Source, development bool, baseURL string) (*Skill, error) {
 	baseURL, err := normalizeBaseURL(baseURL)
 	if err != nil {
@@ -100,6 +103,9 @@ func Render(src Source, development bool, baseURL string) (*Skill, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := checkKeyPlaceholder(skillText, client); err != nil {
+		return nil, err
+	}
 
 	if err := checkName(skillText, name); err != nil {
 		return nil, err
@@ -114,16 +120,42 @@ func Render(src Source, development bool, baseURL string) (*Skill, error) {
 	}, nil
 }
 
-// WriteDir writes the skill files into dir, creating the folders. Other files in dir, such as api_key, stay untouched.
-func (s *Skill) WriteDir(dir string) error {
-	for _, file := range s.Files {
-		path := filepath.Join(dir, filepath.FromSlash(file.Path))
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return err
+// WithAPIKey returns a copy of the skill whose client holds rawKey instead of the placeholder.
+// The key must have the format of the keys the server creates; errors never contain the key.
+func (s *Skill) WithAPIKey(rawKey string) (*Skill, error) {
+	if !validAPIKey.MatchString(rawKey) {
+		return nil, ErrInvalidAPIKey
+	}
+
+	withKey := &Skill{Name: s.Name, Files: make([]File, len(s.Files))}
+	copy(withKey.Files, s.Files)
+	replaced := false
+	for i, file := range withKey.Files {
+		if file.Path != ClientFile {
+			continue
 		}
-		if err := os.WriteFile(path, file.Content, 0o644); err != nil {
-			return err
+		client, err := replaceOnce(ClientFile, string(file.Content), apiKeyAnchor, `API_KEY = "`+rawKey+`"`)
+		if err != nil {
+			return nil, err
 		}
+		withKey.Files[i].Content = []byte(client)
+		replaced = true
+	}
+	if !replaced {
+		return nil, fmt.Errorf("%w: no %s", ErrSourceLayout, ClientFile)
+	}
+	return withKey, nil
+}
+
+// checkKeyPlaceholder requires the placeholder exactly once in the client, in the key line, and nowhere in SKILL.md,
+// so that the key substitution leaves no placeholder behind
+func checkKeyPlaceholder(skillText, client string) error {
+	if count := strings.Count(skillText, APIKeyPlaceholder); count != 0 {
+		return fmt.Errorf("%w: %s: expected no occurrence of %q, found %d", ErrSourceLayout, SkillFile, APIKeyPlaceholder, count)
+	}
+	if count := strings.Count(client, APIKeyPlaceholder); count != 1 || !strings.Contains(client, apiKeyAnchor) {
+		return fmt.Errorf("%w: %s: expected exactly one occurrence of %q, in %q, found %d",
+			ErrSourceLayout, ClientFile, APIKeyPlaceholder, apiKeyAnchor, count)
 	}
 	return nil
 }

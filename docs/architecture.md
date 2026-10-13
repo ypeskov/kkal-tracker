@@ -17,7 +17,6 @@ cmd/
   web/                  # main web server
   migrate/              # migration runner CLI
   seed/                 # database seeding (seed files in sql/)
-  skillgen/             # regenerates skills/kkal-tracker-food-log-dev (make skill-dev)
 internal/
   auth/                 # JWT token management
   config/               # configuration from the environment
@@ -31,13 +30,12 @@ internal/
   repositories/         # data access, one file per entity
   server/               # wiring, routes, security (CSP, rate limits), end-to-end tests
   services/<domain>/    # business logic
-  skill/                # renders the food logging skill (production or -dev variant, base URL): download + generator
+  skill/                # renders the food logging skill for a download: -dev variant, base URL and API key
 migrations/             # Goose SQL migrations
 scripts/                # utility scripts (create_user.go, install-local-db.sh)
 skills/                 # product feature: skills for external agents that log food through /api/v1
-  kkal-tracker-food-log/      # production skill (SKILL.md + scripts/kkal_client.py)
-  kkal-tracker-food-log-dev/  # generated copy for the dev server, do not edit by hand: `make skill-dev` (cmd/skillgen)
-  embed.go                    # embeds the two production skill files, listed one by one (never api_key)
+  kkal-tracker-food-log/      # the skill template (SKILL.md + scripts/kkal_client.py with the API_KEY_HERE placeholder)
+  embed.go                    # embeds the two template files, listed one by one
 web/
   src/api/              # API service classes, one per backend domain
   src/components/       # components (flat + ai/, reports/, settings/)

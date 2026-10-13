@@ -235,16 +235,17 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 - `one_off: true` writes the food to the diary without adding it to the ingredient list.
 - `meal_datetime` is optional and takes RFC 3339 with a time zone offset.
 - A meal is atomic: all items are stored or none. Calories are calculated on the server.
-- `PUT /api/v1/food/:id` takes `weight`, `ingredient_id`, `kcal_per_100g`, `meal_datetime`; fields that are not sent keep their values, calories are recalculated.
+- `ingredient_id` items may override `kcal_per_100g`, `fats`, `carbs` and `proteins` (grams per 100 g) for this entry only, e.g. values read from a label; the ingredient itself does not change.
+- `PUT /api/v1/food/:id` takes `weight`, `ingredient_id`, `kcal_per_100g`, `fats`, `carbs`, `proteins`, `meal_datetime`; fields that are not sent keep their values, calories are recalculated. With `ingredient_id`, the name, calories and macros are copied from that ingredient first, the overrides sent in the same request go on top.
 
 ### Agent skills
 
 `skills/` contains ready-made skills that let an AI agent log food through the external API, for example from voice dictation.
 
-- `kkal-tracker-food-log/` is the production skill: `SKILL.md` and the client `scripts/kkal_client.py` (Python standard library only).
-- `kkal-tracker-food-log-dev/` is the same skill pointed at the development server. It is generated, do not edit it by hand: change the production skill and run `make skill-dev` (`go run ./cmd/skillgen [URL]`, default `https://dev-kcal.peskov.info`). A test fails when the committed copy is out of date.
-- Users get a configured skill from **Settings → AI → Download skill**: a zip ready to upload to Claude, with a new API key in its `api_key` file and the server's `APP_URL` as the base URL (the `-dev` variant on a server with `ENVIRONMENT=development`). The two production skill files are embedded into the binary (`skills/embed.go`).
-- The client takes the key from the `KKAL_API_KEY` variable or from the git-ignored `api_key` file in the skill folder; `KKAL_BASE_URL` overrides the server address. The scripts in the repository hold only the `XXXXXXXXX` placeholder.
+- `kkal-tracker-food-log/` is the only skill in the repository, a template: `SKILL.md` and the client `scripts/kkal_client.py` (Python standard library only). Edit the skill only here, never an installed copy.
+- Users get a configured skill from **Settings → AI → Download skill**: a zip ready to upload to Claude. The download fills in everything that differs between installations: the server's `APP_URL` as the base URL, a new API key in place of the `API_KEY_HERE` placeholder of `scripts/kkal_client.py` (the file has mode 0600 in the zip), and on a server with `ENVIRONMENT=development` the `kkal-tracker-food-log-dev` name, description and DEV banner. The two template files are embedded into the binary (`skills/embed.go`).
+- The client uses the key embedded by the download; `KKAL_API_KEY` and `KKAL_BASE_URL` override the key and the server address for manual checks.
+- After logging a meal the skill shows calories, fats, carbs and proteins of the meal and of the day; the client command `totals` adds them up from the diary.
 
 ## Project Structure
 
@@ -252,8 +253,7 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 cmd/
 ├── web/           # Web server
 ├── migrate/       # Migration runner
-├── seed/          # Database seeding, SQL files in sql/
-└── skillgen/      # Regenerates the dev agent skill (make skill-dev)
+└── seed/          # Database seeding, SQL files in sql/
 internal/
 ├── auth/          # JWT tokens
 ├── config/        # Configuration from the environment

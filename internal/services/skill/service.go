@@ -15,9 +15,6 @@ import (
 	skillfiles "ypeskov/kkal-tracker/internal/skill"
 )
 
-// apiKeyFile is the file next to SKILL.md the skill client reads its key from
-const apiKeyFile = "api_key"
-
 // zipEntry is a file of the archive; name is the full path inside the archive
 type zipEntry struct {
 	name    string
@@ -48,7 +45,8 @@ func New(cfg *config.Config, apiKeyService apikeyservice.Servicer, logger *slog.
 }
 
 // DownloadFoodLog creates a new API key for the user and returns the food logging skill of this server with the key
-// in its api_key file. The development server gives the "-dev" variant. If the zip cannot be built, the key is deleted.
+// in its client script. The development server gives the "-dev" variant. The skill is rendered before the key exists,
+// so a broken template creates no key; if anything fails after the key was created, the key is deleted.
 // The raw key appears only in the returned content, never in errors or logs.
 func (s *Service) DownloadFoodLog(userID int) (*Download, error) {
 	rendered, err := skillfiles.Render(s.source, s.development, s.baseURL)
@@ -62,12 +60,21 @@ func (s *Service) DownloadFoodLog(userID int) (*Download, error) {
 		return nil, fmt.Errorf("create API key: %w", err)
 	}
 
-	entries := make([]zipEntry, 0, len(rendered.Files)+1)
-	for _, file := range rendered.Files {
-		entries = append(entries, zipEntry{name: path.Join(rendered.Name, file.Path), content: file.Content, mode: 0o644})
+	withKey, err := rendered.WithAPIKey(rawKey)
+	if err != nil {
+		s.deleteKey(apiKey.ID, userID)
+		return nil, fmt.Errorf("insert API key: %w", err)
 	}
-	// The key file is readable by the owner only once unpacked
-	entries = append(entries, zipEntry{name: path.Join(rendered.Name, apiKeyFile), content: []byte(rawKey + "\n"), mode: 0o600})
+
+	entries := make([]zipEntry, 0, len(withKey.Files))
+	for _, file := range withKey.Files {
+		mode := fs.FileMode(0o644)
+		if file.Path == skillfiles.ClientFile {
+			// The client holds the key: readable by the owner only once unpacked
+			mode = 0o600
+		}
+		entries = append(entries, zipEntry{name: path.Join(withKey.Name, file.Path), content: file.Content, mode: mode})
+	}
 
 	var archive bytes.Buffer
 	if err := s.writeZip(&archive, entries, now); err != nil {
@@ -75,8 +82,8 @@ func (s *Service) DownloadFoodLog(userID int) (*Download, error) {
 		return nil, fmt.Errorf("build zip: %w", err)
 	}
 
-	s.logger.Info("Skill prepared for download", "user_id", userID, "skill", rendered.Name, "api_key_id", apiKey.ID)
-	return &Download{FileName: rendered.Name + ".zip", Content: archive.Bytes()}, nil
+	s.logger.Info("Skill prepared for download", "user_id", userID, "skill", withKey.Name, "api_key_id", apiKey.ID)
+	return &Download{FileName: withKey.Name + ".zip", Content: archive.Bytes()}, nil
 }
 
 // KeyName is the name of the API key created for a skill download
