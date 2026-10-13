@@ -161,10 +161,17 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 				Carbs:       ingredient.Carbs,
 				Proteins:    ingredient.Proteins,
 			}
+			if field := overrideNutrients(item.Fats, item.Carbs, item.Proteins,
+				&entry.Fats, &entry.Carbs, &entry.Proteins); field != "" {
+				return nil, itemError(i, "%s must be between 0 and %g (grams per 100 g)", field, food.MaxNutrientPer100g)
+			}
 
 		case item.NewIngredient != nil:
 			if item.KcalPer100g != nil {
 				return nil, itemError(i, "kcal_per_100g of a new food belongs inside new_ingredient")
+			}
+			if field := firstSet(item.Fats, item.Carbs, item.Proteins); field != "" {
+				return nil, itemError(i, "%s of a new food belongs inside new_ingredient", field)
 			}
 			newFood := item.NewIngredient
 			name := food.CleanName(newFood.Name)
@@ -254,13 +261,16 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 	return result, nil
 }
 
-// UpdateMealEntry changes the weight, the ingredient, the calorie value or the time of a stored diary entry.
-// Everything that is not sent stays as it is; calories are recalculated from the resulting weight and calorie value.
+// UpdateMealEntry changes the weight, the ingredient, the calorie value, the nutrients or the time of a stored diary
+// entry. Everything that is not sent stays as it is; calories are recalculated from the resulting weight and calorie
+// value. A new ingredient replaces the name, the calorie value and the nutrients first, the sent overrides go on top.
 func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntryResult, error) {
 	s.logger.Debug("UpdateMealEntry called", "entry_id", req.EntryID, "user_id", req.UserID)
 
-	if req.Weight == nil && req.IngredientID == nil && req.KcalPer100g == nil && req.MealDatetime == nil {
-		return nil, &EntryValidationError{Message: "nothing to change: send weight, ingredient_id, kcal_per_100g or meal_datetime"}
+	if req.Weight == nil && req.IngredientID == nil && req.KcalPer100g == nil && req.MealDatetime == nil &&
+		firstSet(req.Fats, req.Carbs, req.Proteins) == "" {
+		return nil, &EntryValidationError{
+			Message: "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins or meal_datetime"}
 	}
 
 	entry, err := s.calorieRepo.GetByID(req.EntryID)
@@ -299,6 +309,10 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 		}
 		entry.KcalPer100g = *req.KcalPer100g
 	}
+	if field := overrideNutrients(req.Fats, req.Carbs, req.Proteins, &entry.Fats, &entry.Carbs, &entry.Proteins); field != "" {
+		return nil, &EntryValidationError{
+			Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", field, food.MaxNutrientPer100g)}
+	}
 	if req.Weight != nil {
 		if !validItemWeight(*req.Weight) {
 			return nil, &EntryValidationError{Message: fmt.Sprintf("weight must be greater than 0 and at most %g grams", maxItemWeight)}
@@ -331,6 +345,41 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 
 	s.logger.Debug("UpdateMealEntry completed successfully", "entry_id", req.EntryID, "user_id", req.UserID)
 	return result, nil
+}
+
+// overrideNutrients replaces the entry's fats, carbs and proteins with the values that were sent (not nil).
+// If a sent value is out of range, nothing is replaced and the name of its field is returned.
+func overrideNutrients(fats, carbs, proteins *float64, entryFats, entryCarbs, entryProteins **float64) (invalidField string) {
+	overrides := []struct {
+		field  string
+		value  *float64
+		target **float64
+	}{{"fats", fats, entryFats}, {"carbs", carbs, entryCarbs}, {"proteins", proteins, entryProteins}}
+
+	for _, o := range overrides {
+		if o.value != nil && !food.ValidNutrientPer100g(*o.value) {
+			return o.field
+		}
+	}
+	for _, o := range overrides {
+		if o.value != nil {
+			*o.target = o.value
+		}
+	}
+	return ""
+}
+
+// firstSet returns the name of the first of fats, carbs and proteins that was sent, or "" when none was
+func firstSet(fats, carbs, proteins *float64) string {
+	switch {
+	case fats != nil:
+		return "fats"
+	case carbs != nil:
+		return "carbs"
+	case proteins != nil:
+		return "proteins"
+	}
+	return ""
 }
 
 func validItemWeight(weight float64) bool {

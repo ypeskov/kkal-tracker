@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -18,14 +19,17 @@ type foodAPIIngredient struct {
 }
 
 type foodAPIEntry struct {
-	ID                int     `json:"id"`
-	Food              string  `json:"food"`
-	Calories          int     `json:"calories"`
-	Weight            float64 `json:"weight"`
-	KcalPer100g       float64 `json:"kcal_per_100g"`
-	MealDatetime      string  `json:"meal_datetime"`
-	IngredientID      *int    `json:"ingredient_id"`
-	IngredientCreated bool    `json:"ingredient_created"`
+	ID                int      `json:"id"`
+	Food              string   `json:"food"`
+	Calories          int      `json:"calories"`
+	Weight            float64  `json:"weight"`
+	KcalPer100g       float64  `json:"kcal_per_100g"`
+	Fats              *float64 `json:"fats"`
+	Carbs             *float64 `json:"carbs"`
+	Proteins          *float64 `json:"proteins"`
+	MealDatetime      string   `json:"meal_datetime"`
+	IngredientID      *int     `json:"ingredient_id"`
+	IngredientCreated bool     `json:"ingredient_created"`
 }
 
 type foodAPIMeal struct {
@@ -395,6 +399,8 @@ func TestFoodAPIIsolatesUsers(t *testing.T) {
 	client.expect(http.StatusNotFound, http.MethodDelete, fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID), nil, nil)
 	client.expect(http.StatusNotFound, http.MethodPut, fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID),
 		map[string]any{"weight": 1}, nil)
+	client.expect(http.StatusNotFound, http.MethodPut, fmt.Sprintf("/api/v1/food/%d", meal.Entries[0].ID),
+		map[string]any{"fats": 1}, nil)
 	if ingredients := listIngredients(t, client); len(ingredients) != 0 {
 		t.Errorf("second user sees ingredients of the first one: %+v", ingredients)
 	}
@@ -429,4 +435,195 @@ func TestFoodAPIIsolatesUsers(t *testing.T) {
 	client.expect(http.StatusUnauthorized, http.MethodPost, "/api/v1/food",
 		map[string]any{"items": []map[string]any{{"ingredient_id": firstIngredientID, "weight": 100}}}, nil)
 	client.expect(http.StatusUnauthorized, http.MethodGet, "/api/v1/ingredients", nil, nil)
+}
+
+// fetchEntry returns a diary entry of the given day through the external API
+func fetchEntry(t *testing.T, client *smokeClient, day string, id int) foodAPIEntry {
+	t.Helper()
+	var data struct {
+		Food []foodAPIEntry `json:"food"`
+	}
+	client.expect(http.StatusOK, http.MethodGet, "/api/v1/data?type=food&from="+day+"&to="+day, nil, &data)
+	for _, entry := range data.Food {
+		if entry.ID == id {
+			return entry
+		}
+	}
+	t.Fatalf("entry %d is not in the diary of %s", id, day)
+	return foodAPIEntry{}
+}
+
+// hasValues checks the food, calories per 100 g, nutrients (nil for unknown) and calories of an entry
+func (e foodAPIEntry) hasValues(food string, kcal float64, fats, carbs, proteins any, calories int) bool {
+	return e.Food == food && e.KcalPer100g == kcal && optional(e.Fats) == fats && optional(e.Carbs) == carbs &&
+		optional(e.Proteins) == proteins && e.Calories == calories
+}
+
+func (e foodAPIEntry) String() string {
+	return fmt.Sprintf("#%d %q %g g, %g kcal/100g, fats %v, carbs %v, proteins %v, %d kcal",
+		e.ID, e.Food, e.Weight, e.KcalPer100g, optional(e.Fats), optional(e.Carbs), optional(e.Proteins), e.Calories)
+}
+
+func TestFoodAPIOverridesMacrosOfAnEntry(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+
+	breadID := addBread(t, client)
+	// An ingredient whose carbs are unknown
+	butterID := createWebIngredient(t, client, map[string]any{"name": "Масло", "kcalPer100g": 748, "fats": 82, "proteins": 0.5}).ID
+	ingredientsBefore := v1Ingredients(t, client)
+
+	const day = "2026-03-10"
+	storeMeal := func(items ...map[string]any) foodAPIMeal {
+		t.Helper()
+		var meal foodAPIMeal
+		client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food",
+			map[string]any{"meal_datetime": day + "T08:00:00Z", "items": items}, &meal)
+		return meal
+	}
+
+	meal := storeMeal(
+		// Label values: calories and all three macros for this entry only
+		map[string]any{"ingredient_id": breadID, "weight": 100, "kcal_per_100g": 260, "fats": 3, "carbs": 48, "proteins": 9},
+		// One macro: the others and the calories come from the ingredient
+		map[string]any{"ingredient_id": breadID, "weight": 100, "fats": 3},
+		// A value the ingredient does not have
+		map[string]any{"ingredient_id": butterID, "weight": 10, "carbs": 0},
+		// The limits are inclusive
+		map[string]any{"ingredient_id": breadID, "weight": 100, "fats": 0, "carbs": 100, "proteins": 0},
+	)
+	want := []struct {
+		food                  string
+		kcal                  float64
+		fats, carbs, proteins any
+		calories              int
+	}{
+		{"Хлеб", 260, 3.0, 48.0, 9.0, 260},
+		{"Хлеб", 250, 3.0, 50.0, 8.0, 250},
+		{"Масло", 748, 82.0, 0.0, 0.5, 75},
+		{"Хлеб", 250, 0.0, 100.0, 0.0, 250},
+	}
+	for i, w := range want {
+		created := meal.Entries[i]
+		if !created.hasValues(w.food, w.kcal, w.fats, w.carbs, w.proteins, w.calories) {
+			t.Errorf("created entry %d = %v, want %+v", i, created, w)
+		}
+		if stored := fetchEntry(t, client, day, created.ID); !stored.hasValues(w.food, w.kcal, w.fats, w.carbs, w.proteins, w.calories) {
+			t.Errorf("stored entry %d = %v, want %+v", i, stored, w)
+		}
+	}
+	if meal.TotalCalories != 835 || meal.DayTotalCalories == nil || *meal.DayTotalCalories != 835 {
+		t.Errorf("meal totals = %d / %v, want 835 / 835", meal.TotalCalories, meal.DayTotalCalories)
+	}
+
+	// An invalid override rejects the whole meal, with the index of the item
+	for _, tt := range []struct {
+		item map[string]any
+		want string
+	}{
+		{map[string]any{"ingredient_id": breadID, "weight": 100, "fats": -1}, "items[1]: fats must be between 0 and 100 (grams per 100 g)"},
+		{map[string]any{"ingredient_id": breadID, "weight": 100, "carbs": 100.01}, "items[1]: carbs must be between 0 and 100 (grams per 100 g)"},
+		{map[string]any{"ingredient_id": breadID, "weight": 100, "proteins": 100.01}, "items[1]: proteins must be between 0 and 100 (grams per 100 g)"},
+		{map[string]any{"new_ingredient": map[string]any{"name": "Батон", "kcal_per_100g": 260}, "weight": 100, "fats": 3},
+			"items[1]: fats of a new food belongs inside new_ingredient"},
+		{map[string]any{"new_ingredient": map[string]any{"name": "Батон", "kcal_per_100g": 260}, "weight": 100, "proteins": 9, "one_off": true},
+			"items[1]: proteins of a new food belongs inside new_ingredient"},
+	} {
+		rec := client.do(http.MethodPost, "/api/v1/food", map[string]any{
+			"meal_datetime": day + "T12:00:00Z",
+			"items":         []map[string]any{{"ingredient_id": breadID, "weight": 50}, tt.item},
+		})
+		expectError(t, rec, http.StatusBadRequest, tt.want)
+	}
+
+	// Nothing of the rejected meals was stored, and no ingredient changed
+	var data struct {
+		Food []foodAPIEntry `json:"food"`
+	}
+	client.expect(http.StatusOK, http.MethodGet, "/api/v1/data?type=food&from="+day+"&to="+day, nil, &data)
+	if len(data.Food) != len(want) {
+		t.Errorf("diary = %v, want only the %d entries of the first meal", data.Food, len(want))
+	}
+	if after := v1Ingredients(t, client); len(after) != len(ingredientsBefore) ||
+		!after[breadID].is("Хлеб", 250, 1.0, 50.0, 8.0) || !after[butterID].is("Масло", 748, 82.0, nil, 0.5) {
+		t.Errorf("ingredients = %v, want them unchanged", after)
+	}
+}
+
+func TestFoodAPIEditsMacrosOfAnEntry(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+
+	breadID := addBread(t, client)
+	baguetteID := createWebIngredient(t, client,
+		map[string]any{"name": "Багет", "kcalPer100g": 270, "fats": 1.5, "carbs": 55, "proteins": 9}).ID
+
+	const day = "2026-03-10"
+	var meal foodAPIMeal
+	client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food", map[string]any{
+		"meal_datetime": day + "T08:00:00Z",
+		"items":         []map[string]any{{"ingredient_id": breadID, "weight": 100}},
+	}, &meal)
+	id := meal.Entries[0].ID
+	entryPath := fmt.Sprintf("/api/v1/food/%d", id)
+
+	type updated struct {
+		Entry            foodAPIEntry `json:"entry"`
+		Day              string       `json:"day"`
+		DayTotalCalories *int         `json:"day_total_calories"`
+	}
+	edit := func(step string, body any, food string, kcal float64, fats, carbs, proteins any, calories int) {
+		t.Helper()
+		var result updated
+		client.expect(http.StatusOK, http.MethodPut, entryPath, body, &result)
+		if !result.Entry.hasValues(food, kcal, fats, carbs, proteins, calories) || result.Entry.Weight != 100 {
+			t.Errorf("%s: entry = %v, want %s, %g kcal/100g, fats %v, carbs %v, proteins %v, %d kcal, 100 g",
+				step, result.Entry, food, kcal, fats, carbs, proteins, calories)
+		}
+		if result.Day != day || result.DayTotalCalories == nil || *result.DayTotalCalories != calories {
+			t.Errorf("%s: day = %q, day total = %v, want %s and %d", step, result.Day, result.DayTotalCalories, day, calories)
+		}
+	}
+
+	// Only the macro that was sent changes, the calories stay
+	edit("proteins only", map[string]any{"proteins": 20}, "Хлеб", 250, 1.0, 50.0, 20.0, 250)
+	// Another ingredient replaces the name, the calories and all macros (the override is gone)
+	edit("ingredient only", map[string]any{"ingredient_id": baguetteID}, "Багет", 270, 1.5, 55.0, 9.0, 270)
+	// Overrides sent with an ingredient go on top of its values
+	edit("ingredient and fats", map[string]any{"ingredient_id": breadID, "fats": 5}, "Хлеб", 250, 5.0, 50.0, 8.0, 250)
+	edit("ingredient, kcal and carbs", map[string]any{"ingredient_id": baguetteID, "kcal_per_100g": 300, "carbs": 10},
+		"Багет", 300, 1.5, 10.0, 9.0, 300)
+
+	// Rejected changes leave the entry as it is
+	before := fetchEntry(t, client, day, id)
+	for _, tt := range []struct {
+		body string
+		want string
+	}{
+		{`{"carbs": 101}`, "carbs must be between 0 and 100 (grams per 100 g)"},
+		{`{"fats": -0.5, "weight": 50}`, "fats must be between 0 and 100 (grams per 100 g)"},
+		{`{"ingredient_id": ` + fmt.Sprint(breadID) + `, "proteins": 100.01}`, "proteins must be between 0 and 100 (grams per 100 g)"},
+		{`{}`, "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins or meal_datetime"},
+		{`{"fats": null}`, "nothing to change"},
+	} {
+		expectError(t, doRaw(client, http.MethodPut, entryPath, tt.body), http.StatusBadRequest, tt.want)
+	}
+	if after := fetchEntry(t, client, day, id); after.String() != before.String() || after.MealDatetime != before.MealDatetime {
+		t.Errorf("entry after rejected changes = %v, want %v", after, before)
+	}
+
+	// null keeps the current value when something else changes
+	var result updated
+	if rec := doRaw(client, http.MethodPut, entryPath, `{"fats": null, "weight": 50}`); rec.Code != http.StatusOK {
+		t.Fatalf("null with a weight: status = %d; body: %s", rec.Code, rec.Body.String())
+	} else if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil ||
+		!result.Entry.hasValues("Багет", 300, 1.5, 10.0, 9.0, 150) || result.Entry.Weight != 50 {
+		t.Errorf("null with a weight: entry = %v, want the same macros at 50 g", result.Entry)
+	}
+
+	// The ingredients never changed
+	ingredients := v1Ingredients(t, client)
+	if !ingredients[breadID].is("Хлеб", 250, 1.0, 50.0, 8.0) || !ingredients[baguetteID].is("Багет", 270, 1.5, 55.0, 9.0) {
+		t.Errorf("ingredients = %v, want them unchanged", ingredients)
+	}
 }

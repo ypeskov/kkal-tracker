@@ -231,6 +231,9 @@ func (h *Handler) CreateFood(c *echo.Context) error {
 			OneOff:       item.OneOff,
 			Weight:       item.Weight,
 			KcalPer100g:  item.KcalPer100g,
+			Fats:         item.Fats,
+			Carbs:        item.Carbs,
+			Proteins:     item.Proteins,
 		}
 		if item.NewIngredient != nil {
 			if item.NewIngredient.KcalPer100g == nil {
@@ -285,7 +288,7 @@ func (h *Handler) CreateFood(c *echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
-// UpdateFood corrects a stored diary entry: its weight, ingredient, calorie value or time
+// UpdateFood corrects a stored diary entry: its weight, ingredient, calorie value, nutrients or time
 func (h *Handler) UpdateFood(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
@@ -305,6 +308,9 @@ func (h *Handler) UpdateFood(c *echo.Context) error {
 		Weight:       req.Weight,
 		IngredientID: req.IngredientID,
 		KcalPer100g:  req.KcalPer100g,
+		Fats:         req.Fats,
+		Carbs:        req.Carbs,
+		Proteins:     req.Proteins,
 	}
 	if req.MealDatetime != "" {
 		mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)

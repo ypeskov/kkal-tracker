@@ -54,6 +54,10 @@ type MealItem struct {
 	Weight float64
 	// KcalPer100g overrides the calorie value of an existing ingredient for this entry only
 	KcalPer100g *float64
+	// Fats, Carbs and Proteins (grams per 100 g) override the values of an existing ingredient for this entry only
+	Fats     *float64
+	Carbs    *float64
+	Proteins *float64
 }
 
 type CreateMealRequest struct {
@@ -87,7 +91,12 @@ type UpdateMealEntryRequest struct {
 	// IngredientID switches the entry to another ingredient of the user: name, calories and nutrients come from it
 	IngredientID *int
 	// KcalPer100g overrides the calorie value for this entry only
-	KcalPer100g  *float64
+	KcalPer100g *float64
+	// Fats, Carbs and Proteins (grams per 100 g) override the nutrients for this entry only;
+	// together with IngredientID they are applied on top of the values of the new ingredient
+	Fats         *float64
+	Carbs        *float64
+	Proteins     *float64
 	MealDatetime *time.Time
 }
 

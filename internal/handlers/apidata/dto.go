@@ -38,6 +38,10 @@ type FoodItemRequest struct {
 	Weight float64 `json:"weight"`
 	// KcalPer100g overrides the calorie value of an existing ingredient for this entry only
 	KcalPer100g *float64 `json:"kcal_per_100g"`
+	// Fats, Carbs and Proteins (grams per 100 g) override the values of an existing ingredient for this entry only
+	Fats     *float64 `json:"fats"`
+	Carbs    *float64 `json:"carbs"`
+	Proteins *float64 `json:"proteins"`
 }
 
 type NewIngredientRequest struct {
@@ -77,6 +81,11 @@ type UpdateFoodRequest struct {
 	IngredientID *int `json:"ingredient_id"`
 	// KcalPer100g overrides the calorie value for this entry only
 	KcalPer100g *float64 `json:"kcal_per_100g"`
+	// Fats, Carbs and Proteins (grams per 100 g) override the nutrients for this entry only;
+	// with IngredientID they are applied on top of the values of the new ingredient
+	Fats     *float64 `json:"fats"`
+	Carbs    *float64 `json:"carbs"`
+	Proteins *float64 `json:"proteins"`
 	// MealDatetime is RFC 3339
 	MealDatetime string `json:"meal_datetime"`
 }
