@@ -43,7 +43,8 @@ migrated SQLite database with a fake SMTP server (register → activation → lo
 - **Agent skill**: the food logging skill is edited only in `skills/kkal-tracker-food-log/` in the repository. Never
   edit an installed copy (e.g. `~/.claude/skills/…`): the next download replaces it, which is how the macros step was
   lost once. The repository holds the template only; the base URL, the dev naming and the API key are filled in by
-  the download
+  the download. Every change to the template bumps `SKILL_VERSION` in `scripts/kkal_client.py` (the date of the
+  change), so an outdated installed copy can be told apart
 - **Frontend**: Tailwind utilities only, every user-facing string through `t()` in all 4 locales, units too
   (`common.kg`, `common.kcalPerDay`). Layout and component patterns: the `frontend-style` skill
 - **API**: all routes under `/api`; list in [`docs/api.md`](docs/api.md)

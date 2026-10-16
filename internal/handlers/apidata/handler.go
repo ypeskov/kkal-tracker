@@ -59,6 +59,7 @@ func New(calorieService calorieservice.Servicer, weightService weightservice.Ser
 func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/data", h.GetData)
 	g.GET("/ingredients", h.GetIngredients)
+	g.POST("/ingredients", h.CreateIngredient)
 	g.PUT("/ingredients/:id", h.UpdateIngredient)
 	g.DELETE("/ingredients/:id", h.DeleteIngredient)
 	g.POST("/food", h.CreateFood)
@@ -127,14 +128,47 @@ func (h *Handler) GetIngredients(c *echo.Context) error {
 
 	response := IngredientsResponse{Ingredients: make([]IngredientItem, len(ingredients))}
 	for i, ingredient := range ingredients {
-		response.Ingredients[i] = IngredientItem{
-			IngredientInfo: mapIngredient(&ingredient.UserIngredient),
-			TimesUsed:      ingredient.TimesUsed,
-			LastUsed:       ingredient.LastUsed,
-		}
+		response.Ingredients[i] = mapIngredientItem(ingredient)
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+// CreateIngredient adds an ingredient to the list without logging anything to the diary,
+// e.g. a product from a label. The response is the ingredient as a row of GetIngredients.
+func (h *Handler) CreateIngredient(c *echo.Context) error {
+	userID := c.Get("user_id").(int)
+
+	var req CreateIngredientRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+	}
+
+	ingredient, err := h.ingredientService.AddIngredient(&ingredientservice.AddIngredientRequest{
+		UserID:      userID,
+		Name:        req.Name,
+		KcalPer100g: req.KcalPer100g,
+		Fats:        req.Fats,
+		Carbs:       req.Carbs,
+		Proteins:    req.Proteins,
+	})
+	if err != nil {
+		var validationErr *ingredientservice.ValidationError
+		var duplicateErr *ingredientservice.DuplicateIngredientError
+		switch {
+		case errors.As(err, &validationErr):
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
+		case errors.As(err, &duplicateErr):
+			return c.JSON(http.StatusConflict, IngredientNameConflictResponse{
+				Message:            duplicateErr.Error(),
+				ExistingIngredient: mapIngredient(duplicateErr.Existing),
+			})
+		}
+		h.logger.Error("Failed to create ingredient", "error", err, "user_id", userID)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create ingredient")
+	}
+
+	return c.JSON(http.StatusCreated, mapIngredientItem(ingredient))
 }
 
 // UpdateIngredient corrects an ingredient of the list: its name, calorie value or nutrients.
@@ -368,6 +402,14 @@ func mapIngredient(ingredient *models.UserIngredient) IngredientInfo {
 		Fats:        ingredient.Fats,
 		Carbs:       ingredient.Carbs,
 		Proteins:    ingredient.Proteins,
+	}
+}
+
+func mapIngredientItem(ingredient *models.UserIngredientUsage) IngredientItem {
+	return IngredientItem{
+		IngredientInfo: mapIngredient(&ingredient.UserIngredient),
+		TimesUsed:      ingredient.TimesUsed,
+		LastUsed:       ingredient.LastUsed,
 	}
 }
 

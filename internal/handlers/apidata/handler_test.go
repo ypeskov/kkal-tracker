@@ -31,14 +31,20 @@ func (f *failingIngredientService) DeleteIngredient(int, int) error {
 	return f.err
 }
 
+func (f *failingIngredientService) AddIngredient(*ingredientservice.AddIngredientRequest) (*models.UserIngredientUsage, error) {
+	return nil, f.err
+}
+
 func TestIngredientChangesHideInternalErrors(t *testing.T) {
 	internalErr := errors.New("SQL logic error: database is locked (5)")
 
 	tests := []struct {
-		method, body, wantMessage string
+		method, path, body, wantMessage string
+		wantLog                         []string
 	}{
-		{http.MethodPut, `{"kcal_per_100g": 260}`, "Failed to update ingredient"},
-		{http.MethodDelete, "", "Failed to delete ingredient"},
+		{http.MethodPut, "/ingredients/42", `{"kcal_per_100g": 260}`, "Failed to update ingredient", []string{"ingredient_id=42"}},
+		{http.MethodDelete, "/ingredients/42", "", "Failed to delete ingredient", []string{"ingredient_id=42"}},
+		{http.MethodPost, "/ingredients", `{"name": "Хлебцы", "kcal_per_100g": 310}`, "Failed to create ingredient", nil},
 	}
 	for _, tt := range tests {
 		var logs bytes.Buffer
@@ -54,7 +60,7 @@ func TestIngredientChangesHideInternalErrors(t *testing.T) {
 		})
 		h.RegisterRoutes(g)
 
-		req := httptest.NewRequest(tt.method, "/ingredients/42", strings.NewReader(tt.body))
+		req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -65,7 +71,7 @@ func TestIngredientChangesHideInternalErrors(t *testing.T) {
 		if strings.Contains(rec.Body.String(), "SQL") || strings.Contains(rec.Body.String(), "locked") {
 			t.Errorf("%s: response reveals the internal error: %s", tt.method, rec.Body.String())
 		}
-		for _, part := range []string{"level=ERROR", "database is locked", "user_id=7", "ingredient_id=42"} {
+		for _, part := range append([]string{"level=ERROR", "database is locked", "user_id=7"}, tt.wantLog...) {
 			if !strings.Contains(logs.String(), part) {
 				t.Errorf("%s: log %q does not contain %q", tt.method, logs.String(), part)
 			}

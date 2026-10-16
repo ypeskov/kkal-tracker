@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -32,6 +33,8 @@ type skillClientEnv struct {
 
 	mu       sync.Mutex
 	requests []recordedRequest
+	// respond, when set, answers the requests it returns true for instead of the server, e.g. like an older server
+	respond func(w http.ResponseWriter, r *http.Request) bool
 }
 
 // newSkillClientEnv serves the smoke environment over a real listener, downloads the skill of the client's user
@@ -50,7 +53,11 @@ func newSkillClientEnv(t *testing.T, client *smokeClient) *skillClientEnv {
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		env.mu.Lock()
 		env.requests = append(env.requests, recordedRequest{r.Method, r.URL.RequestURI(), string(body)})
+		respond := env.respond
 		env.mu.Unlock()
+		if respond != nil && respond(w, r) {
+			return
+		}
 		client.handler.ServeHTTP(w, r)
 	}))
 	t.Cleanup(server.Close)
@@ -107,6 +114,26 @@ func (e *skillClientEnv) runIn(dir string, extraEnv map[string]string, args ...s
 func (e *skillClientEnv) run(args ...string) (stdout, stderr string, code int) {
 	e.t.Helper()
 	return e.runIn(e.dir, nil, args...)
+}
+
+// answerAs makes the server answer the given method and path with status and a JSON message, like a server without
+// the route; an empty status forwards everything again
+func (e *skillClientEnv) answerAs(method, path string, status int, message string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if status == 0 {
+		e.respond = nil
+		return
+	}
+	e.respond = func(w http.ResponseWriter, r *http.Request) bool {
+		if r.Method != method || r.URL.Path != path {
+			return false
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{"message":%q}`+"\n", message)
+		return true
+	}
 }
 
 // takeRequests returns the requests recorded since the last call
@@ -446,4 +473,187 @@ func TestSkillClientTemplateWithoutKey(t *testing.T) {
 	if _, stderr, code := env.runIn(dir, map[string]string{"KKAL_API_KEY": client.apiKey}, "ingredients"); code != 0 {
 		t.Errorf("with KKAL_API_KEY: exit code %d, stderr %q", code, stderr)
 	}
+}
+
+// expectNoRequests fails when the client sent anything since the last check
+func (e *skillClientEnv) expectNoRequests(what string) {
+	e.t.Helper()
+	if requests := e.takeRequests(); len(requests) != 0 {
+		e.t.Errorf("%s: requests = %+v, want none", what, requests)
+	}
+}
+
+// The client adds an ingredient to the list with one request and reports conflicts, invalid values and older servers
+func TestSkillClientAddIngredient(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "skill-ingredient@example.com")
+	env := newSkillClientEnv(t, client)
+
+	t.Run("created", func(t *testing.T) {
+		stdout, stderr, code := env.run("add-ingredient", "--name", "Хлебцы ржаные", "--kcal", "310", "--fats", "0", "--proteins", "10")
+		if code != 0 {
+			t.Fatalf("exit code %d; stderr: %s", code, stderr)
+		}
+		requests := env.takeRequests()
+		if len(requests) != 1 || requests[0].method != http.MethodPost || requests[0].uri != "/api/v1/ingredients" {
+			t.Fatalf("requests = %+v, want one POST /api/v1/ingredients", requests)
+		}
+		// 0 is sent, carbs that were not passed are not
+		var sent map[string]any
+		if err := json.Unmarshal([]byte(requests[0].body), &sent); err != nil || !maps.Equal(sent,
+			map[string]any{"name": "Хлебцы ржаные", "kcal_per_100g": 310.0, "fats": 0.0, "proteins": 10.0}) {
+			t.Errorf("sent %s, want exactly name, kcal_per_100g, fats 0 and proteins", requests[0].body)
+		}
+
+		var created apiIngredient
+		if err := json.Unmarshal([]byte(stdout), &created); err != nil || !created.is("Хлебцы ржаные", 310, 0.0, nil, 10.0) {
+			t.Fatalf("output = %s, want the created ingredient", stdout)
+		}
+		if !strings.Contains(stdout, `"times_used": 0`) {
+			t.Errorf("output = %s, want the list row with times_used", stdout)
+		}
+		if listed := v1Ingredients(t, client)[created.ID]; !listed.is("Хлебцы ржаные", 310, 0.0, nil, 10.0) {
+			t.Errorf("list: %v", listed)
+		}
+	})
+
+	t.Run("missing options make no request", func(t *testing.T) {
+		for _, args := range [][]string{
+			{"add-ingredient", "--name", "Хлебцы"},
+			{"add-ingredient", "--kcal", "310"},
+			{"add-ingredient", "--name", "Хлебцы", "--kcal", "много"},
+		} {
+			if _, stderr, code := env.run(args...); code == 0 || !strings.Contains(stderr, "usage") {
+				t.Errorf("%v: exit code %d, stderr %q; want a failure with the usage", args, code, stderr)
+			}
+		}
+		env.expectNoRequests("missing options")
+	})
+
+	t.Run("duplicate", func(t *testing.T) {
+		// The existing ingredient comes from the website, so the subtest does not depend on the others
+		existing := createWebIngredient(t, client,
+			map[string]any{"name": "Хлебцы гречневые", "kcalPer100g": 310, "fats": 0, "proteins": 10})
+		before := len(webIngredients(t, client))
+
+		stdout, stderr, code := env.run("add-ingredient", "--name", "хлебцы  гречневые", "--kcal", "300")
+		if code != 1 || !strings.Contains(stderr, "HTTP 409") {
+			t.Errorf("exit code %d, stderr %q; want 1 and HTTP 409", code, stderr)
+		}
+		var response struct {
+			Message            string        `json:"message"`
+			ExistingIngredient apiIngredient `json:"existing_ingredient"`
+		}
+		if err := json.Unmarshal([]byte(stdout), &response); err != nil || response.ExistingIngredient.ID != existing.ID ||
+			!response.ExistingIngredient.is("Хлебцы гречневые", 310, 0.0, nil, 10.0) {
+			t.Errorf("output = %s, want existing_ingredient #%d", stdout, existing.ID)
+		}
+		if requests := env.takeRequests(); len(requests) != 1 {
+			t.Errorf("requests = %+v, want one", requests)
+		}
+		if after := len(webIngredients(t, client)); after != before {
+			t.Errorf("ingredients = %d, want %d: a duplicate was created", after, before)
+		}
+	})
+
+	t.Run("invalid value", func(t *testing.T) {
+		before := len(webIngredients(t, client))
+
+		stdout, stderr, code := env.run("add-ingredient", "--name", "Чипсы", "--kcal", "1000")
+		if code != 1 || !strings.Contains(stderr, "HTTP 400") || !strings.Contains(stdout, "kcal_per_100g must be between 0 and 900") {
+			t.Errorf("exit code %d, stdout %q, stderr %q; want 1, HTTP 400 and the kcal_per_100g message", code, stdout, stderr)
+		}
+		requests := env.takeRequests()
+		if len(requests) != 1 || requests[0].method != http.MethodPost || requests[0].uri != "/api/v1/ingredients" {
+			t.Errorf("requests = %+v, want one POST /api/v1/ingredients", requests)
+		}
+		if after := len(webIngredients(t, client)); after != before {
+			t.Errorf("ingredients = %d, want %d: a rejected ingredient was created", after, before)
+		}
+	})
+
+	t.Run("older server", func(t *testing.T) {
+		defer env.answerAs("", "", 0, "")
+		for status, message := range map[int]string{
+			http.StatusMethodNotAllowed: "Method Not Allowed",
+			// What a server without the route answers (checked on v5.14.0)
+			http.StatusNotFound: "Not Found",
+		} {
+			env.answerAs(http.MethodPost, "/api/v1/ingredients", status, message)
+			stdout, stderr, code := env.run("add-ingredient", "--name", "Хлебцы", "--kcal", "310")
+			if code != 1 || !strings.Contains(stderr, fmt.Sprintf("HTTP %d", status)) ||
+				!strings.Contains(stderr, "does not support adding ingredients yet") || !strings.Contains(stderr, "Nothing was created") {
+				t.Errorf("%d: exit code %d, stderr %q; want 1 and the older-server message", status, code, stderr)
+			}
+			if stdout != "" || strings.Contains(stderr, "Ingredient not found") {
+				t.Errorf("%d: stdout %q, stderr %q", status, stdout, stderr)
+			}
+			if requests := env.takeRequests(); len(requests) != 1 {
+				t.Errorf("%d: requests = %+v, want one", status, requests)
+			}
+		}
+	})
+
+	t.Run("edit and delete keep their messages", func(t *testing.T) {
+		defer env.answerAs("", "", 0, "")
+		env.answerAs(http.MethodPut, "/api/v1/ingredients/999999", http.StatusNotFound, "Not Found")
+		_, stderr, code := env.run("edit-ingredient", "999999", "--kcal", "1")
+		if code != 1 || !strings.Contains(stderr, "does not support editing or deleting ingredients yet") ||
+			!strings.Contains(stderr, "Nothing was changed") {
+			t.Errorf("edit on an older server: exit code %d, stderr %q", code, stderr)
+		}
+		env.answerAs("", "", 0, "")
+
+		// A missing ingredient on a current server is not an older server
+		stdout, stderr, code := env.run("delete-ingredient", "999999")
+		if code != 1 || !strings.Contains(stderr, "HTTP 404") || strings.Contains(stderr, "does not support") ||
+			!strings.Contains(stdout, "Ingredient not found") {
+			t.Errorf("delete of a missing ingredient: exit code %d, stdout %q, stderr %q", code, stdout, stderr)
+		}
+		env.takeRequests()
+	})
+}
+
+// templateSkillVersion is the SKILL_VERSION constant of the client in the repository
+func templateSkillVersion(t *testing.T) string {
+	t.Helper()
+	template, err := os.ReadFile(filepath.Join("..", "..", "skills", "kkal-tracker-food-log", "scripts", "kkal_client.py"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	matches := regexp.MustCompile(`(?m)^SKILL_VERSION = "(\d{4}-\d{2}-\d{2})"$`).FindAllStringSubmatch(string(template), -1)
+	if len(matches) != 1 {
+		t.Fatalf("the client must define SKILL_VERSION as a YYYY-MM-DD date exactly once, found %d", len(matches))
+	}
+	return matches[0][1]
+}
+
+// version prints the version of the skill without a request, also when the key is not configured
+func TestSkillClientVersion(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "skill-version@example.com")
+	env := newSkillClientEnv(t, client)
+	want := templateSkillVersion(t)
+
+	// The downloaded client
+	if stdout, stderr, code := env.run("version"); code != 0 || stdout != want+"\n" {
+		t.Errorf("downloaded client: exit code %d, stdout %q, stderr %q; want %s", code, stdout, stderr, want)
+	}
+
+	// The template without a key
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "scripts"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	template, err := os.ReadFile(filepath.Join("..", "..", "skills", "kkal-tracker-food-log", "scripts", "kkal_client.py"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "scripts", "kkal_client.py"), template, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if stdout, stderr, code := env.runIn(dir, nil, "version"); code != 0 || stdout != want+"\n" {
+		t.Errorf("template: exit code %d, stdout %q, stderr %q; want %s", code, stdout, stderr, want)
+	}
+	env.expectNoRequests("version")
 }

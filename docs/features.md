@@ -14,7 +14,8 @@
   own list on registration and managed on the Food List page
   - Ingredient names are unique per user ignoring case, spacing, invisible characters and `ё`/`е`: creating or renaming
     an ingredient to such a name on the Food List page (`POST` / `PUT /api/ingredients`) or through the API
-    (`/api/v1`) is rejected with 409 and the existing ingredient; the Food List modal stays open with the input kept
+    (`/api/v1`: `new_ingredient` of a meal, `POST` / `PUT /api/v1/ingredients`) is rejected with 409 and the existing
+    ingredient; the Food List modal stays open with the input kept
     and names the existing ingredient (other save failures show a generic error there). A case-only rename of the ingredient itself is
     allowed; near-duplicates that existed before the rule are kept. Adding a diary entry on the website
     (`POST /api/calories`) still creates or updates its ingredient by the exact name, so it can add a near-duplicate
@@ -40,6 +41,10 @@
     skill at its `APP_URL` (`POST /api/skills/food-log/download`). The repository holds only the template; the
     development server (`ENVIRONMENT=development`) generates the `kkal-tracker-food-log-dev` variant at download, so the
     dev and prod skills can be installed side by side
+  - The skill is versioned by the `SKILL_VERSION` constant (a date) in its client, shown by the client's `version`
+    command and bumped in every change of the template (`SKILL.md` or the client). Every download renders the skill
+    from the running release, so a release ships the new skill; an installed copy stays as it was until the user
+    downloads it again
   - After logging a meal the skill replies with the items and a table of calories, fats, carbs and proteins (columns
     Ккал, Ж, У, Б) for the meal and for the day. Calories come from the server, the grams from the client command
     `totals`, which adds up the entries of the diary day and checks them against the server's calorie totals
@@ -58,6 +63,8 @@
     and `proteins` for this entry only (e.g. values from a label); the ingredient stays as it is
   - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, macros, time),
     `DELETE /api/v1/food/:id` removes it
+  - The agent can add an ingredient to the list without logging anything (`POST /api/v1/ingredients`, the skill
+    command `add-ingredient`), e.g. a product from a label photo; the day total does not change
   - The agent can correct ingredients of the list (`PUT /api/v1/ingredients/:id`, only the sent fields change) and
     delete them (`DELETE /api/v1/ingredients/:id`)
   - Diary entries keep their own copy of the food name, calories and macros: editing or deleting an ingredient does not

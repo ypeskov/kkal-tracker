@@ -49,9 +49,10 @@ docs/                   # reference docs
 data/                   # local SQLite database (git-ignored)
 tmp/                    # Air output, logs (git-ignored)
 ```
-Domains (handlers and services): ai, apidata (external `/api/v1`: data export, ingredient list and its editing, food logging),
-apikey, auth, calorie(s), email, export, ingredient(s), languages, metrics, profile (incl. weight goals), reports,
-skill (food logging skill download with a new API key), static (embedded frontend), weight.
+Domains (handlers and services): ai, apidata (external `/api/v1`: data export, ingredient list and its editing
+(create, update, delete), food logging), apikey, auth, calorie(s), email, export, ingredient(s), languages, metrics,
+profile (incl. weight goals), reports, skill (food logging skill download with a new API key), static (embedded
+frontend), weight.
 
 ## Conventions
 - **Handlers**: `handlers/<domain>/handler.go`, request/response types in `dto.go`

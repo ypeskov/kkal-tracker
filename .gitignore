@@ -36,6 +36,8 @@ data/
 
 # API keys of the agent skills
 skills/*/api_key
+# Bytecode left by running or compiling the skill clients
+__pycache__/
 
 # Frontend
 web/node_modules/

@@ -97,6 +97,16 @@ type UpdateFoodResponse struct {
 	DayTotalCalories *int   `json:"day_total_calories,omitempty"`
 }
 
+// CreateIngredientRequest adds an ingredient to the list without a diary entry. The name and the calories are
+// required; nutrients that are not sent (or null) stay unknown.
+type CreateIngredientRequest struct {
+	Name        *string  `json:"name"`
+	KcalPer100g *float64 `json:"kcal_per_100g"`
+	Fats        *float64 `json:"fats"`
+	Carbs       *float64 `json:"carbs"`
+	Proteins    *float64 `json:"proteins"`
+}
+
 // UpdateIngredientRequest changes an ingredient of the list; fields that are not sent (or null) keep their values
 type UpdateIngredientRequest struct {
 	Name        *string  `json:"name"`

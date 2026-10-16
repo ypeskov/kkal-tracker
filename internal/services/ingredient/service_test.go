@@ -31,6 +31,12 @@ type fakeIngredientRepo struct {
 	// writeErr makes the next create or update fail
 	writeErr error
 	listErr  error
+
+	// diary holds the usage statistics of food names in the diary of user, matched by the exact name like the database
+	diary    map[string]models.UserIngredientUsage
+	usageErr error
+	// beforeUsage runs right before the usage statistics are read, e.g. to simulate a concurrent delete
+	beforeUsage func()
 }
 
 func newFakeRepo() *fakeIngredientRepo {
@@ -82,6 +88,25 @@ func (r *fakeIngredientRepo) GetAllUserIngredients(userID int) ([]*models.UserIn
 		if ingredient := r.get(userID, id); ingredient != nil {
 			result = append(result, ingredient)
 		}
+	}
+	return result, nil
+}
+
+func (r *fakeIngredientRepo) GetUserIngredientsWithUsage(userID int) ([]*models.UserIngredientUsage, error) {
+	if r.beforeUsage != nil {
+		r.beforeUsage()
+	}
+	if r.usageErr != nil {
+		return nil, r.usageErr
+	}
+	ingredients, _ := r.GetAllUserIngredients(userID)
+	result := make([]*models.UserIngredientUsage, len(ingredients))
+	for i, ingredient := range ingredients {
+		row := &models.UserIngredientUsage{UserIngredient: *ingredient}
+		if used, ok := r.diary[ingredient.Name]; ok && userID == user {
+			row.TimesUsed, row.LastUsed = used.TimesUsed, used.LastUsed
+		}
+		result[i] = row
 	}
 	return result, nil
 }
@@ -485,5 +510,223 @@ func TestWriteErrorsAreNotDuplicates(t *testing.T) {
 	}
 	if len(repo.ingredients) != 3 {
 		t.Errorf("ingredients = %d, want only the original ones", len(repo.ingredients))
+	}
+}
+
+// addRequest is a valid new ingredient of the external API; change modifies it before it is sent
+func addRequest(change func(*AddIngredientRequest)) *AddIngredientRequest {
+	req := &AddIngredientRequest{UserID: user, Name: ptr("Хлебцы ржаные"), KcalPer100g: ptr(310.0),
+		Fats: ptr(2.0), Carbs: ptr(60.0), Proteins: ptr(10.0)}
+	if change != nil {
+		change(req)
+	}
+	return req
+}
+
+func TestAddIngredientCreatesIngredient(t *testing.T) {
+	service, repo := newTestService()
+
+	got, err := service.AddIngredient(addRequest(nil))
+	if err != nil {
+		t.Fatalf("AddIngredient: %v", err)
+	}
+	if got.UserID != user || got.Name != "Хлебцы ржаные" || got.TimesUsed != 0 || got.LastUsed != nil {
+		t.Errorf("returned ingredient = %+v", got)
+	}
+	assertIngredient(t, repo, got.ID, "Хлебцы ржаные", 310, 2.0, 60.0, 10.0)
+
+	// Nutrients that are not sent stay unknown; the cleaned name is stored
+	got, err = service.AddIngredient(&AddIngredientRequest{
+		UserID: user, Name: ptr("  Хлебцы" + zeroWidthSpace + "   с отрубями "), KcalPer100g: ptr(120.0), Proteins: ptr(0.0),
+	})
+	if err != nil {
+		t.Fatalf("AddIngredient without fats and carbs: %v", err)
+	}
+	if got.Name != "Хлебцы с отрубями" {
+		t.Errorf("name = %q, want the cleaned name", got.Name)
+	}
+	assertIngredient(t, repo, got.ID, "Хлебцы с отрубями", 120, nil, nil, 0.0)
+}
+
+func TestAddIngredientLimits(t *testing.T) {
+	service, repo := newTestService()
+
+	longName := strings.Repeat("я", 200)
+	valid := []struct {
+		name                  string
+		kcal                  float64
+		fats, carbs, proteins *float64
+	}{
+		{"Вода", 0, nil, nil, nil},
+		{"Масло", 900, nil, nil, nil},
+		{"Ноль", 100, ptr(0.0), ptr(0.0), ptr(0.0)},
+		{"Сто", 100, ptr(100.0), ptr(100.0), ptr(100.0)},
+		// 200 characters after cleaning
+		{" " + longName + " ", 100, nil, nil, nil},
+	}
+	for _, v := range valid {
+		got, err := service.AddIngredient(&AddIngredientRequest{
+			UserID: user, Name: ptr(v.name), KcalPer100g: ptr(v.kcal), Fats: v.fats, Carbs: v.carbs, Proteins: v.proteins,
+		})
+		if err != nil {
+			t.Errorf("%q, %g kcal: %v", v.name, v.kcal, err)
+			continue
+		}
+		assertIngredient(t, repo, got.ID, strings.TrimSpace(v.name), v.kcal, floatValue(v.fats), floatValue(v.carbs), floatValue(v.proteins))
+	}
+	created := len(repo.ingredients)
+
+	invalid := []struct {
+		change    func(*AddIngredientRequest)
+		wantParts []string
+	}{
+		{func(r *AddIngredientRequest) { r.KcalPer100g = ptr(-1.0) }, []string{"kcal_per_100g must be between 0 and 900"}},
+		{func(r *AddIngredientRequest) { r.KcalPer100g = ptr(-0.1) }, []string{"kcal_per_100g must be between 0 and 900"}},
+		{func(r *AddIngredientRequest) { r.KcalPer100g = ptr(900.1) }, []string{"kcal_per_100g must be between 0 and 900"}},
+		{func(r *AddIngredientRequest) { r.KcalPer100g = nil }, []string{"kcal_per_100g is required"}},
+		{func(r *AddIngredientRequest) { r.Fats = ptr(-0.1) }, []string{"fats must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Fats = ptr(100.1) }, []string{"fats must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Carbs = ptr(-0.1) }, []string{"carbs must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Carbs = ptr(100.1) }, []string{"carbs must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Proteins = ptr(-0.1) }, []string{"proteins must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Proteins = ptr(100.1) }, []string{"proteins must be between 0 and 100 (grams per 100 g)"}},
+		{func(r *AddIngredientRequest) { r.Name = nil }, []string{"name is required"}},
+		{func(r *AddIngredientRequest) { r.Name = ptr("") }, []string{"name is required"}},
+		{func(r *AddIngredientRequest) { r.Name = ptr("   ") }, []string{"name is required"}},
+		{func(r *AddIngredientRequest) { r.Name = ptr(zeroWidthSpace + " \t" + zeroWidthSpace) }, []string{"name is required"}},
+		{func(r *AddIngredientRequest) { r.Name = ptr(strings.Repeat("я", 201)) }, []string{"name must be at most 200 characters"}},
+	}
+	for _, tt := range invalid {
+		_, err := service.AddIngredient(addRequest(tt.change))
+		assertValidationError(t, err, tt.wantParts...)
+	}
+	if len(repo.ingredients) != created {
+		t.Errorf("ingredients = %d, want %d: a rejected ingredient was created", len(repo.ingredients), created)
+	}
+}
+
+func TestAddIngredientRejectsDuplicateNames(t *testing.T) {
+	service, repo := newTestService()
+	buckwheatID := repo.insert(user, "Гречка", 330, nil, nil, nil)
+	hedgehogID := repo.insert(user, "Ёжик", 100, nil, nil, nil)
+	repo.insert(otherUser, "Овсянка", 370, nil, nil, nil)
+
+	for _, name := range nameVariants {
+		_, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr(name) }))
+		assertDuplicate(t, err, buckwheatID)
+	}
+	_, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("ежик") }))
+	assertDuplicate(t, err, hedgehogID)
+	if len(repo.ingredients) != 3 {
+		t.Errorf("ingredients = %d, want no new ones", len(repo.ingredients))
+	}
+	assertIngredient(t, repo, buckwheatID, "Гречка", 330, nil, nil, nil)
+
+	// Names of another user do not conflict
+	created, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("Овсянка") }))
+	if err != nil || created.Name != "Овсянка" || created.UserID != user {
+		t.Errorf("AddIngredient = %+v, %v; want a new ingredient of the user", created, err)
+	}
+}
+
+func TestAddIngredientUsage(t *testing.T) {
+	service, repo := newTestService()
+	// One-off diary entries with exactly this name already exist: the list counts them for the new ingredient
+	repo.diary = map[string]models.UserIngredientUsage{"Кофе раф": {TimesUsed: 2, LastUsed: ptr("2026-10-15")}}
+
+	got, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr(" Кофе раф ") }))
+	if err != nil {
+		t.Fatalf("AddIngredient: %v", err)
+	}
+	if got.Name != "Кофе раф" || got.TimesUsed != 2 || got.LastUsed == nil || *got.LastUsed != "2026-10-15" {
+		t.Errorf("returned ingredient = %+v, want the usage of the diary entries", got)
+	}
+
+	// The ingredient is stored; a failure to read the statistics does not turn the create into an error
+	repo.usageErr = errors.New("database is locked")
+	got, err = service.AddIngredient(addRequest(nil))
+	if err != nil {
+		t.Fatalf("AddIngredient without usage: %v", err)
+	}
+	if got.ID == 0 || got.Name != "Хлебцы ржаные" || got.TimesUsed != 0 || got.LastUsed != nil {
+		t.Errorf("returned ingredient = %+v, want it without usage", got)
+	}
+	assertIngredient(t, repo, got.ID, "Хлебцы ржаные", 310, 2.0, 60.0, 10.0)
+
+	// Deleted by a concurrent request between the create and the statistics: the created ingredient is returned
+	repo.usageErr = nil
+	repo.beforeUsage = func() { delete(repo.ingredients, repo.nextID-1) }
+	got, err = service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("Батон") }))
+	if err != nil {
+		t.Fatalf("AddIngredient deleted concurrently: %v", err)
+	}
+	if got.ID != repo.nextID-1 || got.Name != "Батон" || got.KcalPer100g != 310 || got.TimesUsed != 0 || got.LastUsed != nil {
+		t.Errorf("returned ingredient = %+v, want the created one without usage", got)
+	}
+}
+
+func TestAddIngredientWriteErrors(t *testing.T) {
+	service, repo := newTestService()
+	dbErr := errors.New("database is locked")
+
+	// Another request adds exactly the same name between the check and the write: the unique index catches it
+	var concurrentID int
+	repo.beforeWrite = func() {
+		concurrentID = repo.insert(user, "Хлебцы ржаные", 300, nil, nil, nil)
+		repo.beforeWrite = nil
+	}
+	_, err := service.AddIngredient(addRequest(nil))
+	assertDuplicate(t, err, concurrentID)
+
+	// A plain write failure is not a duplicate
+	repo.writeErr = dbErr
+	if _, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("Гречка") })); !errors.Is(err, dbErr) {
+		t.Errorf("error = %v, want the database error", err)
+	}
+
+	// A near-duplicate added concurrently cannot make the write fail (the index compares the exact name),
+	// so a failed write is the database error, not a name conflict
+	repo.beforeWrite = func() {
+		repo.insert(user, "рис", 130, nil, nil, nil)
+		repo.beforeWrite = nil
+	}
+	repo.writeErr = dbErr
+	_, err = service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("Рис") }))
+	var duplicateErr *DuplicateIngredientError
+	if !errors.Is(err, dbErr) || errors.As(err, &duplicateErr) {
+		t.Errorf("near-duplicate: error = %v, want the database error", err)
+	}
+
+	// The duplicate check cannot run: the write does not happen
+	repo.listErr = dbErr
+	if _, err := service.AddIngredient(addRequest(func(r *AddIngredientRequest) { r.Name = ptr("Батон") })); !errors.Is(err, dbErr) {
+		t.Errorf("without the list: error = %v, want the database error", err)
+	}
+	if len(repo.ingredients) != 2 {
+		t.Errorf("ingredients = %d, want only the concurrent ones", len(repo.ingredients))
+	}
+}
+
+// The website create keeps its rules: no upper limits and the name stored as sent
+func TestCreateIngredientKeepsWebsiteRules(t *testing.T) {
+	service, repo := newTestService()
+
+	created, err := service.CreateIngredient(&CreateIngredientRequest{UserID: user, Name: " Масло ", KcalPer100g: 1000, Fats: ptr(120.0)})
+	if err != nil {
+		t.Fatalf("CreateIngredient: %v", err)
+	}
+	assertIngredient(t, repo, created.ID, " Масло ", 1000, 120.0, nil, nil)
+
+	for _, req := range []CreateIngredientRequest{
+		{UserID: user, Name: "", KcalPer100g: 100},
+		{UserID: user, Name: "Хлеб", KcalPer100g: -1},
+		{UserID: user, Name: "Хлеб", KcalPer100g: 100, Carbs: ptr(-1.0)},
+	} {
+		if _, err := service.CreateIngredient(&req); err == nil {
+			t.Errorf("%+v: want a validation error", req)
+		}
+	}
+	if len(repo.ingredients) != 1 {
+		t.Errorf("ingredients = %d, want 1", len(repo.ingredients))
 	}
 }

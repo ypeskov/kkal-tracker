@@ -549,3 +549,305 @@ func TestIngredientsWebKeepsOtherBehavior(t *testing.T) {
 	client.expect(http.StatusNoContent, http.MethodDelete, path, nil, nil)
 	client.expect(http.StatusNotFound, http.MethodDelete, path, nil, nil)
 }
+
+// Every test below stays under the burst of the api-v1 rate limiter: all requests of a test come from one address
+
+const v1IngredientsPath = "/api/v1/ingredients"
+
+// createV1Ingredient creates an ingredient through the external API and returns it with the raw response body
+func createV1Ingredient(t *testing.T, client *smokeClient, body any) (apiIngredient, string) {
+	t.Helper()
+	var created apiIngredient
+	rec := client.expect(http.StatusCreated, http.MethodPost, v1IngredientsPath, body, &created)
+	return created, strings.TrimSpace(rec.Body.String())
+}
+
+// v1IngredientRows returns the raw rows of the external API ingredient list by ID
+func v1IngredientRows(t *testing.T, client *smokeClient) map[int]string {
+	t.Helper()
+	var response struct {
+		Ingredients []json.RawMessage `json:"ingredients"`
+	}
+	client.expect(http.StatusOK, http.MethodGet, v1IngredientsPath, nil, &response)
+	rows := make(map[int]string, len(response.Ingredients))
+	for _, raw := range response.Ingredients {
+		var row struct {
+			ID int `json:"id"`
+		}
+		if err := json.Unmarshal(raw, &row); err != nil {
+			t.Fatalf("invalid ingredient row %s: %v", raw, err)
+		}
+		rows[row.ID] = string(raw)
+	}
+	return rows
+}
+
+func TestIngredientAPICreatesIngredient(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+
+	// The response is the row of the list: the same keys in the same order, without last_used for an unused name
+	created, body := createV1Ingredient(t, client,
+		map[string]any{"name": "Хлебцы ржаные", "kcal_per_100g": 310, "fats": 2, "carbs": 60, "proteins": 10})
+	if want := fmt.Sprintf(`{"id":%d,"name":"Хлебцы ржаные","kcal_per_100g":310,"fats":2,"carbs":60,"proteins":10,"times_used":0}`,
+		created.ID); body != want {
+		t.Errorf("response = %s, want %s", body, want)
+	}
+
+	// Macros that are not sent, or sent as null, stay unknown and are absent
+	sauce, sauceBody := createV1Ingredient(t, client, map[string]any{"name": "Соус", "kcal_per_100g": 120})
+	if want := fmt.Sprintf(`{"id":%d,"name":"Соус","kcal_per_100g":120,"times_used":0}`, sauce.ID); sauceBody != want {
+		t.Errorf("response without macros = %s, want %s", sauceBody, want)
+	}
+	nulls, nullsBody := createV1Ingredient(t, client,
+		map[string]any{"name": "Кетчуп", "kcal_per_100g": 100, "fats": nil, "carbs": nil, "proteins": nil})
+	if want := fmt.Sprintf(`{"id":%d,"name":"Кетчуп","kcal_per_100g":100,"times_used":0}`, nulls.ID); nullsBody != want {
+		t.Errorf("response with null macros = %s, want %s", nullsBody, want)
+	}
+
+	// The name is cleaned before it is stored
+	if cleaned, _ := createV1Ingredient(t, client, map[string]any{"name": "  Хлебцы" + invisibleSpace + "   с отрубями ", "kcal_per_100g": 300}); cleaned.Name != "Хлебцы с отрубями" {
+		t.Errorf("name = %q, want the cleaned name", cleaned.Name)
+	}
+
+	// Boundary values; unknown fields are ignored, the ingredient belongs to the key's user
+	lower, _ := createV1Ingredient(t, client, map[string]any{"name": "Вода", "kcal_per_100g": 0, "fats": 0, "carbs": 0, "proteins": 0})
+	upper, _ := createV1Ingredient(t, client, map[string]any{"name": "Жир", "kcal_per_100g": 900, "fats": 100, "carbs": 100, "proteins": 100})
+	longName := strings.Repeat("я", 200)
+	long, _ := createV1Ingredient(t, client, map[string]any{"name": longName, "kcal_per_100g": 1, "user_id": 999999, "times_used": 5})
+	if !lower.is("Вода", 0, 0.0, 0.0, 0.0) || !upper.is("Жир", 900, 100.0, 100.0, 100.0) || !long.is(longName, 1, nil, nil, nil) {
+		t.Errorf("boundaries: %v, %v, %v", lower, upper, long)
+	}
+
+	// The list rows equal the responses
+	rows := v1IngredientRows(t, client)
+	for id, want := range map[int]string{created.ID: body, sauce.ID: sauceBody, nulls.ID: nullsBody} {
+		if rows[id] != want {
+			t.Errorf("list row = %s, want the response %s", rows[id], want)
+		}
+	}
+	if !strings.Contains(rows[long.ID], `"times_used":0`) {
+		t.Errorf("row with ignored fields = %s", rows[long.ID])
+	}
+
+	// The website lists it with the same values
+	web := webIngredients(t, client)[created.ID]
+	if web.Name != "Хлебцы ржаные" || web.KcalPer100g != 310 ||
+		optional(web.Fats) != 2.0 || optional(web.Carbs) != 60.0 || optional(web.Proteins) != 10.0 {
+		t.Errorf("website list: %+v", web)
+	}
+	if web := webIngredients(t, client)[long.ID]; web.Name != longName {
+		t.Errorf("ingredient with a user_id in the body is not in the key user's list: %+v", web)
+	}
+
+	// The new ingredient can be logged right away
+	var meal foodAPIMeal
+	client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food",
+		map[string]any{"items": []map[string]any{{"ingredient_id": created.ID, "weight": 100}}}, &meal)
+	if e := meal.Entries[0]; e.Calories != 310 || e.Food != "Хлебцы ржаные" || e.IngredientCreated {
+		t.Errorf("entry = %+v, want 310 kcal of the created ingredient", e)
+	}
+}
+
+func TestIngredientAPICreateRejectsInvalidValues(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+	before := v1IngredientRows(t, client)
+
+	tests := []struct {
+		field string
+		value any
+		want  string
+	}{
+		{"kcal_per_100g", -1, "kcal_per_100g must be between 0 and 900"},
+		{"kcal_per_100g", 900.1, "kcal_per_100g must be between 0 and 900"},
+		{"fats", -0.1, "fats must be between 0 and 100 (grams per 100 g)"},
+		{"fats", 100.1, "fats must be between 0 and 100 (grams per 100 g)"},
+		{"carbs", -0.1, "carbs must be between 0 and 100 (grams per 100 g)"},
+		{"carbs", 100.1, "carbs must be between 0 and 100 (grams per 100 g)"},
+		{"proteins", -0.1, "proteins must be between 0 and 100 (grams per 100 g)"},
+		{"proteins", 100.1, "proteins must be between 0 and 100 (grams per 100 g)"},
+		{"kcal_per_100g", nil, "kcal_per_100g is required"},
+	}
+	for _, tt := range tests {
+		body := map[string]any{"name": "Хлебцы", "kcal_per_100g": 310, "fats": 2, "carbs": 60, "proteins": 10}
+		body[tt.field] = tt.value
+		expectError(t, client.do(http.MethodPost, v1IngredientsPath, body), http.StatusBadRequest, tt.want)
+	}
+	// kcal_per_100g not sent at all
+	expectError(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "Хлебцы", "fats": 2}),
+		http.StatusBadRequest, "kcal_per_100g is required")
+
+	if after := v1IngredientRows(t, client); len(after) != len(before) {
+		t.Errorf("ingredients = %d, want %d: a rejected ingredient was created", len(after), len(before))
+	}
+}
+
+func TestIngredientAPICreateRejectsInvalidRequests(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+	before := v1IngredientRows(t, client)
+
+	for _, body := range []map[string]any{
+		{"kcal_per_100g": 310},
+		{"name": nil, "kcal_per_100g": 310},
+		{"name": "", "kcal_per_100g": 310},
+		{"name": "   ", "kcal_per_100g": 310},
+		{"name": invisibleSpace + " \t" + invisibleSpace, "kcal_per_100g": 310},
+	} {
+		expectError(t, client.do(http.MethodPost, v1IngredientsPath, body), http.StatusBadRequest, "name is required")
+	}
+	expectError(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": strings.Repeat("я", 201), "kcal_per_100g": 310}),
+		http.StatusBadRequest, "name must be at most 200 characters")
+
+	expectError(t, doRaw(client, http.MethodPost, v1IngredientsPath, `{"name": "Хлебцы", "kcal_per_100g": 310`),
+		http.StatusBadRequest, "Invalid request body")
+	expectError(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "Хлебцы", "kcal_per_100g": "abc"}),
+		http.StatusBadRequest, "Invalid request body")
+	expectError(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": 5, "kcal_per_100g": 310}),
+		http.StatusBadRequest, "Invalid request body")
+
+	if after := v1IngredientRows(t, client); len(after) != len(before) {
+		t.Errorf("ingredients = %d, want %d: a rejected ingredient was created", len(after), len(before))
+	}
+}
+
+func TestIngredientAPICreateRejectsDuplicateNames(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+
+	signUp(t, client, smtpServer, "second@example.com")
+	otherOats := createWebIngredient(t, client, map[string]any{"name": "Овсянка", "kcalPer100g": 370})
+	otherToken, otherAPIKey := client.token, client.apiKey
+
+	signUp(t, client, smtpServer, "first@example.com")
+	buckwheatID := createWebIngredient(t, client, map[string]any{"name": "Гречка", "kcalPer100g": 330, "proteins": 12.6}).ID
+	hedgehogID := createWebIngredient(t, client, map[string]any{"name": "Ёжик", "kcalPer100g": 100}).ID
+	before := v1IngredientRows(t, client)
+
+	// The existing ingredient comes in the external API shape with its own values
+	rec := client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "Гречка", "kcal_per_100g": 340})
+	want := fmt.Sprintf(`{"message":"%s","existing_ingredient":{"id":%d,"name":"Гречка","kcal_per_100g":330,"proteins":12.6}}`,
+		duplicateNameMessage, buckwheatID)
+	if got := strings.TrimSpace(rec.Body.String()); rec.Code != http.StatusConflict || got != want {
+		t.Errorf("response = %d %s, want 409 %s", rec.Code, got, want)
+	}
+	for _, name := range []string{"гречка", " Гречка ", "ГРЕЧКА", "Греч" + invisibleSpace + "ка"} {
+		expectConflict(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": name, "kcal_per_100g": 340}),
+			buckwheatID, "Гречка", "kcal_per_100g")
+	}
+	expectConflict(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "ежик", "kcal_per_100g": 1}),
+		hedgehogID, "Ёжик", "kcal_per_100g")
+
+	after := v1IngredientRows(t, client)
+	if len(after) != len(before) || after[buckwheatID] != before[buckwheatID] {
+		t.Errorf("list after conflicts: %v, want %v", after, before)
+	}
+
+	// Another user's name is not a conflict, and nothing of that user is revealed
+	oats, oatsBody := createV1Ingredient(t, client, map[string]any{"name": "Овсянка", "kcal_per_100g": 350})
+	if oats.ID == otherOats.ID || !oats.is("Овсянка", 350, nil, nil, nil) {
+		t.Errorf("created = %s, want a new ingredient of the user", oatsBody)
+	}
+	client.token, client.apiKey = otherToken, otherAPIKey
+	if others := v1Ingredients(t, client); len(others) != 1 || !others[otherOats.ID].is("Овсянка", 370, nil, nil, nil) {
+		t.Errorf("the other user's list = %v, want only the own Овсянка", others)
+	}
+}
+
+func TestIngredientAPICreateKeepsDiary(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+	breadID := addBread(t, client)
+
+	var meal foodAPIMeal
+	client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food",
+		map[string]any{"items": []map[string]any{{"ingredient_id": breadID, "weight": 120}}}, &meal)
+	if meal.DayTotalCalories == nil || *meal.DayTotalCalories != 300 {
+		t.Fatalf("day total after the meal = %v, want 300", meal.DayTotalCalories)
+	}
+	dataPath := fmt.Sprintf("/api/v1/data?type=food&from=%s&to=%s", meal.Day, meal.Day)
+	diary := func() string {
+		t.Helper()
+		return strings.TrimSpace(client.expect(http.StatusOK, http.MethodGet, dataPath, nil, nil).Body.String())
+	}
+	before := diary()
+
+	createV1Ingredient(t, client, map[string]any{"name": "Хлебцы ржаные", "kcal_per_100g": 310})
+	expectError(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "Чипсы", "kcal_per_100g": 1000}),
+		http.StatusBadRequest, "kcal_per_100g")
+	conflict(t, client.do(http.MethodPost, v1IngredientsPath, map[string]any{"name": "хлеб", "kcal_per_100g": 250}))
+
+	after := diary()
+	if after != before {
+		t.Errorf("diary changed: %s, want %s", after, before)
+	}
+	var data struct {
+		Food []foodAPIEntry `json:"food"`
+	}
+	if err := json.Unmarshal([]byte(after), &data); err != nil {
+		t.Fatal(err)
+	}
+	total := 0
+	for _, entry := range data.Food {
+		total += entry.Calories
+		if entry.Food != "Хлеб" {
+			t.Errorf("unexpected diary entry %+v", entry)
+		}
+	}
+	if len(data.Food) != 1 || total != 300 {
+		t.Errorf("diary = %+v, want the one meal with 300 kcal", data.Food)
+	}
+}
+
+// The statistics are matched by name: entries that already have exactly the new name count, as in the list
+func TestIngredientAPICreateShowsUsageOfTheName(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+
+	for _, datetime := range []string{"2026-10-10T08:00:00Z", "2026-10-12T08:00:00Z"} {
+		client.expect(http.StatusCreated, http.MethodPost, "/api/v1/food", map[string]any{
+			"meal_datetime": datetime,
+			"items": []map[string]any{{"new_ingredient": map[string]any{"name": "Кофе раф", "kcal_per_100g": 80},
+				"weight": 250, "one_off": true}},
+		}, nil)
+	}
+
+	created, body := createV1Ingredient(t, client, map[string]any{"name": "Кофе раф", "kcal_per_100g": 80})
+	if want := fmt.Sprintf(`{"id":%d,"name":"Кофе раф","kcal_per_100g":80,"times_used":2,"last_used":"2026-10-12"}`,
+		created.ID); body != want {
+		t.Errorf("response = %s, want %s", body, want)
+	}
+	if row := v1IngredientRows(t, client)[created.ID]; row != body {
+		t.Errorf("list row = %s, want the response %s", row, body)
+	}
+}
+
+func TestIngredientAPICreateRequiresAPIKey(t *testing.T) {
+	client, smtpServer := newSmokeEnvironment(t)
+	signUp(t, client, smtpServer, "food@example.com")
+	token, apiKey := client.token, client.apiKey
+	before := len(webIngredients(t, client))
+
+	var revoked struct {
+		ID  int    `json:"id"`
+		Key string `json:"key"`
+	}
+	client.expect(http.StatusCreated, http.MethodPost, "/api/api-keys", map[string]any{"name": "old"}, &revoked)
+	client.expect(http.StatusOK, http.MethodPost, fmt.Sprintf("/api/api-keys/%d/revoke", revoked.ID), nil, nil)
+
+	body := map[string]any{"name": "Хлебцы ржаные", "kcal_per_100g": 310}
+	for _, auth := range []struct{ token, apiKey string }{
+		{token, ""},         // a website session only
+		{"", ""},            // nothing
+		{"", "invalid-key"}, // an unknown key
+		{"", revoked.Key},   // a revoked key
+	} {
+		client.token, client.apiKey = auth.token, auth.apiKey
+		client.expect(http.StatusUnauthorized, http.MethodPost, v1IngredientsPath, body, nil)
+	}
+
+	client.token, client.apiKey = token, apiKey
+	if after := len(webIngredients(t, client)); after != before {
+		t.Errorf("ingredients = %d, want %d: created without a valid API key", after, before)
+	}
+}

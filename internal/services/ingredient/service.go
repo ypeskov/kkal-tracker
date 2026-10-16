@@ -71,22 +71,68 @@ func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	if err := s.checkDuplicateName(req.UserID, req.Name, nil); err != nil {
+	return s.createIngredient(req.UserID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+}
+
+// AddIngredient creates an ingredient for the external API. Unlike CreateIngredient of the website, the values are
+// checked against the sanity limits of package food and the name is cleaned, like a new ingredient of a meal.
+// The result carries the usage statistics the ingredient list shows for it: the statistics are matched by name, so
+// diary entries that already have exactly this name count.
+func (s *Service) AddIngredient(req *AddIngredientRequest) (*models.UserIngredientUsage, error) {
+	s.logger.Debug("AddIngredient called", "user_id", req.UserID)
+
+	name, err := validateAddRequest(req)
+	if err != nil {
+		s.logger.Debug("AddIngredient failed - validation error", "user_id", req.UserID, "error", err)
 		return nil, err
 	}
 
-	ingredient, err := s.ingredientRepo.CreateUserIngredient(
-		req.UserID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins,
-	)
+	ingredient, err := s.createIngredient(req.UserID, name, *req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
 	if err != nil {
-		if duplicateErr := s.duplicateAfterWriteError(req.UserID, req.Name, 0, err); duplicateErr != nil {
+		return nil, err
+	}
+
+	return s.withUsage(ingredient), nil
+}
+
+// withUsage returns a new ingredient with its row of the ingredient list. The ingredient is already stored, so
+// a failure to read the statistics is logged and the ingredient is returned without them instead of as an error:
+// an error would make the client retry a create that has succeeded.
+func (s *Service) withUsage(ingredient *models.UserIngredient) *models.UserIngredientUsage {
+	ingredients, err := s.ingredientRepo.GetUserIngredientsWithUsage(ingredient.UserID)
+	if err != nil {
+		s.logger.Error("Failed to get usage of the created ingredient", "error", err,
+			"user_id", ingredient.UserID, "ingredient_id", ingredient.ID)
+		return &models.UserIngredientUsage{UserIngredient: *ingredient}
+	}
+	for _, row := range ingredients {
+		if row.ID == ingredient.ID {
+			return row
+		}
+	}
+	// Deleted by a concurrent request right after the create
+	return &models.UserIngredientUsage{UserIngredient: *ingredient}
+}
+
+// createIngredient is the one create path of the ingredient list, for the website and the external API:
+// the duplicate-name rule, the write, and the explanation of a failed write
+func (s *Service) createIngredient(userID int, name string, kcalPer100g float64,
+	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	if err := s.checkDuplicateName(userID, name, nil); err != nil {
+		return nil, err
+	}
+
+	ingredient, err := s.ingredientRepo.CreateUserIngredient(userID, name, kcalPer100g, fats, carbs, proteins)
+	if err != nil {
+		if duplicateErr := s.duplicateAfterWriteError(userID, name, 0, err); duplicateErr != nil {
 			return nil, duplicateErr
 		}
-		s.logger.Error("Failed to create user ingredient", "error", err, "user_id", req.UserID, "name", req.Name)
+		s.logger.Error("Failed to create user ingredient", "error", err, "user_id", userID, "name", name)
 		return nil, err
 	}
 
-	s.logger.Debug("CreateIngredient completed successfully", "user_id", req.UserID, "ingredient_id", ingredient.ID, "name", req.Name)
+	s.logger.Info("User ingredient created", "user_id", userID, "ingredient_id", ingredient.ID,
+		"name", ingredient.Name, "kcal_per_100g", ingredient.KcalPer100g)
 	return ingredient, nil
 }
 
@@ -282,27 +328,64 @@ func validatePatchRequest(req *PatchIngredientRequest) (string, error) {
 
 	var name string
 	if req.Name != nil {
-		name = food.CleanName(*req.Name)
-		if name == "" {
-			return "", &ValidationError{Message: "name must not be empty"}
-		}
-		if food.NameTooLong(name) {
-			return "", &ValidationError{Message: fmt.Sprintf("name must be at most %d characters", food.MaxNameLength)}
+		var err error
+		if name, err = cleanName(*req.Name, "name must not be empty"); err != nil {
+			return "", err
 		}
 	}
-	if req.KcalPer100g != nil && !food.ValidKcalPer100g(*req.KcalPer100g) {
-		return "", &ValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)}
+	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins); err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
+// validateAddRequest checks a new ingredient of the external API and returns its cleaned name
+func validateAddRequest(req *AddIngredientRequest) (string, error) {
+	const nameRequired = "name is required"
+	if req.Name == nil {
+		return "", &ValidationError{Message: nameRequired}
+	}
+	name, err := cleanName(*req.Name, nameRequired)
+	if err != nil {
+		return "", err
+	}
+	if req.KcalPer100g == nil {
+		return "", &ValidationError{Message: "kcal_per_100g is required"}
+	}
+	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins); err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
+// cleanName cleans a sent ingredient name and checks its length; emptyMessage is the error of a name that is empty
+// after cleaning
+func cleanName(raw, emptyMessage string) (string, error) {
+	name := food.CleanName(raw)
+	if name == "" {
+		return "", &ValidationError{Message: emptyMessage}
+	}
+	if food.NameTooLong(name) {
+		return "", &ValidationError{Message: fmt.Sprintf("name must be at most %d characters", food.MaxNameLength)}
+	}
+	return name, nil
+}
+
+// validateValues checks the sent (non-nil) calorie and nutrient values against the sanity limits of package food
+func validateValues(kcalPer100g, fats, carbs, proteins *float64) error {
+	if kcalPer100g != nil && !food.ValidKcalPer100g(*kcalPer100g) {
+		return &ValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)}
 	}
 	nutrients := []struct {
 		field string
 		value *float64
-	}{{"fats", req.Fats}, {"carbs", req.Carbs}, {"proteins", req.Proteins}}
+	}{{"fats", fats}, {"carbs", carbs}, {"proteins", proteins}}
 	for _, n := range nutrients {
 		if n.value != nil && !food.ValidNutrientPer100g(*n.value) {
-			return "", &ValidationError{Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)}
+			return &ValidationError{Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)}
 		}
 	}
-	return name, nil
+	return nil
 }
 
 func (s *Service) validateUpdateRequest(req *UpdateIngredientRequest) error {

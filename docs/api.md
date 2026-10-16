@@ -41,6 +41,14 @@ All routes are under `/api`.
 - `/api/v1/*` - external API (`X-API-Key` header, rate limited per IP: burst of 20, then 1 req/sec)
   - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
   - `GET /api/v1/ingredients` - all user ingredients with `times_used` and `last_used`
+  - `POST /api/v1/ingredients` - add an ingredient to the list without a diary entry: `{name, kcal_per_100g, fats?, carbs?,
+    proteins?}`. The same limits and name cleaning as `new_ingredient` of `POST /food` (`kcal_per_100g` required, 0–900;
+    macros 0–100, `null` or not sent = unknown; name up to 200 characters after cleaning). 400 names the field
+    (`name is required`, `kcal_per_100g is required`, `<field> must be between ...`). Returns 201 with the ingredient
+    as a row of `GET /ingredients` (`{id, name, kcal_per_100g, fats?, carbs?, proteins?, times_used, last_used?}`; the
+    statistics are matched by name, so diary entries that already have exactly this name count); 409
+    `{message, existing_ingredient}` when the user already has an ingredient with the same name (ignoring case,
+    spacing, invisible characters and `ё`/`е`). No diary entry is created
   - `POST /api/v1/food` - store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?, fats?, carbs?, proteins?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`.
     On an `ingredient_id` item, `kcal_per_100g` (0–900) and `fats`/`carbs`/`proteins` (grams per 100 g, 0–100) override
     the ingredient's values for this entry only; values that are not sent are copied from the ingredient (macros may be

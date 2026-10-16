@@ -8,8 +8,10 @@ Commands:
   totals --day YYYY-MM-DD  calories, fats, carbs and proteins of a meal (--meal IDs) and of the whole diary day
   edit ENTRY_ID [...]      change the weight, ingredient, calories, macros or time of a diary entry
   delete ENTRY_ID          delete a diary entry
+  add-ingredient --name --kcal  add an ingredient to the list without logging it
   edit-ingredient ID [...] correct the name, calories or nutrients of an ingredient in the list
   delete-ingredient ID     delete an ingredient from the list (diary entries stay)
+  version                  print the version of this skill (no request)
 
 Every command prints the HTTP status on failure and exits with code 1.
 """
@@ -32,6 +34,10 @@ import urllib.request
 DEFAULT_BASE_URL = "https://kcal.peskov.info"
 API_KEY = "API_KEY_HERE"
 # -----------------------------------------------------------------------------
+
+# The version of the whole skill (SKILL.md and this client): the date of the last change of either file.
+# Bump it in every change of the skill template.
+SKILL_VERSION = "2026-10-16"
 
 # Assembled from parts: the download replaces the only literal placeholder, the one in the line above
 API_KEY_PLACEHOLDER = "API_KEY_" + "HERE"
@@ -106,12 +112,12 @@ def number(value):
     return f"{value:g}"
 
 
-def expect_ingredient_change(status, payload, ok_status):
+def expect_ingredient_change(status, payload, ok_status, action="editing or deleting", outcome="changed"):
     """Like expect, but tells a missing ingredient from an older server without the ingredient routes."""
     not_found = isinstance(payload, dict) and payload.get("message") == "Ingredient not found"
     if status in (404, 405) and not not_found:
-        fail(f"HTTP {status}: the server probably does not support editing or deleting ingredients yet "
-             "(an older server version). Nothing was changed.")
+        fail(f"HTTP {status}: the server probably does not support {action} ingredients yet "
+             f"(an older server version). Nothing was {outcome}.")
     expect(status, payload, ok_status)
 
 
@@ -243,6 +249,18 @@ def cmd_delete(args):
     print(f"Entry {args.entry_id} deleted")
 
 
+def cmd_add_ingredient(args):
+    ingredient = {"name": args.name, "kcal_per_100g": args.kcal}
+    # 0 is a value and is sent; only the macros that were not passed stay unknown
+    ingredient.update({nutrient: getattr(args, nutrient) for nutrient in NUTRIENTS
+                       if getattr(args, nutrient) is not None})
+
+    status, payload = request("POST", "/ingredients", ingredient)
+    # POST never answers "Ingredient not found": a 404 or 405 is always an older server without the route
+    expect_ingredient_change(status, payload, 201, action="adding", outcome="created")
+    print_json(payload)
+
+
 def cmd_edit_ingredient(args):
     changes = {
         "name": args.name,
@@ -264,6 +282,10 @@ def cmd_delete_ingredient(args):
     status, payload = request("DELETE", f"/ingredients/{args.ingredient_id}")
     expect_ingredient_change(status, payload, 204)
     print(f"Ingredient {args.ingredient_id} deleted")
+
+
+def cmd_version(args):
+    print(SKILL_VERSION)
 
 
 def main():
@@ -310,6 +332,15 @@ def main():
     delete.add_argument("entry_id", type=int)
     delete.set_defaults(func=cmd_delete)
 
+    add_ingredient = commands.add_parser(
+        "add-ingredient", help="add an ingredient to the list without logging anything to the diary")
+    add_ingredient.add_argument("--name", required=True, help="name of the product, short, in the user's language")
+    add_ingredient.add_argument("--kcal", type=float, required=True, help="calories per 100 g")
+    add_ingredient.add_argument("--fats", type=float, help="fats, grams per 100 g")
+    add_ingredient.add_argument("--carbs", type=float, help="carbohydrates, grams per 100 g")
+    add_ingredient.add_argument("--proteins", type=float, help="proteins, grams per 100 g")
+    add_ingredient.set_defaults(func=cmd_add_ingredient)
+
     edit_ingredient = commands.add_parser(
         "edit-ingredient",
         help="correct an ingredient of the list for all future entries; logged entries do not change")
@@ -327,6 +358,9 @@ def main():
         "delete-ingredient", help="delete an ingredient from the list; logged entries stay, no undo")
     delete_ingredient.add_argument("ingredient_id", type=int)
     delete_ingredient.set_defaults(func=cmd_delete_ingredient)
+
+    version = commands.add_parser("version", help="print the version of this skill; sends no request")
+    version.set_defaults(func=cmd_version)
 
     args = parser.parse_args()
     args.func(args)

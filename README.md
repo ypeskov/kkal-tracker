@@ -209,6 +209,9 @@ Rate limit per IP: a burst of 20 requests, then 1 request per second.
 |----------|-------------|
 | `GET /api/v1/data?type=weight\|food\|both&from=YYYY-MM-DD&to=YYYY-MM-DD` | Weight entries, food entries or both |
 | `GET /api/v1/ingredients` | All ingredients of the user with `times_used` and `last_used` |
+| `POST /api/v1/ingredients` | Add an ingredient to the list without a diary entry |
+| `PUT /api/v1/ingredients/:id` | Change an ingredient of the list |
+| `DELETE /api/v1/ingredients/:id` | Delete an ingredient of the list (diary entries stay) |
 | `POST /api/v1/food` | Store a meal |
 | `PUT /api/v1/food/:id` | Change a food entry |
 | `DELETE /api/v1/food/:id` | Delete a food entry |
