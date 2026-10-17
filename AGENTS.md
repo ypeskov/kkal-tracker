@@ -34,7 +34,9 @@ migrated SQLite database with a fake SMTP server (register → activation → lo
 - **Git commits**: no "Co-Authored-By" or any other AI/assistant attribution, no mentions of AI tools
 - **Libraries**: before writing code against a library, fetch its current docs for the version in `go.mod` /
   `package.json` (Context7 MCP server when available), do not rely on memory
-- **Migrations** are never run automatically: neither the server nor the deploy applies them (see the `deploy` skill)
+- **Migrations** are never run automatically: neither the server nor the deploy applies them (see the `deploy` skill).
+  They run with foreign keys off (the app enforces them), so a parent-table rebuild does not cascade-delete the
+  children; afterwards `cmd/migrate` runs `PRAGMA foreign_key_check` and fails if the migration left orphaned rows
 - **CSP** (`internal/server/security.go`): scripts only from the own origin, no inline scripts, no `eval`. Do not add
   inline `<script>`, external script/style/font hosts or eval-based code without updating the policy
 - **Secrets**: API keys never go to the repository (the skill template holds the `API_KEY_HERE` placeholder; a real

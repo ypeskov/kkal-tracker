@@ -36,21 +36,22 @@ func main() {
 	cfg := config.New()
 	appLogger := logger.New(cfg)
 
+	// Migrate on a migration connection (the same path as cmd/migrate), then create the user on an app connection
+	err = database.MigrateUp(cfg.DatabasePath, database.MigrationsDir, appLogger)
+	if err != nil {
+		log.Fatal("Failed to run migrations: ", err)
+	}
+
 	db, err := database.New(cfg.DatabasePath, appLogger)
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		log.Fatal("Failed to initialize database: ", err)
 	}
 	defer db.Close()
-
-	err = database.Migrate(db)
-	if err != nil {
-		log.Fatal("Failed to run migrations:", err)
-	}
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Fatal("Failed to hash password:", err)
+		log.Fatal("Failed to hash password: ", err)
 	}
 
 	userRepo := repositories.NewUserRepository(db, appLogger, repositories.DialectSQLite)
@@ -58,7 +59,7 @@ func main() {
 	// Create active user directly (skipActivation = true in repository)
 	user, err := userRepo.CreateWithLanguage(email, string(hashedPassword), languageCode, true)
 	if err != nil {
-		log.Fatal("Failed to create user:", err)
+		log.Fatal("Failed to create user: ", err)
 	}
 
 	fmt.Printf("User created successfully: ID=%d, Email=%s, Language=%s, Active=%t\n", user.ID, user.Email, languageCode, user.IsActive)

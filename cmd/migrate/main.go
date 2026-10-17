@@ -27,35 +27,36 @@ func main() {
 
 	appLogger := logger.New(cfg)
 
-	db, err := database.New(cfg.DatabasePath, appLogger)
+	// Migrations run with foreign keys off and are followed by PRAGMA foreign_key_check (see database.Migrator)
+	migrator, err := database.NewMigrator(cfg.DatabasePath, database.MigrationsDir, appLogger)
 	if err != nil {
 		appLogger.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer migrator.Close()
 
 	switch command {
 	case "up":
 		fmt.Println("Running migrations...")
-		err = database.Migrate(db)
+		err = migrator.Up()
 		if err != nil {
-			log.Fatal("Failed to run migrations:", err)
+			log.Fatal("Failed to run migrations: ", err)
 		}
 		fmt.Println("Migrations completed successfully!")
 
 	case "down":
 		fmt.Println("Rolling back last migration...")
-		err = database.MigrateDown(db)
+		err = migrator.Down()
 		if err != nil {
-			log.Fatal("Failed to rollback migration:", err)
+			log.Fatal("Failed to rollback migration: ", err)
 		}
 		fmt.Println("Rollback completed successfully!")
 
 	case "status":
 		fmt.Println("Migration status:")
-		err = database.MigrateStatus(db)
+		err = migrator.Status()
 		if err != nil {
-			log.Fatal("Failed to get migration status:", err)
+			log.Fatal("Failed to get migration status: ", err)
 		}
 
 	default:

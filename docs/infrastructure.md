@@ -39,6 +39,9 @@
   `services/kkal-tracker/backups`
 - Retention: `RETENTION_DAYS` (7): files older than that are deleted on the server (`find -mtime +7`, so 8-9 files
   remain) and on Google Drive
+- The database stays in rollback-journal mode (`delete`). WAL is deliberately not used: it would add `-wal`/`-shm`
+  files that every process opening the database, including the backup pod (another image and user on the same
+  hostPath), must be able to write, and change what a plain file copy contains
 
 ## Environment variables
 See `.env.sample`. The main ones:

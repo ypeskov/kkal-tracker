@@ -197,19 +197,19 @@ func newSmokeEnvironment(t *testing.T) (*smokeClient, *fakeSMTPServer) {
 func newSmokeEnvironmentWith(t *testing.T, logger *slog.Logger, configure func(*config.Config)) (*smokeClient, *fakeSMTPServer) {
 	t.Helper()
 
-	db, err := database.New(filepath.Join(t.TempDir(), "app.db"), logger)
+	databasePath := filepath.Join(t.TempDir(), "app.db")
+
+	// The production path: migrations on a migration connection, the server on an app connection
+	goose.SetLogger(goose.NopLogger())
+	if err := database.MigrateUp(databasePath, filepath.Join("..", "..", database.MigrationsDir), logger); err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
+
+	db, err := database.New(databasePath, logger)
 	if err != nil {
 		t.Fatalf("failed to open database: %v", err)
 	}
 	t.Cleanup(func() { db.Close() })
-
-	goose.SetLogger(goose.NopLogger())
-	if err := goose.SetDialect("sqlite3"); err != nil {
-		t.Fatalf("failed to set migration dialect: %v", err)
-	}
-	if err := goose.Up(db, filepath.Join("..", "..", "migrations")); err != nil {
-		t.Fatalf("failed to run migrations: %v", err)
-	}
 
 	smtpServer := newFakeSMTPServer(t)
 

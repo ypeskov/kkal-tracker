@@ -5,6 +5,13 @@
 - **Frontend**: React 19, TanStack Query & Router, TypeScript, Vite, Tailwind CSS v4, Chart.js, date-fns, lucide-react
 - **Database**: SQLite only (modernc.org/sqlite), Goose migrations. `queries.go` still has PostgreSQL-dialect variants;
   they are not wired up: there is no driver and no configuration option
+  - App connections (`database.New`: server, seed, `scripts/create_user.go`, tests) enforce foreign keys and wait 5 s
+    on locks held by another connection (`database.BusyTimeout`). Both are `_pragma` DSN parameters, so the driver
+    sets them on every pooled connection; `DATABASE_PATH` stays a plain file path
+  - The journal mode stays rollback (`delete`); nothing sets WAL
+  - `cmd/migrate` (`database.Migrator`, also used by `scripts/create_user.go` and the tests) runs migrations with
+    foreign keys off, so rebuilding a parent table does not cascade-delete its children, then runs
+    `PRAGMA foreign_key_check` after `up` and `down` and fails, naming the tables, if any row lost its parent
 - **Auth**: JWT + bcrypt, token in sessionStorage, email activation; `X-API-Key` auth for `/api/v1`
 - **I18n**: react-i18next (frontend) + own translator (backend) with embedded locale files; `en_US`, `uk_UA`, `ru_UA`, `bg_BG`
 - **Logging**: slog, created in `main.go` and passed through dependency injection; JSON format in production

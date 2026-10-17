@@ -37,7 +37,7 @@ Exact versions are in [`go.mod`](go.mod) and [`web/package.json`](web/package.js
 
 - Go 1.26+
 - Node.js 20.19+ or 22.12+ (required by Vite; Docker builds use Node 24) and npm
-- Optional: the `sqlite3` CLI (used by `make seed-clean`)
+- Optional: the `sqlite3` CLI (for inspecting the database and `scripts/install-local-db.sh`)
 
 ### First run
 
@@ -100,7 +100,7 @@ make migrate-status                  # Show migration status
 make migrate-create NAME=add_table   # Create a new migration file
 
 make seed             # Run the SQL files from cmd/seed/sql in alphabetical order
-make seed-clean       # Delete the global ingredients and seed again (dev only, needs sqlite3)
+make seed-clean       # Delete the global ingredients (their ids start at 1 again) and seed again (dev only)
 ```
 
 ### Tests and checks
