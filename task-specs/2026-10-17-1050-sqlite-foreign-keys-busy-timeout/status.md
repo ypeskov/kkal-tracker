@@ -1,8 +1,8 @@
 # Task Status: SQLite: enforce foreign keys and wait on locks (busy timeout)
 
 ## Current Phase
-**Phase**: `devops`
-**Assigned to**: `devops-engineer`
+**Phase**: `done`
+**Assigned to**: `-`
 **Updated**: 2026-10-17
 
 Chain (backend-only): BA → Backend Dev → Backend Review → Security Review → QA Review → BA Acceptance → DevOps.
@@ -202,6 +202,7 @@ Clean, no `agent-reviews/qa-review.md`.
 | 2026-10-17 | qa-review | security-reviewer | Security review iteration 1: clean, no report. Data loss: the only parent delete in app code is the registration rollback of the just-created user (cascade now also removes its copied `user_ingredients`, as intended); no `OR REPLACE` can delete a parent (`01_ingredients.sql` inserts `global_ingredients` without id and the table has no unique key, so REPLACE never fires a cascade); migrations run with foreign keys off, so parent rebuilds in Up/Down cannot cascade; cleanup migration uses `NOT EXISTS` on NOT NULL columns only (matches `foreign_key_check` exactly), empty Down; `seed -clean` is not in the image, one transaction, only NULLs `global_ingredient_id`. `foreign_key_check` error has table names and counts only (test asserts no token value or id). `DATABASE_PATH`: `?` and empty/blank rejected, no DSN parameter injection (driver v1.60.1 `newConn` checked; a `file:` prefix still gets the pragmas). FK errors reach clients only as existing generic 500s (no string-based error mapping). No secrets in the diff; `go.mod`/`go.sum` unchanged, no dependency audit needed |
 | 2026-10-17 | ba-acceptance | qa-engineer | QA review iteration 1: clean, no report. vet/test/-race green; all acceptance criteria mapped to tests; mutation checks confirm the key tests fail on regressions; subtask 7 repeated on a new pre-migration copy (2 `activation_tokens` deleted, down/up clean); `cmd/migrate` exit codes and busy wait checked on copies; seeds re-checked; dev-server browser check left manual (see QA Review) |
 | 2026-10-17 | devops | business-analyst | Acceptance passed. Every criterion was checked against the code (`internal/database/database.go`, `migrate.go`, the cleanup migration, `02_user_data.sql`, `Makefile`, callers, docs, `TODO.md` deleted) and the developer's and QA's results. Accepted deviation: `seed-clean` runs `cmd/seed -clean` (same effect, uses `DATABASE_PATH`). The dev-server criterion is covered by the end-to-end tests with foreign keys on, per QA; the user did not require a browser check. Unchecked: the production steps (backup → new `cmd/migrate up` → release, post-release checks) |
+| 2026-10-17 | done | devops-engineer | Production DB backed up (`app.db.bak_20261017_114935`, integrity ok); `foreign_key_check` before: 2 rows (activation_tokens → users); new `cmd/migrate up` (linux/arm64) applied `20261017110038_cleanup_orphaned_rows.sql`, exit 0, check clean, integrity ok, journal mode delete. Released v5.17.0 with `deploy.sh`: pod running on `ypeskov/kcal-tracker:5.17.0`, 0 restarts, no errors in the log; site 200; login endpoint answers; `foreign_key_check` on the live file (read-only) empty |
 
 ## Review Iterations
 - **Iteration 1 (backend review)**: 2026-10-17 — issues: empty-path guard in `database.open` (required); suggestions for `seed -clean` (explicit names delete, atomicity, double logging) and `scripts/create_user.go` messages. Report: `agent-reviews/backend-review.md`
