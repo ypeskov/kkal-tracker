@@ -17,7 +17,8 @@ user asks.
    ```
    Run it as a background task of your runtime, not with `&` inside a foreground command
 3. The first build takes a while (npm install + vite + go build). Wait until the log shows the server listening
-4. Tell the user the URL: `http://<VM IP>:<port>` (`hostname -I | awk '{print $1}'`)
+4. Tell the user the URL: **https://dev-kcal.peskov.info/** (the dev server's domain, `APP_URL` in `.env`). Direct
+   access also works: `http://<VM IP>:<port>` (`hostname -I | awk '{print $1}'`)
 
 ## Behavior
 - Air rebuilds on changes to go, tsx, ts, html, css, js, json files (`.air.toml`); a rebuild includes the frontend
