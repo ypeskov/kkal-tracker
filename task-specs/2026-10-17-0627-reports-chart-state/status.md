@@ -1,8 +1,8 @@
 # Task Status: Reports page: remember the chart settings (per user, on the server) and keep the trend line up to date
 
 ## Current Phase
-**Phase**: `devops`
-**Assigned to**: `devops-engineer`
+**Phase**: `done`
+**Assigned to**: `-`
 **Updated**: 2026-10-17
 
 Chain (full-stack): BA → Backend Dev → Backend Review → Frontend Dev → Frontend Review → Security Review →
@@ -147,6 +147,7 @@ briefly) → login as U1 again (U1's settings). Verified in code only.
 | 2026-10-17 | qa-review | security-reviewer | Security review clean, no report. Routes JWT-only (`RequireAuth` reads only the `Authorization` header; `X-API-Key` → 401), user only from the token, allow-list before any DB access, strict per-field validation, 4 KiB limit after auth (Content-Length and streamed bodies), stored value is the server's re-encoding with `v`, no stored values or internal errors in responses/logs, SQL parameterized. No CSRF angle (no cookie auth, CORS limited to `AppURL`). No rate limit needed (bounded upsert, as other JWT write routes). Frontend: user id in the query key, `clear()` + ingredient cache on logout/login, saves dropped on token change, nothing new in local/sessionStorage, CSP unchanged. Dependencies unchanged. Dev server probed unauthenticated only: 401 for GET/PUT, API key, unknown key |
 | 2026-10-17 | ba-acceptance | qa-engineer | QA review clean, no report. `go vet ./...`, `go test -count=1 ./...`, `go test -race` (preferences service/handler, `internal/server`, repositories) green; coverage: service 95.7%, handler 88.9% (only unreachable marshal/DB-load branches uncovered); migrate up → down → up on a copy of `data/app.db` OK. Every backend criterion maps to `services/preferences/service_test.go`, `handlers/preferences/handler_test.go` or `server/preferences_test.go` (boundaries incl. 2024-02-29 / 2026-02-29, "today" only for To, half range, wrong types, 4096 → 200 / 4097 → 413 unchanged, unknown key/fields, corrupt stored values, U1/U2 isolation, 401 without JWT and with a real API key only, generic 500). Frontend criteria verified by reading the code; tsc, lint (no new warnings), build green. Dev server probed unauthenticated only: 401. **Manual browser check still open**: logout → login as U2 → login as U1 in the same tab (made after the user's browser check) |
 | 2026-10-17 | devops | business-analyst | Acceptance passed. Every criterion verified against the code and QA's results is met; the user's browser check confirmed persistence across reload, the trend redraw after weight add/edit/delete and the previous chart kept while loading. `requirements.md` updated: C1 (cache reset on logout/login) and C2 (midnight To) recorded as decisions, B2 aligned (wrong types → 400 naming the field). Unchecked: the same-tab logout/login browser check (pending, user), the production migration (DevOps, by agreement with the user), 2 post-release checks |
+| 2026-10-17 | done | devops-engineer | Production DB backed up (`app.db.bak_20261017_101334`, integrity ok), migration `20261017065036_add_user_preferences.sql` applied with `cmd/migrate` (linux/arm64) after the user's agreement; released v5.16.0 with `deploy.sh`. Pod running on `ypeskov/kcal-tracker:5.16.0`, 0 restarts, no errors in the log; site 200; `GET`/`PUT /api/preferences/reports` without a token → 401. Open: the same-tab logout/login browser check and the post-release persistence check (user) |
 
 ## Review Iterations
 - **Backend iteration 1**: 2026-10-17 — clean (no issues). Notes for later steps: `requirements.md` B2 still says wrong types → `Invalid request body`, while `acceptance-criteria.md` and the implementation name the field (BA to align at acceptance)
