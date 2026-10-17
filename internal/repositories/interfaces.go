@@ -79,3 +79,11 @@ type APIKeyRepository interface {
 	Revoke(id, userID int) error
 	Delete(id, userID int) error
 }
+
+// UserPreferenceRepository defines the contract for user preference data access
+type UserPreferenceRepository interface {
+	// Get returns the stored preference of the user, ErrNotFound when there is none for the key
+	Get(userID int, key string) (*models.UserPreference, error)
+	// Upsert stores the value of the key, replacing the previous one
+	Upsert(userID int, key, value string) error
+}

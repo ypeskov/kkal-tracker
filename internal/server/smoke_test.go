@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -132,13 +133,20 @@ type smokeClient struct {
 	handler http.Handler
 	token   string
 	apiKey  string
+	// db is the server's database, for checks and changes the API does not offer
+	db *sql.DB
 }
+
+// rawBody is a request body sent verbatim, e.g. malformed JSON
+type rawBody string
 
 func (c *smokeClient) do(method, path string, body any) *httptest.ResponseRecorder {
 	c.t.Helper()
 
 	var payload io.Reader
-	if body != nil {
+	if raw, ok := body.(rawBody); ok {
+		payload = strings.NewReader(string(raw))
+	} else if body != nil {
 		encoded, err := json.Marshal(body)
 		if err != nil {
 			c.t.Fatalf("failed to encode request body: %v", err)
@@ -221,7 +229,7 @@ func newSmokeEnvironmentWith(t *testing.T, logger *slog.Logger, configure func(*
 	// The real embedded frontend (requires web/dist): API errors must not be replaced by its index page
 	srv := New(cfg, logger, db, web.StaticFiles).Start()
 
-	return &smokeClient{t: t, handler: srv.Handler}, smtpServer
+	return &smokeClient{t: t, handler: srv.Handler, db: db}, smtpServer
 }
 
 func TestSmokeUserJourney(t *testing.T) {

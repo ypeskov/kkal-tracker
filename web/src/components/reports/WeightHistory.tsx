@@ -102,6 +102,15 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     };
   }, [weightHistory]);
 
+  // A weight change moves the chart, the goal trend line, the latest weight and the BMI
+  const invalidateWeightQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['weightHistory'] });
+    queryClient.invalidateQueries({ queryKey: ['reportData'] });
+    queryClient.invalidateQueries({ queryKey: ['weightGoalProgress'] });
+    queryClient.invalidateQueries({ queryKey: ['latestWeight'] });
+    queryClient.invalidateQueries({ queryKey: ['healthMetrics'] });
+  };
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: () => weightService.createWeightEntry({
@@ -109,8 +118,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
       recorded_at: formData.recorded_at,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['weightHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['reportData'] });
+      invalidateWeightQueries();
       setShowAddForm(false);
       setFormData({
         weight: '',
@@ -124,8 +132,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
     mutationFn: ({ id, weight, recorded_at }: { id: number; weight: number; recorded_at: string }) =>
       weightService.updateWeightEntry(id, { weight, recorded_at }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['weightHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['reportData'] });
+      invalidateWeightQueries();
       setEditingId(null);
       setFormData({
         weight: '',
@@ -138,8 +145,7 @@ export default function WeightHistory({ dateFrom, dateTo }: WeightHistoryProps) 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => weightService.deleteWeightEntry(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['weightHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['reportData'] });
+      invalidateWeightQueries();
     },
   });
 

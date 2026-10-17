@@ -5,36 +5,53 @@ import WeightCaloriesChart from '@/components/reports/WeightCaloriesChart';
 import WeightHistory from '@/components/reports/WeightHistory';
 import StatisticsCard from '@/components/StatisticsCard';
 import TabNavigation from '@/components/TabNavigation';
-import { useQuery } from '@tanstack/react-query';
+import { useReportPreferences } from '@/hooks/useReportPreferences';
+import { ReportSettings } from '@/types/preferences';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { BarChart3, Weight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
-type StepInterval = '1' | '5' | '10' | '15';
-
 export default function Report() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'chart' | 'weight'>('chart');
-  const [showWeight, setShowWeight] = useState(true);
-  const [showCalories, setShowCalories] = useState(true);
-  const [showGoalProjection, setShowGoalProjection] = useState(true);
-  const [period, setPeriod] = useState<Period>('daily');
-  const [stepInterval, setStepInterval] = useState<StepInterval>('1');
+  const { settings, update } = useReportPreferences();
 
-  // Default date range: last 30 days
-  const [dateFrom, setDateFrom] = useState(
-    () => format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
-  );
-  const [dateTo, setDateTo] = useState(
-    () => format(new Date(), 'yyyy-MM-dd')
-  );
+  return (
+    <div className="px-4 py-2 md:px-6 lg:px-8">
+      <div className="mb-6">
+        <h2 className="text-3xl font-semibold text-gray-800">{t('report.title')}</h2>
+      </div>
 
-  // Fetch report data
+      {/* The controls and the data wait for the saved settings: no defaults shown or requested before them */}
+      {settings ? (
+        <ReportContent settings={settings} onChange={update} />
+      ) : (
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="h-64 sm:h-96 flex items-center justify-center">
+            <span className="text-gray-500">{t('common.loading')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ReportContentProps {
+  settings: ReportSettings;
+  onChange: (change: Partial<ReportSettings>) => void;
+}
+
+function ReportContent({ settings, onChange }: ReportContentProps) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'chart' | 'weight'>('chart'); // Not saved: the page opens on Charts
+  const { dateFrom, dateTo, showWeight, showCalories, showGoalProjection, period, stepInterval } = settings;
+
+  // Fetch report data; the previous range stays on screen while a new one loads
   const { data: reportData, isLoading } = useQuery({
     queryKey: ['reportData', dateFrom, dateTo],
     queryFn: () => reportsService.getReportData(dateFrom, dateTo),
+    placeholderData: keepPreviousData,
   });
 
   // Fetch weight goal progress
@@ -206,11 +223,7 @@ export default function Report() {
   }, [reportData]);
 
   return (
-    <div className="px-4 py-2 md:px-6 lg:px-8">
-      <div className="mb-6">
-        <h2 className="text-3xl font-semibold text-gray-800">{t('report.title')}</h2>
-      </div>
-
+    <>
       {/* Tabs */}
       <TabNavigation
         tabs={[
@@ -225,19 +238,19 @@ export default function Report() {
       <ReportFilters
         dateFrom={dateFrom}
         dateTo={dateTo}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
+        onDateFromChange={(value) => onChange({ dateFrom: value })}
+        onDateToChange={(value) => onChange({ dateTo: value })}
         activeTab={activeTab}
         period={period}
-        onPeriodChange={setPeriod}
+        onPeriodChange={(value) => onChange({ period: value })}
         stepInterval={stepInterval}
-        onStepIntervalChange={setStepInterval}
+        onStepIntervalChange={(value) => onChange({ stepInterval: value })}
         showWeight={showWeight}
-        onShowWeightChange={setShowWeight}
+        onShowWeightChange={(value) => onChange({ showWeight: value })}
         showCalories={showCalories}
-        onShowCaloriesChange={setShowCalories}
+        onShowCaloriesChange={(value) => onChange({ showCalories: value })}
         showGoalProjection={showGoalProjection}
-        onShowGoalProjectionChange={setShowGoalProjection}
+        onShowGoalProjectionChange={(value) => onChange({ showGoalProjection: value })}
         hasGoalWithDate={!!goalProgress?.target_date}
         weightStats={weightStats}
       />
@@ -294,6 +307,6 @@ export default function Report() {
       ) : (
         <WeightHistory dateFrom={dateFrom} dateTo={dateTo} />
       )}
-    </div>
+    </>
   );
 }

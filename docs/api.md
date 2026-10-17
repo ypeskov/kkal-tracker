@@ -18,6 +18,25 @@ All routes are under `/api`.
 - `/api/profile/goal` - weight goal (GET progress, PUT set, DELETE clear)
 - `/api/metrics` - health metrics (GET)
 - `/api/reports/data` - aggregated report data (GET, `from`/`to` query params)
+- `/api/preferences/:key` - per-user UI preferences (JWT auth only: an `X-API-Key` gives 401). The only key is
+  `reports`, any other → 404 `{"message": "Unknown preference"}`
+  - `GET` - always 200 with the full object. Nothing saved → the defaults `{"date_from": null, "date_to": null,
+    "show_weight": true, "show_calories": true, "show_goal_projection": true, "period": "daily", "step_interval": 1}`.
+    A stored value that cannot be read gives the defaults; an invalid stored field gives that field's default (an
+    invalid range resets both dates to `null`)
+  - `PUT` - replaces the whole value (body: the same object as `GET`) and returns the stored object (200). Fields of
+    `reports`:
+    - `date_from`: `YYYY-MM-DD` from `1900-01-01` to `2100-12-31`, or `null`; `date_to`: the same, the literal
+      `"today"` (the client's current day, resolved by the client), or `null`. Both `null` (no saved range: the client
+      default) or both set; `date_from` after `date_to` is accepted. A missing date counts as `null`
+    - `show_weight`, `show_calories`, `show_goal_projection`: booleans, required
+    - `period`: `daily` | `weekly` | `monthly` | `yearly`, required; `step_interval`: `1` | `5` | `10` | `15` (a JSON
+      integer), required
+    - unknown fields are ignored and not stored
+  - Errors of `PUT`: 400 `{"message": "Invalid request body"}` for malformed JSON or a body that is not an object; 400
+    with a message that starts with the field name for a missing or invalid field (`period must be one of daily,
+    weekly, monthly, yearly`, `date_from and date_to must both be set or both be null`, ...), nothing is stored; 413
+    for a body over 4 KB; 500 `Failed to load preferences` / `Failed to save preferences` on a database failure
 - `/api/ai/*` - AI analysis (rate limited: 2 req/min)
   - `GET /api/ai/status` - AI service status
   - `POST /api/ai/analyze` - run an analysis

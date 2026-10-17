@@ -61,6 +61,10 @@ const (
 	QueryGetAPIKeysByUserID = "getAPIKeysByUserID"
 	QueryRevokeAPIKey       = "revokeAPIKey"
 	QueryDeleteAPIKey       = "deleteAPIKey"
+
+	// User preference queries
+	QueryGetUserPreference    = "getUserPreference"
+	QueryUpsertUserPreference = "upsertUserPreference"
 )
 
 // buildKey creates a query key by combining query name and dialect
@@ -620,6 +624,30 @@ func getQueries() map[string]string {
 	`,
 		buildKey(QueryDeleteAPIKey, DialectPostgres): `
 		DELETE FROM api_keys WHERE id = $1 AND user_id = $2
+	`,
+
+		// User preference queries
+		buildKey(QueryGetUserPreference, DialectSQLite): `
+		SELECT user_id, pref_key, value, updated_at
+		FROM user_preferences
+		WHERE user_id = ? AND pref_key = ?
+	`,
+		buildKey(QueryGetUserPreference, DialectPostgres): `
+		SELECT user_id, pref_key, value, updated_at
+		FROM user_preferences
+		WHERE user_id = $1 AND pref_key = $2
+	`,
+
+		// One row per user and key: a write replaces the whole value
+		buildKey(QueryUpsertUserPreference, DialectSQLite): `
+		INSERT INTO user_preferences (user_id, pref_key, value, updated_at)
+		VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT (user_id, pref_key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+	`,
+		buildKey(QueryUpsertUserPreference, DialectPostgres): `
+		INSERT INTO user_preferences (user_id, pref_key, value, updated_at)
+		VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+		ON CONFLICT (user_id, pref_key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
 	`,
 	}
 }

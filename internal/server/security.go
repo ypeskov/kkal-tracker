@@ -21,6 +21,8 @@ const (
 
 	// No endpoint accepts uploads, JSON payloads are small: 1 MB
 	maxRequestBodySize int64 = 1 << 20
+	// A preference value is a handful of fields: 4 KB
+	maxPreferencesBodySize int64 = 4 << 10
 
 	// Register sends an email: 3 attempts at once, then one attempt every 20 minutes per IP
 	registerRateBurst    = 3

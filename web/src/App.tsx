@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Login from './components/Login';
 import { authService } from './api/auth';
+import { ingredientService } from './api/ingredients';
 // App.css imports removed - using Tailwind CSS
 import { router } from './router';
 import { RouterProvider } from '@tanstack/react-router';
@@ -17,9 +18,31 @@ const convertLanguageCode = (backendCode: string): string => {
 
 function App() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  // Nothing cached for one account may be shown to or used for the next one in this tab. clear() also cancels the
+  // queries in flight, so their responses are dropped
+  const resetClientState = useCallback(() => {
+    queryClient.clear();
+    ingredientService.clearCache();
+  }, [queryClient]);
+
+  // The token goes first: a pending Reports settings save of this session sees it gone and is dropped
+  const endSession = useCallback(() => {
+    authService.logout();
+    resetClientState();
+    setIsAuthenticated(false);
+  }, [resetClientState]);
+
+  // Cleared again at login: a mutation of the previous session that completed after the logout may have written to
+  // the cache in its onSuccess
+  const startSession = () => {
+    resetClientState();
+    setIsAuthenticated(true);
+  };
 
   // Track pathname changes
   useEffect(() => {
@@ -67,10 +90,9 @@ function App() {
 
   useEffect(() => {
     if (error && isAuthenticated) {
-      authService.logout();
-      setIsAuthenticated(false);
+      endSession();
     }
-  }, [error, isAuthenticated]);
+  }, [error, isAuthenticated, endSession]);
 
   // Apply user's language preference when user data is loaded
   useEffect(() => {
@@ -82,10 +104,6 @@ function App() {
     }
   }, [user]);
 
-  const handleLogout = () => {
-    authService.logout();
-    setIsAuthenticated(false);
-  };
 
   if (isInitializing || (isAuthenticated && isUserLoading)) {
     return (
@@ -113,7 +131,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-        <Login onLogin={() => setIsAuthenticated(true)} />
+        <Login onLogin={startSession} />
       </div>
     );
   }
@@ -121,7 +139,7 @@ function App() {
   // Show app for authenticated users
   return (
     <div className="min-h-screen bg-gray-100">
-      <RouterProvider router={router} context={{ user: user!, onLogout: handleLogout }} />
+      <RouterProvider router={router} context={{ user: user!, onLogout: endSession }} />
     </div>
   );
 }

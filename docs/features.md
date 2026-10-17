@@ -1,7 +1,9 @@
 # Features
 
 - **User Authentication**: JWT-based login/register/activate with bcrypt password hashing and email activation
-- **Persistent Sessions**: JWT tokens stored in sessionStorage, survive page reloads
+- **Persistent Sessions**: JWT tokens stored in sessionStorage, survive page reloads. Logout (also the automatic one
+  when the current user cannot be loaded) and login clear the client caches (TanStack Query cache, the ingredient
+  cache in sessionStorage), so nothing of the previous account is shown or used in the same tab
 - **Calorie Tracking**: food entries with name, weight, kcal/100g, auto-calculated totals
 - **Dashboard**: today's entries with the total calorie count, weight goal card
 - **Weight Management**: weight history over time with charts
@@ -21,6 +23,21 @@
     (`POST /api/calories`) still creates or updates its ingredient by the exact name, so it can add a near-duplicate
 - **User Profiles**: personal settings, preferences, gender, activity level
 - **Reports & Analytics**: calorie and weight trends
+  - The Reports page remembers its settings per user on the server (`/api/preferences/reports`), so they are the same
+    on every device and browser: the date range (shared by the Charts and Weight History tabs), the Weight, Calories
+    and "Show goal projection" checkboxes, the period and the step. The active tab is not remembered: the page opens
+    on Charts
+  - Range: From is kept as a fixed date; To is kept as "today" when it was today at the time of the change, so it rolls
+    forward, otherwise as a fixed date. A To the user did not change stays "today" when it was "today" or not saved
+    (also in a tab left open past midnight). Without a saved range the page shows the last 30 days, rolling. A cleared
+    date input is not saved
+  - The settings are applied once on page entry, before the first report request (prefetched after login); until they
+    arrive the page shows "Loading…". If they cannot be loaded the defaults apply. Changes are saved about a second
+    after the last one (one request at a time, sent at once when leaving the page, best effort on reload); a failed
+    save is silent and the next change sends the whole state again. Several devices: last write wins, another device
+    picks the change up on its next visit of the page
+  - Adding, editing or deleting a weigh-in refreshes the chart, the trend line, the latest weight and the health
+    metrics without a reload. While a new range loads, the previous chart stays on screen
 - **AI Insights**: AI-powered nutrition and weight analysis with personalized recommendations
   - OpenAI integration (GPT-4o-mini by default), provider selection in the UI (extensible to more providers)
   - Analysis periods of 7, 14, 30, 90 days, optional specific question

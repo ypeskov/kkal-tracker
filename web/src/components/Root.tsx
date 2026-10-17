@@ -1,11 +1,21 @@
 import { Link, Outlet, useRouteContext } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { RouterContext } from '@/router';
+import { prefetchReportPreferences } from '@/hooks/useReportPreferences';
 import HamburgerMenu from './HamburgerMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 // Root.css imports removed - using Tailwind CSS
 
 export default function Root() {
-  const { onLogout } = useRouteContext({ from: '__root__' }) as RouterContext;
+  const { user, onLogout } = useRouteContext({ from: '__root__' }) as RouterContext;
+  const queryClient = useQueryClient();
+  const userId = user?.id;
+
+  // Load the Reports page settings once per login, so the page usually opens without waiting for them
+  useEffect(() => {
+    if (userId !== undefined) prefetchReportPreferences(queryClient, userId);
+  }, [queryClient, userId]);
 
   return (
     <div className="min-h-screen flex flex-col w-full">

@@ -18,6 +18,7 @@ import (
 	"ypeskov/kkal-tracker/internal/handlers/ingredients"
 	languageshandler "ypeskov/kkal-tracker/internal/handlers/languages"
 	metricshandler "ypeskov/kkal-tracker/internal/handlers/metrics"
+	preferenceshandler "ypeskov/kkal-tracker/internal/handlers/preferences"
 	"ypeskov/kkal-tracker/internal/handlers/profile"
 	reportshandler "ypeskov/kkal-tracker/internal/handlers/reports"
 	skillhandler "ypeskov/kkal-tracker/internal/handlers/skill"
@@ -33,6 +34,7 @@ import (
 	exportservice "ypeskov/kkal-tracker/internal/services/export"
 	ingredientservice "ypeskov/kkal-tracker/internal/services/ingredient"
 	metricsservice "ypeskov/kkal-tracker/internal/services/metrics"
+	preferencesservice "ypeskov/kkal-tracker/internal/services/preferences"
 	profileservice "ypeskov/kkal-tracker/internal/services/profile"
 	reportsservice "ypeskov/kkal-tracker/internal/services/reports"
 	skillservice "ypeskov/kkal-tracker/internal/services/skill"
@@ -54,6 +56,7 @@ type Server struct {
 	ingredientRepo repositories.IngredientRepository
 	weightRepo     repositories.WeightHistoryRepository
 	apiKeyRepo     repositories.APIKeyRepository
+	preferenceRepo repositories.UserPreferenceRepository
 }
 
 // setupRepositories configures the repositories; SQLite is the only supported database
@@ -64,6 +67,7 @@ func (s *Server) setupRepositories() {
 	s.ingredientRepo = repositories.NewIngredientRepository(s.db, s.logger, repositories.DialectSQLite)
 	s.weightRepo = repositories.NewWeightHistoryRepository(s.db, s.logger, repositories.DialectSQLite)
 	s.apiKeyRepo = repositories.NewAPIKeyRepository(s.db, repositories.DialectSQLite, s.logger)
+	s.preferenceRepo = repositories.NewUserPreferenceRepository(s.db, repositories.DialectSQLite, s.logger)
 	s.logger.Debug("Configured SQLite repositories")
 }
 
@@ -126,6 +130,7 @@ func (s *Server) Start() *http.Server {
 	exportSvc := exportservice.New(calorieService, weightService, emailService, s.logger)
 	apiKeySvc := apikeyservice.New(s.apiKeyRepo, s.logger)
 	skillSvc := skillservice.New(s.config, apiKeySvc, s.logger)
+	preferencesSvc := preferencesservice.New(s.preferenceRepo, s.logger)
 
 	authHandler := authhandler.NewHandler(authService, s.logger)
 	calorieHandler := calories.New(calorieService, s.logger)
@@ -138,6 +143,7 @@ func (s *Server) Start() *http.Server {
 	exportHandler := exporthandler.New(exportSvc, s.userRepo, s.logger)
 	apiKeyHandler := apikeyhandler.New(apiKeySvc, s.logger)
 	skillHandler := skillhandler.New(skillSvc, s.logger)
+	preferencesHandler := preferenceshandler.New(preferencesSvc, s.logger)
 	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeySvc, s.logger)
 	apiDataHandler := apidatahandler.New(calorieService, weightService, ingredientService, s.logger)
 
@@ -180,6 +186,11 @@ func (s *Server) Start() *http.Server {
 	// Reports routes require authentication
 	reportsGroup := apiGroup.Group("/reports", authMiddleware.RequireAuth)
 	reportsHandler.RegisterRoutes(reportsGroup)
+
+	// UI preferences (JWT auth): small JSON values, so a body limit far below the global one
+	preferencesGroup := apiGroup.Group("/preferences", authMiddleware.RequireAuth,
+		echomiddleware.BodyLimit(maxPreferencesBodySize))
+	preferencesHandler.RegisterRoutes(preferencesGroup)
 
 	// AI routes require authentication and strict rate limiting
 	// Rate: 2 requests per minute (1 request every 30 seconds) to control AI costs

@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next';
-
-type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
-type StepInterval = '1' | '5' | '10' | '15';
+import { ReportPeriod as Period, ReportStepInterval as StepInterval } from '@/types/preferences';
 
 interface ReportFiltersProps {
   dateFrom: string;
