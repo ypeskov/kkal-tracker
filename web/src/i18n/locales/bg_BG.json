@@ -377,7 +377,7 @@
     "estimatedCompletion": "Очаквано завършване: {{date}}",
     "estimatedShort": "Очак: {{date}}",
     "targetLine": "Цел",
-    "trajectory": "Тренд",
+    "trajectory": "Тренд от началото на целта",
     "targetLoss": "Цел",
     "targetGain": "Цел",
     "manage": "Управление",
