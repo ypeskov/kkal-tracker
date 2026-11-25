@@ -1,13 +1,13 @@
 # Task Status: Dietary fibre per 100 g on ingredients and diary entries
 
 ## Current Phase
-**Phase**: `devops`
-**Assigned to**: `devops-engineer`
-**Updated**: 2026-11-24
+**Phase**: `done`
+**Assigned to**: —
+**Updated**: 2026-11-25
 
-The user approved `requirements.md` and `acceptance-criteria.md` (workflow step 2.5). Backend, skill template and
-backend docs are implemented, reviewed (backend review clean) and not committed. New migration: `migrations/20261124193203_add_fiber.sql` (applied to
-the local dev database only; production applies it manually at the release). There are no open questions.
+Released as v5.18.0 (image `ypeskov/kcal-tracker:5.18.0`). `migrations/20261124193203_add_fiber.sql` is applied to the
+production database (snapshot taken before it; `foreign_key_check` clean, existing rows have `fiber` NULL). There are no
+open questions.
 
 ## Phase History
 | Date       | Phase       | Agent             | Notes                                                              |
@@ -24,6 +24,7 @@ the local dev database only; production applies it manually at the release). The
 | 2026-11-24 | qa-review | qa-engineer | Security review clean (no report): new field parameterised and user-scoped in all changed SQL, 0-100 validated on all write paths of both APIs, new 400s carry only constant messages, export writes a numeric cell, skill template has no key or URL change, UI renders text only; dependencies unchanged |
 | 2026-11-24 | ba-acceptance | business-analyst | QA review clean (no report): `go vet`, `go test`, `go test -race`, coverage, `tsc`, lint (0 errors, 27 pre-existing warnings), `npm run build` pass; every criterion mapped to a test or to a QA run on scratch databases (migration up/down/up on a copy of the dev database, previous skill client 2026-10-16 against the new server, `/api/v1` scenario with export, UI in 4 languages at 1280 and 375 px); UI criteria have no committed tests (the project has no frontend tests) |
 | 2026-11-24 | devops | devops-engineer | BA acceptance: all criteria of `acceptance-criteria.md` met and checked (code and docs read; QA test results as evidence; UI, previous skill client and `make seed` rest on manual evidence). Not committed yet: the commit (step 7.5) and the release need the user's confirmation; the release applies `migrations/20261124193203_add_fiber.sql` before the rollout |
+| 2026-11-25 | done | devops-engineer | Released v5.18.0 as a split release agreed with the user: `deploy.sh --tag=5.18.0 --skip-deploy`, database snapshot on the server, `git pull`, `make migrate-up` (one pending migration, `add_fiber`), then `kubectl apply -k kubernetes/overlays/prod` and rollout status by hand; pod runs 5.18.0, no errors in the log, the site responds |
 
 ## Review Iterations
 - **Iteration 1**: 2026-11-24 — backend review clean, no issues; non-blocking suggestions returned to the orchestrator
