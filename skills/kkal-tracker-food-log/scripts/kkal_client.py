@@ -5,11 +5,11 @@ Commands:
   ingredients              list the user's ingredients (compact table, most used first)
   add                      store one meal; the meal JSON comes from --json or stdin
   entries [--from --to]    list diary entries with their IDs (default: today, UTC)
-  totals --day YYYY-MM-DD  calories, fats, carbs and proteins of a meal (--meal IDs) and of the whole diary day
-  edit ENTRY_ID [...]      change the weight, ingredient, calories, macros or time of a diary entry
+  totals --day YYYY-MM-DD  calories, fats, carbs, proteins and fiber of a meal (--meal IDs) and of the whole diary day
+  edit ENTRY_ID [...]      change the weight, ingredient, calories, macros, fiber or time of a diary entry
   delete ENTRY_ID          delete a diary entry
   add-ingredient --name --kcal  add an ingredient to the list without logging it
-  edit-ingredient ID [...] correct the name, calories or nutrients of an ingredient in the list
+  edit-ingredient ID [...] correct the name, calories, macros or fiber of an ingredient in the list
   delete-ingredient ID     delete an ingredient from the list (diary entries stay)
   version                  print the version of this skill (no request)
 
@@ -37,12 +37,15 @@ API_KEY = "API_KEY_HERE"
 
 # The version of the whole skill (SKILL.md and this client): the date of the last change of either file.
 # Bump it in every change of the skill template.
-SKILL_VERSION = "2026-10-16"
+SKILL_VERSION = "2026-11-24"
 
 # Assembled from parts: the download replaces the only literal placeholder, the one in the line above
 API_KEY_PLACEHOLDER = "API_KEY_" + "HERE"
 TIMEOUT_SECONDS = 30
 NUTRIENTS = ("fats", "carbs", "proteins")
+# Dietary fibre is summed and passed like a macro, but an entry without it is reported separately (without_fiber)
+FIBER = "fiber"
+GRAM_FIELDS = NUTRIENTS + (FIBER,)
 
 
 def load_key():
@@ -129,11 +132,11 @@ def cmd_ingredients(args):
         return
 
     ingredients = sorted(payload["ingredients"], key=lambda i: (-i["times_used"], i["name"].lower()))
-    print("id\tname\tkcal_per_100g\tfats\tcarbs\tproteins\ttimes_used\tlast_used")
+    print("id\tname\tkcal_per_100g\tfats\tcarbs\tproteins\tfiber\ttimes_used\tlast_used")
     for i in ingredients:
         print("\t".join([
             str(i["id"]), i["name"], number(i["kcal_per_100g"]),
-            number(i.get("fats")), number(i.get("carbs")), number(i.get("proteins")),
+            number(i.get("fats")), number(i.get("carbs")), number(i.get("proteins")), number(i.get(FIBER)),
             str(i["times_used"]), i.get("last_used") or "-",
         ]))
 
@@ -164,9 +167,9 @@ def grams(value):
 
 
 def totals_row(entries):
-    """Calories (the server's entry calories) and grams of fats, carbs and proteins of the entries, unrounded."""
+    """Calories (the server's entry calories) and grams of fats, carbs, proteins and fiber of the entries, unrounded."""
     row = {"kcal": sum(entry["calories"] for entry in entries)}
-    for nutrient in NUTRIENTS:
+    for nutrient in GRAM_FIELDS:
         # Decimal from the shortest text form of each number: no binary float error before the halves-up rounding
         row[nutrient] = sum((decimal.Decimal(str(entry.get(nutrient) or 0)) * decimal.Decimal(str(entry["weight"]))
                              / 100 for entry in entries), decimal.Decimal(0))
@@ -174,7 +177,7 @@ def totals_row(entries):
 
 
 def rounded(row):
-    return {field: grams(value) if field in NUTRIENTS else value for field, value in row.items()}
+    return {field: grams(value) if field in GRAM_FIELDS else value for field, value in row.items()}
 
 
 def cmd_totals(args):
@@ -220,6 +223,11 @@ def cmd_totals(args):
             {"id": entry["id"], "food": entry["food"], "in_meal": entry["id"] in meal_ids}
             for entry in entries if all(entry.get(nutrient) is None for nutrient in NUTRIENTS)
         ],
+        # Fibre 0 is a known value: only the entries without any fibre value understate the fibre totals
+        "without_fiber": [
+            {"id": entry["id"], "food": entry["food"], "in_meal": entry["id"] in meal_ids}
+            for entry in entries if entry.get(FIBER) is None
+        ],
         "check": check,
     })
 
@@ -232,11 +240,12 @@ def cmd_edit(args):
         "fats": args.fats,
         "carbs": args.carbs,
         "proteins": args.proteins,
+        "fiber": args.fiber,
         "meal_datetime": args.datetime,
     }
     changes = {field: value for field, value in changes.items() if value is not None}
     if not changes:
-        fail("Nothing to change: pass --weight, --ingredient-id, --kcal, --fats, --carbs, --proteins or --datetime")
+        fail("Nothing to change: pass --weight, --ingredient-id, --kcal, --fats, --carbs, --proteins, --fiber or --datetime")
 
     status, payload = request("PUT", f"/food/{args.entry_id}", changes)
     expect(status, payload, 200)
@@ -251,8 +260,8 @@ def cmd_delete(args):
 
 def cmd_add_ingredient(args):
     ingredient = {"name": args.name, "kcal_per_100g": args.kcal}
-    # 0 is a value and is sent; only the macros that were not passed stay unknown
-    ingredient.update({nutrient: getattr(args, nutrient) for nutrient in NUTRIENTS
+    # 0 is a value and is sent; only the macros and the fiber that were not passed stay unknown
+    ingredient.update({nutrient: getattr(args, nutrient) for nutrient in GRAM_FIELDS
                        if getattr(args, nutrient) is not None})
 
     status, payload = request("POST", "/ingredients", ingredient)
@@ -268,10 +277,11 @@ def cmd_edit_ingredient(args):
         "fats": args.fats,
         "carbs": args.carbs,
         "proteins": args.proteins,
+        "fiber": args.fiber,
     }
     changes = {field: value for field, value in changes.items() if value is not None}
     if not changes:
-        fail("Nothing to change: pass --name, --kcal, --fats, --carbs or --proteins")
+        fail("Nothing to change: pass --name, --kcal, --fats, --carbs, --proteins or --fiber")
 
     status, payload = request("PUT", f"/ingredients/{args.ingredient_id}", changes)
     expect_ingredient_change(status, payload, 200)
@@ -306,7 +316,7 @@ def main():
     entries.set_defaults(func=cmd_entries)
 
     totals = commands.add_parser(
-        "totals", help="calories and grams of fats, carbs and proteins of a meal and of the whole diary day")
+        "totals", help="calories and grams of fats, carbs, proteins and fiber of a meal and of the whole diary day")
     totals.add_argument("--day", required=True, metavar="YYYY-MM-DD",
                         help="the diary day, YYYY-MM-DD: the 'day' of the add or edit response (UTC)")
     totals.add_argument("--meal", type=int, nargs="+", action="extend", metavar="ID",
@@ -325,6 +335,7 @@ def main():
     edit.add_argument("--fats", type=float, help="fats, grams per 100 g, for this entry only")
     edit.add_argument("--carbs", type=float, help="carbohydrates, grams per 100 g, for this entry only")
     edit.add_argument("--proteins", type=float, help="proteins, grams per 100 g, for this entry only")
+    edit.add_argument("--fiber", type=float, help="dietary fiber, grams per 100 g, for this entry only")
     edit.add_argument("--datetime", help="new meal time, RFC 3339 with the UTC offset")
     edit.set_defaults(func=cmd_edit)
 
@@ -339,6 +350,7 @@ def main():
     add_ingredient.add_argument("--fats", type=float, help="fats, grams per 100 g")
     add_ingredient.add_argument("--carbs", type=float, help="carbohydrates, grams per 100 g")
     add_ingredient.add_argument("--proteins", type=float, help="proteins, grams per 100 g")
+    add_ingredient.add_argument("--fiber", type=float, help="dietary fiber, grams per 100 g (0 is a value)")
     add_ingredient.set_defaults(func=cmd_add_ingredient)
 
     edit_ingredient = commands.add_parser(
@@ -352,6 +364,7 @@ def main():
     edit_ingredient.add_argument("--fats", type=float, help="fats, grams per 100 g")
     edit_ingredient.add_argument("--carbs", type=float, help="carbohydrates, grams per 100 g")
     edit_ingredient.add_argument("--proteins", type=float, help="proteins, grams per 100 g")
+    edit_ingredient.add_argument("--fiber", type=float, help="dietary fiber, grams per 100 g (0 is a value)")
     edit_ingredient.set_defaults(func=cmd_edit_ingredient)
 
     delete_ingredient = commands.add_parser(

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Ingredient } from '@/api/ingredients';
 import FoodAutocomplete from './FoodAutocomplete';
 import CalculatorInput from './CalculatorInput';
+import { fiberToInput, parseFiberInput } from '@/utils/fiber';
 
 interface AddFoodEntryFormProps {
   onSubmit: (entry: any) => void;
@@ -17,6 +18,8 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
   const [fats, setFats] = useState('');
   const [carbs, setCarbs] = useState('');
   const [proteins, setProteins] = useState('');
+  const [fiber, setFiber] = useState('');
+  const [fiberInvalid, setFiberInvalid] = useState(false);
   const foodInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,16 +32,30 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
     return Math.round((weightNum * kcalNum) / 100);
   }, [weight, kcalPer100g]);
 
+  const handleFiberChange = (value: string) => {
+    setFiber(value);
+    setFiberInvalid(false);
+  };
+
   const handleIngredientSelect = (ingredient: Ingredient) => {
     setKcalPer100g(ingredient.kcalPer100g.toString());
     setFats(ingredient.fats ? ingredient.fats.toString() : '');
     setCarbs(ingredient.carbs ? ingredient.carbs.toString() : '');
     setProteins(ingredient.proteins ? ingredient.proteins.toString() : '');
+    // Unlike the macros, a fibre of 0 is a known value and stays in the field
+    handleFiberChange(fiberToInput(ingredient.fiber));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!foodName || !weight || !kcalPer100g) return;
+
+    // An empty field is unknown (not sent), 0 is a value; out of range is rejected here, not by the server
+    const fiberValue = parseFiberInput(fiber);
+    if (fiberValue === null) {
+      setFiberInvalid(true);
+      return;
+    }
 
     const entryData: any = {
       food: foodName,
@@ -51,6 +68,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
     if (fats && parseFloat(fats) > 0) entryData.fats = parseFloat(fats);
     if (carbs && parseFloat(carbs) > 0) entryData.carbs = parseFloat(carbs);
     if (proteins && parseFloat(proteins) > 0) entryData.proteins = parseFloat(proteins);
+    if (fiberValue !== undefined) entryData.fiber = fiberValue;
 
     onSubmit(entryData);
 
@@ -60,6 +78,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
     setFats('');
     setCarbs('');
     setProteins('');
+    setFiber('');
 
     foodInputRef.current?.focus();
   };
@@ -169,13 +188,13 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
           </div>
         </div>
 
-        {/* Mobile: Proteins - two-row layout like paired fields */}
+        {/* Mobile: Proteins+Fibre - labels on top, inputs below */}
         <div className="lg:hidden mb-4">
           <div className="flex justify-between mb-1">
             <label htmlFor="proteins" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.proteins')}:</label>
-            <div className="w-[45%]"></div>
+            <label htmlFor="fiber" className="font-medium text-gray-800 text-sm w-[45%]">{t('dashboard.fiber')}:</label>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-2">
             <div className="w-[45%]">
               <CalculatorInput
                 id="proteins"
@@ -184,12 +203,19 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <div className="w-[45%]"></div>
+            <div className="w-[45%]">
+              <CalculatorInput
+                id="fiber"
+                value={fiber}
+                onChange={handleFiberChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Desktop: all 3 in one row */}
-        <div className="hidden lg:grid lg:grid-cols-3 gap-4 mb-4">
+        {/* Desktop: all 4 in one row */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-4 mb-4">
           <div className="flex flex-col">
             <label htmlFor="fats-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fats')}:</label>
             <CalculatorInput
@@ -210,8 +236,7 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
             />
           </div>
 
-          {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
-          <div className="flex flex-col col-span-1 md:col-span-1">
+          <div className="flex flex-col">
             <label htmlFor="proteins-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.proteins')}:</label>
             <CalculatorInput
               id="proteins-desktop"
@@ -220,7 +245,21 @@ export default function AddFoodEntryForm({ onSubmit, isSubmitting }: AddFoodEntr
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+
+          <div className="flex flex-col">
+            <label htmlFor="fiber-desktop" className="font-medium mb-1 text-gray-800 text-sm">{t('dashboard.fiber')}:</label>
+            <CalculatorInput
+              id="fiber-desktop"
+              value={fiber}
+              onChange={handleFiberChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
+
+        {fiberInvalid && (
+          <p role="alert" className="mb-4 text-sm text-red-600">{t('common.fiberInvalid')}</p>
+        )}
 
         {/* Mobile: Total calories and submit button */}
         <div className="flex items-center gap-2 mb-4 lg:hidden">

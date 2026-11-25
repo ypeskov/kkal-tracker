@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useEffect } from 'react';
 import { calorieService } from '@/api/calories';
 import { ingredientService } from '@/api/ingredients';
+import { sumFiber } from '@/utils/fiber';
 import DashboardHeader from '@/components/DashboardHeader';
 import WeightGoalCard from '@/components/WeightGoalCard';
 import AddFoodEntryForm from '@/components/AddFoodEntryForm';
@@ -81,14 +82,16 @@ export default function DashboardPage() {
 
   const nutritionTotals = useMemo(() => {
     if (!entries || entries.length === 0) {
-      return { calories: 0, fats: 0, carbs: 0, proteins: 0 };
+      return { calories: 0, fats: 0, carbs: 0, proteins: 0, fiber: sumFiber([]) };
     }
-    return entries.reduce((totals, entry) => ({
+    const macroTotals = entries.reduce((totals, entry) => ({
       calories: totals.calories + entry.calories,
       fats: totals.fats + ((entry.fats || 0) * entry.weight / 100),
       carbs: totals.carbs + ((entry.carbs || 0) * entry.weight / 100),
       proteins: totals.proteins + ((entry.proteins || 0) * entry.weight / 100)
     }), { calories: 0, fats: 0, carbs: 0, proteins: 0 });
+    // Fibre is counted apart from the macros: an entry without a value is unknown, not zero
+    return { ...macroTotals, fiber: sumFiber(entries) };
   }, [entries]);
 
   const addEntryMutation = useMutation({

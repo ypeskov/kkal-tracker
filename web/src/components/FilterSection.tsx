@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import FiberTotal from './FiberTotal';
+import { FiberTotals } from '@/utils/fiber';
 
 type FilterType = 'today' | 'yesterday' | 'lastWeek' | 'lastMonth' | 'customRange';
 
@@ -14,6 +16,7 @@ interface FilterSectionProps {
     fats: number;
     carbs: number;
     proteins: number;
+    fiber: FiberTotals;
   };
 }
 
@@ -81,17 +84,18 @@ export default function FilterSection({
         <div className="mb-2">
           {t('dashboard.totalCaloriesFiltered')} {nutritionTotals.calories} {t('dashboard.kcal')}
         </div>
-        {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0) && (
+        {(nutritionTotals.fats > 0 || nutritionTotals.carbs > 0 || nutritionTotals.proteins > 0 || nutritionTotals.fiber.known > 0) && (
           <div className="flex gap-6 text-sm flex-wrap">
             {nutritionTotals.fats > 0 && (
-              <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)}g</span>
+              <span>{t('dashboard.fats')}: {nutritionTotals.fats.toFixed(1)} {t('common.g')}</span>
             )}
             {nutritionTotals.carbs > 0 && (
-              <span>{t('dashboard.carbs')}: {nutritionTotals.carbs.toFixed(1)}g</span>
+              <span>{t('dashboard.carbs')}: {nutritionTotals.carbs.toFixed(1)} {t('common.g')}</span>
             )}
             {nutritionTotals.proteins > 0 && (
-              <span>{t('dashboard.proteins')}: {nutritionTotals.proteins.toFixed(1)}g</span>
+              <span>{t('dashboard.proteins')}: {nutritionTotals.proteins.toFixed(1)} {t('common.g')}</span>
             )}
+            <FiberTotal totals={nutritionTotals.fiber} />
           </div>
         )}
       </div>

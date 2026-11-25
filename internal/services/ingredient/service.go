@@ -71,7 +71,7 @@ func (s *Service) CreateIngredient(req *CreateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	return s.createIngredient(req.UserID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+	return s.createIngredient(req.UserID, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber)
 }
 
 // AddIngredient creates an ingredient for the external API. Unlike CreateIngredient of the website, the values are
@@ -87,7 +87,7 @@ func (s *Service) AddIngredient(req *AddIngredientRequest) (*models.UserIngredie
 		return nil, err
 	}
 
-	ingredient, err := s.createIngredient(req.UserID, name, *req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+	ingredient, err := s.createIngredient(req.UserID, name, *req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +117,12 @@ func (s *Service) withUsage(ingredient *models.UserIngredient) *models.UserIngre
 // createIngredient is the one create path of the ingredient list, for the website and the external API:
 // the duplicate-name rule, the write, and the explanation of a failed write
 func (s *Service) createIngredient(userID int, name string, kcalPer100g float64,
-	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	if err := s.checkDuplicateName(userID, name, nil); err != nil {
 		return nil, err
 	}
 
-	ingredient, err := s.ingredientRepo.CreateUserIngredient(userID, name, kcalPer100g, fats, carbs, proteins)
+	ingredient, err := s.ingredientRepo.CreateUserIngredient(userID, name, kcalPer100g, fats, carbs, proteins, fiber)
 	if err != nil {
 		if duplicateErr := s.duplicateAfterWriteError(userID, name, 0, err); duplicateErr != nil {
 			return nil, duplicateErr
@@ -151,7 +151,7 @@ func (s *Service) UpdateIngredient(req *UpdateIngredientRequest) (*models.UserIn
 		return nil, err
 	}
 
-	return s.saveIngredient(current, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+	return s.saveIngredient(current, req.Name, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber)
 }
 
 // PatchIngredient changes only the sent values of a user ingredient. Sent values are checked against the sanity
@@ -178,7 +178,7 @@ func (s *Service) PatchIngredient(req *PatchIngredientRequest) (*models.UserIngr
 	if req.KcalPer100g != nil {
 		kcalPer100g = *req.KcalPer100g
 	}
-	fats, carbs, proteins := current.Fats, current.Carbs, current.Proteins
+	fats, carbs, proteins, fiber := current.Fats, current.Carbs, current.Proteins, current.Fiber
 	if req.Fats != nil {
 		fats = req.Fats
 	}
@@ -188,8 +188,11 @@ func (s *Service) PatchIngredient(req *PatchIngredientRequest) (*models.UserIngr
 	if req.Proteins != nil {
 		proteins = req.Proteins
 	}
+	if req.Fiber != nil {
+		fiber = req.Fiber
+	}
 
-	return s.saveIngredient(current, name, kcalPer100g, fats, carbs, proteins)
+	return s.saveIngredient(current, name, kcalPer100g, fats, carbs, proteins, fiber)
 }
 
 // getOwnIngredient reads the ingredient that is about to change. A missing or foreign ingredient is sql.ErrNoRows.
@@ -208,12 +211,12 @@ func (s *Service) getOwnIngredient(userID, ingredientID int) (*models.UserIngred
 
 // saveIngredient writes the new values of an existing ingredient after the duplicate-name check
 func (s *Service) saveIngredient(current *models.UserIngredient, name string, kcalPer100g float64,
-	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	if err := s.checkDuplicateName(current.UserID, name, current); err != nil {
 		return nil, err
 	}
 
-	ingredient, err := s.ingredientRepo.UpdateUserIngredient(current.UserID, current.ID, name, kcalPer100g, fats, carbs, proteins)
+	ingredient, err := s.ingredientRepo.UpdateUserIngredient(current.UserID, current.ID, name, kcalPer100g, fats, carbs, proteins, fiber)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Deleted between the read and the write
 		return nil, sql.ErrNoRows
@@ -317,13 +320,14 @@ func (s *Service) validateCreateRequest(req *CreateIngredientRequest) error {
 	if req.Proteins != nil && *req.Proteins < 0 {
 		return ErrInvalidNutritionValue
 	}
-	return nil
+	return validateWebFiber(req.Fiber)
 }
 
 // validatePatchRequest checks the sent values and returns the cleaned name (empty when the name is not sent)
 func validatePatchRequest(req *PatchIngredientRequest) (string, error) {
-	if req.Name == nil && req.KcalPer100g == nil && req.Fats == nil && req.Carbs == nil && req.Proteins == nil {
-		return "", &ValidationError{Message: "nothing to change: send name, kcal_per_100g, fats, carbs or proteins"}
+	if req.Name == nil && req.KcalPer100g == nil && req.Fats == nil && req.Carbs == nil && req.Proteins == nil &&
+		req.Fiber == nil {
+		return "", &ValidationError{Message: "nothing to change: send name, kcal_per_100g, fats, carbs, proteins or fiber"}
 	}
 
 	var name string
@@ -333,7 +337,7 @@ func validatePatchRequest(req *PatchIngredientRequest) (string, error) {
 			return "", err
 		}
 	}
-	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins); err != nil {
+	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber); err != nil {
 		return "", err
 	}
 	return name, nil
@@ -352,7 +356,7 @@ func validateAddRequest(req *AddIngredientRequest) (string, error) {
 	if req.KcalPer100g == nil {
 		return "", &ValidationError{Message: "kcal_per_100g is required"}
 	}
-	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins); err != nil {
+	if err := validateValues(req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber); err != nil {
 		return "", err
 	}
 	return name, nil
@@ -372,18 +376,27 @@ func cleanName(raw, emptyMessage string) (string, error) {
 }
 
 // validateValues checks the sent (non-nil) calorie and nutrient values against the sanity limits of package food
-func validateValues(kcalPer100g, fats, carbs, proteins *float64) error {
+func validateValues(kcalPer100g, fats, carbs, proteins, fiber *float64) error {
 	if kcalPer100g != nil && !food.ValidKcalPer100g(*kcalPer100g) {
 		return &ValidationError{Message: fmt.Sprintf("kcal_per_100g must be between 0 and %g", food.MaxKcalPer100g)}
 	}
 	nutrients := []struct {
 		field string
 		value *float64
-	}{{"fats", fats}, {"carbs", carbs}, {"proteins", proteins}}
+	}{{"fats", fats}, {"carbs", carbs}, {"proteins", proteins}, {"fiber", fiber}}
 	for _, n := range nutrients {
 		if n.value != nil && !food.ValidNutrientPer100g(*n.value) {
 			return &ValidationError{Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)}
 		}
+	}
+	return nil
+}
+
+// validateWebFiber checks the fibre of an ingredient of the website (grams per 100 g); nil is unknown and valid.
+// Unlike the other nutrients of the website, which only must not be negative, fibre has the upper limit too.
+func validateWebFiber(fiber *float64) error {
+	if fiber != nil && !food.ValidNutrientPer100g(*fiber) {
+		return &ValidationError{Message: fmt.Sprintf("fiber must be between 0 and %g (grams per 100 g)", food.MaxNutrientPer100g)}
 	}
 	return nil
 }
@@ -407,5 +420,5 @@ func (s *Service) validateUpdateRequest(req *UpdateIngredientRequest) error {
 	if req.Proteins != nil && *req.Proteins < 0 {
 		return ErrInvalidNutritionValue
 	}
-	return nil
+	return validateWebFiber(req.Fiber)
 }

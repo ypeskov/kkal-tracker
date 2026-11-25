@@ -7,6 +7,7 @@ type CreateIngredientRequest struct {
 	Fats        *float64
 	Carbs       *float64
 	Proteins    *float64
+	Fiber       *float64
 }
 
 // AddIngredientRequest is a new ingredient of the external API. Nil fields were not sent (or sent as null):
@@ -18,6 +19,7 @@ type AddIngredientRequest struct {
 	Fats        *float64
 	Carbs       *float64
 	Proteins    *float64
+	Fiber       *float64
 }
 
 type UpdateIngredientRequest struct {
@@ -28,6 +30,7 @@ type UpdateIngredientRequest struct {
 	Fats         *float64
 	Carbs        *float64
 	Proteins     *float64
+	Fiber        *float64
 }
 
 // PatchIngredientRequest changes some values of a user ingredient. Nil fields keep their current values.
@@ -39,4 +42,5 @@ type PatchIngredientRequest struct {
 	Fats         *float64
 	Carbs        *float64
 	Proteins     *float64
+	Fiber        *float64
 }

@@ -160,3 +160,91 @@ func TestFoodHandlersPassNutrientOverrides(t *testing.T) {
 		t.Errorf("update = %+v with nutrients %v, want entry 12 of user 7, ingredient 76, fats 5, proteins 0", update, got)
 	}
 }
+
+// recordingIngredientService records the requests of the ingredient handlers
+type recordingIngredientService struct {
+	ingredientservice.Servicer
+
+	add   *ingredientservice.AddIngredientRequest
+	patch *ingredientservice.PatchIngredientRequest
+}
+
+func (r *recordingIngredientService) AddIngredient(req *ingredientservice.AddIngredientRequest) (*models.UserIngredientUsage, error) {
+	r.add = req
+	return &models.UserIngredientUsage{UserIngredient: models.UserIngredient{ID: 1, Name: *req.Name, Fiber: req.Fiber}}, nil
+}
+
+func (r *recordingIngredientService) PatchIngredient(req *ingredientservice.PatchIngredientRequest) (*models.UserIngredient, error) {
+	r.patch = req
+	return &models.UserIngredient{ID: req.IngredientID, Name: "Хлеб", Fiber: req.Fiber}, nil
+}
+
+func fiberValue(v *float64) any {
+	if v == nil {
+		return nil
+	}
+	return *v
+}
+
+// The handlers pass the fibre on as sent: a value, a zero, and nil for null or a field that is not sent
+func TestHandlersPassFiber(t *testing.T) {
+	calories := &recordingCalorieService{}
+	ingredients := &recordingIngredientService{}
+	h := New(calories, nil, ingredients, slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil)))
+
+	rec := serveFood(h, http.MethodPost, "/food", `{"items": [
+		{"ingredient_id": 94, "weight": 100, "fiber": 8},
+		{"ingredient_id": 94, "weight": 50, "fiber": 0},
+		{"ingredient_id": 94, "weight": 50, "fiber": null},
+		{"new_ingredient": {"name": "Груша", "kcal_per_100g": 57, "fiber": 3.1}, "weight": 100},
+		{"new_ingredient": {"name": "Вода", "kcal_per_100g": 0}, "weight": 100, "fiber": 1}]}`)
+	if rec.Code != http.StatusCreated || calories.meal == nil || len(calories.meal.Items) != 5 {
+		t.Fatalf("POST /food = %d %s, want 201 with 5 items passed on", rec.Code, rec.Body.String())
+	}
+	items := calories.meal.Items
+	if got := []any{fiberValue(items[0].Fiber), fiberValue(items[1].Fiber), fiberValue(items[2].Fiber), fiberValue(items[3].Fiber)}; got[0] != 8.0 || got[1] != 0.0 || got[2] != nil || got[3] != nil {
+		t.Errorf("item overrides = %v, want 8, 0, none, none", got)
+	}
+	if got := fiberValue(items[3].NewIngredient.Fiber); got != 3.1 {
+		t.Errorf("new_ingredient fiber = %v, want 3.1", got)
+	}
+	// A fibre next to new_ingredient reaches the service, which rejects it
+	if items[4].NewIngredient.Fiber != nil || fiberValue(items[4].Fiber) != 1.0 {
+		t.Errorf("item 4 = %+v, want the top-level fiber passed on as an override", items[4])
+	}
+
+	for body, want := range map[string]any{`{"fiber": 4}`: 4.0, `{"fiber": 0}`: 0.0, `{"fiber": null, "weight": 50}`: nil, `{"weight": 50}`: nil} {
+		rec = serveFood(h, http.MethodPut, "/food/12", body)
+		if rec.Code != http.StatusOK || calories.update == nil || fiberValue(calories.update.Fiber) != want {
+			t.Errorf("PUT /food/12 %s = %d, fiber passed on = %v, want %v", body, rec.Code, fiberValue(calories.update.Fiber), want)
+		}
+	}
+	// The entry of the response carries the fibre under the key "fiber", and omits an unknown one
+	calories.update = nil
+	if rec = serveFood(h, http.MethodPut, "/food/12", `{"weight": 50}`); strings.Contains(rec.Body.String(), "fiber") {
+		t.Errorf("response without fibre = %s, want no fiber key", rec.Body.String())
+	}
+
+	for body, want := range map[string]any{
+		`{"name": "Овсянка", "kcal_per_100g": 370, "fiber": 10.6}`: 10.6,
+		`{"name": "Мясо", "kcal_per_100g": 200, "fiber": 0}`:       0.0,
+		`{"name": "Соус", "kcal_per_100g": 120, "fiber": null}`:    nil,
+		`{"name": "Кетчуп", "kcal_per_100g": 100}`:                 nil,
+	} {
+		rec = serveFood(h, http.MethodPost, "/ingredients", body)
+		if rec.Code != http.StatusCreated || ingredients.add == nil || fiberValue(ingredients.add.Fiber) != want {
+			t.Errorf("POST /ingredients %s = %d, fiber passed on = %v, want %v", body, rec.Code, fiberValue(ingredients.add.Fiber), want)
+		}
+		if hasKey := strings.Contains(rec.Body.String(), `"fiber":`); hasKey != (want != nil) {
+			t.Errorf("POST /ingredients %s: response %s, fiber key present = %v", body, rec.Body.String(), hasKey)
+		}
+	}
+
+	for body, want := range map[string]any{`{"fiber": 2.5}`: 2.5, `{"fiber": 0}`: 0.0, `{"fiber": null}`: nil, `{"kcal_per_100g": 260}`: nil} {
+		rec = serveFood(h, http.MethodPut, "/ingredients/94", body)
+		if rec.Code != http.StatusOK || ingredients.patch == nil || fiberValue(ingredients.patch.Fiber) != want ||
+			ingredients.patch.IngredientID != 94 || ingredients.patch.UserID != 7 {
+			t.Errorf("PUT /ingredients/94 %s = %d, request passed on = %+v, want fiber %v", body, rec.Code, ingredients.patch, want)
+		}
+	}
+}

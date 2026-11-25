@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import CalculatorInput from './CalculatorInput';
+import { fiberToInput, parseFiberInput } from '@/utils/fiber';
 
 interface EditEntryModalProps {
   entry: any;
@@ -19,6 +20,8 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   const [editFats, setEditFats] = useState('');
   const [editCarbs, setEditCarbs] = useState('');
   const [editProteins, setEditProteins] = useState('');
+  const [editFiber, setEditFiber] = useState('');
+  const [fiberInvalid, setFiberInvalid] = useState(false);
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('');
 
@@ -30,6 +33,9 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
       setEditFats(entry.fats ? entry.fats.toString() : '');
       setEditCarbs(entry.carbs ? entry.carbs.toString() : '');
       setEditProteins(entry.proteins ? entry.proteins.toString() : '');
+      // The update replaces all values: the stored fibre (0 included) is loaded here and sent back on save
+      setEditFiber(fiberToInput(entry.fiber));
+      setFiberInvalid(false);
       const mealDate = new Date(entry.meal_datetime);
       const dateString = mealDate.toISOString().split('T')[0];
       const timeString = mealDate.toTimeString().split(' ')[0].substring(0, 5);
@@ -37,6 +43,11 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
       setEditTime(timeString);
     }
   }, [entry]);
+
+  const handleFiberChange = (value: string) => {
+    setEditFiber(value);
+    setFiberInvalid(false);
+  };
 
   const editTotalCalories = useMemo(() => {
     const weightNum = parseFloat(editWeight) || 0;
@@ -47,6 +58,13 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
   const handleUpdateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editFoodName || !editWeight || !editKcalPer100g || !entry || !editDate || !editTime) return;
+
+    // An empty field is unknown (not sent, which clears the value), 0 is a value; out of range is rejected here
+    const fiberValue = parseFiberInput(editFiber);
+    if (fiberValue === null) {
+      setFiberInvalid(true);
+      return;
+    }
 
     const mealDateTime = new Date(`${editDate}T${editTime}:00`).toISOString();
 
@@ -61,6 +79,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
     if (editFats && parseFloat(editFats) > 0) entryData.fats = parseFloat(editFats);
     if (editCarbs && parseFloat(editCarbs) > 0) entryData.carbs = parseFloat(editCarbs);
     if (editProteins && parseFloat(editProteins) > 0) entryData.proteins = parseFloat(editProteins);
+    if (fiberValue !== undefined) entryData.fiber = fiberValue;
 
     onUpdate(entry.id, entryData);
   };
@@ -139,8 +158,8 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
             </div>
           </div>
 
-          {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+          {/* Fats+Carbs and Proteins+Fibre in 2 cols: four labels with units do not fit one row of the modal */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col">
               <label htmlFor="editFats" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fats')}:</label>
               <CalculatorInput
@@ -161,8 +180,7 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
               />
             </div>
 
-            {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
-            <div className="flex flex-col col-span-1 md:col-span-1">
+            <div className="flex flex-col">
               <label htmlFor="editProteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.proteins')}:</label>
               <CalculatorInput
                 id="editProteins"
@@ -171,7 +189,21 @@ export default function EditEntryModal({ entry, onUpdate, onCancel, onDelete, is
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
               />
             </div>
+
+            <div className="flex flex-col">
+              <label htmlFor="editFiber" className="block mb-1 text-gray-600 text-sm font-medium">{t('dashboard.fiber')}:</label>
+              <CalculatorInput
+                id="editFiber"
+                value={editFiber}
+                onChange={handleFiberChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+              />
+            </div>
           </div>
+
+          {fiberInvalid && (
+            <p role="alert" className="mb-4 text-sm text-red-600">{t('common.fiberInvalid')}</p>
+          )}
 
           <div className="flex flex-col md:flex-row gap-4 mb-4 items-stretch md:items-end">
             <div className="flex flex-col flex-1">

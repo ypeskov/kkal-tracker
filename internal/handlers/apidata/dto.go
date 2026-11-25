@@ -8,6 +8,7 @@ type IngredientInfo struct {
 	Fats        *float64 `json:"fats,omitempty"`
 	Carbs       *float64 `json:"carbs,omitempty"`
 	Proteins    *float64 `json:"proteins,omitempty"`
+	Fiber       *float64 `json:"fiber,omitempty"`
 }
 
 // IngredientItem is an ingredient of the list together with its usage statistics
@@ -38,10 +39,11 @@ type FoodItemRequest struct {
 	Weight float64 `json:"weight"`
 	// KcalPer100g overrides the calorie value of an existing ingredient for this entry only
 	KcalPer100g *float64 `json:"kcal_per_100g"`
-	// Fats, Carbs and Proteins (grams per 100 g) override the values of an existing ingredient for this entry only
+	// Fats, Carbs, Proteins and Fiber (grams per 100 g) override the values of an existing ingredient for this entry only
 	Fats     *float64 `json:"fats"`
 	Carbs    *float64 `json:"carbs"`
 	Proteins *float64 `json:"proteins"`
+	Fiber    *float64 `json:"fiber"`
 }
 
 type NewIngredientRequest struct {
@@ -50,6 +52,7 @@ type NewIngredientRequest struct {
 	Fats        *float64 `json:"fats"`
 	Carbs       *float64 `json:"carbs"`
 	Proteins    *float64 `json:"proteins"`
+	Fiber       *float64 `json:"fiber"`
 }
 
 type CreatedFoodEntry struct {
@@ -81,11 +84,12 @@ type UpdateFoodRequest struct {
 	IngredientID *int `json:"ingredient_id"`
 	// KcalPer100g overrides the calorie value for this entry only
 	KcalPer100g *float64 `json:"kcal_per_100g"`
-	// Fats, Carbs and Proteins (grams per 100 g) override the nutrients for this entry only;
+	// Fats, Carbs, Proteins and Fiber (grams per 100 g) override the nutrients for this entry only;
 	// with IngredientID they are applied on top of the values of the new ingredient
 	Fats     *float64 `json:"fats"`
 	Carbs    *float64 `json:"carbs"`
 	Proteins *float64 `json:"proteins"`
+	Fiber    *float64 `json:"fiber"`
 	// MealDatetime is RFC 3339
 	MealDatetime string `json:"meal_datetime"`
 }
@@ -105,6 +109,7 @@ type CreateIngredientRequest struct {
 	Fats        *float64 `json:"fats"`
 	Carbs       *float64 `json:"carbs"`
 	Proteins    *float64 `json:"proteins"`
+	Fiber       *float64 `json:"fiber"`
 }
 
 // UpdateIngredientRequest changes an ingredient of the list; fields that are not sent (or null) keep their values
@@ -114,6 +119,7 @@ type UpdateIngredientRequest struct {
 	Fats        *float64 `json:"fats"`
 	Carbs       *float64 `json:"carbs"`
 	Proteins    *float64 `json:"proteins"`
+	Fiber       *float64 `json:"fiber"`
 }
 
 type UpdateIngredientResponse struct {

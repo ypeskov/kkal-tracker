@@ -37,9 +37,12 @@
     "fats": "Мазнини (г/100г)",
     "carbs": "Въглехидрати (г/100г)",
     "proteins": "Белтъци (г/100г)",
+    "fiber": "Фибри (г/100г)",
     "fatsConsumed": "Мазнини",
     "carbsConsumed": "Въглехидрати",
     "proteinsConsumed": "Белтъци",
+    "fiberConsumed": "Фибри",
+    "fiberUnderstated": "занижено, записи без данни: {{count}}",
     "totalCalories": "Общо ккал",
     "addEntry": "Добави",
     "todayEntries": "Записи",
@@ -77,6 +80,8 @@
     "proteins": "Белтъци",
     "carbs": "Въглехидрати",
     "fats": "Мазнини",
+    "fiber": "Фибри",
+    "fiberPer100g": "Фибри, г/100 г",
     "noIngredients": "Не са намерени съставки",
     "editIngredient": "Редактиране на съставка",
     "addNewIngredient": "Добави нова съставка",
@@ -346,7 +351,8 @@
     "kg": "кг",
     "kcalPerDay": "ккал/ден",
     "kcalPer100g": "ккал/100г",
-    "g": "г"
+    "g": "г",
+    "fiberInvalid": "Фибри: въведете число от 0 до 100 (г на 100 г)"
   },
   "weightGoal": {
     "title": "Цел за теглото",

@@ -40,7 +40,7 @@ func (r *fakeCalorieRepo) CreateMeal(userID int, entries []models.NewMealEntry, 
 	for i, e := range entries {
 		created[i] = models.CreatedMealEntry{Entry: &models.CalorieEntry{
 			ID: 100 + i, UserID: userID, Food: e.Food, Calories: e.Calories, Weight: e.Weight, KcalPer100g: e.KcalPer100g,
-			Fats: e.Fats, Carbs: e.Carbs, Proteins: e.Proteins, MealDatetime: mealDatetime,
+			Fats: e.Fats, Carbs: e.Carbs, Proteins: e.Proteins, Fiber: e.Fiber, MealDatetime: mealDatetime,
 		}}
 	}
 	return created, nil
@@ -56,10 +56,10 @@ func (r *fakeCalorieRepo) GetByID(id int) (*models.CalorieEntry, error) {
 }
 
 func (r *fakeCalorieRepo) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64,
-	fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+	fats, carbs, proteins, fiber *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
 	r.updates++
 	entry := &models.CalorieEntry{ID: id, UserID: userID, Food: food, Calories: calories, Weight: weight,
-		KcalPer100g: kcalPer100g, Fats: fats, Carbs: carbs, Proteins: proteins, MealDatetime: mealDatetime}
+		KcalPer100g: kcalPer100g, Fats: fats, Carbs: carbs, Proteins: proteins, Fiber: fiber, MealDatetime: mealDatetime}
 	r.entries[id] = entry
 	return entry, nil
 }
@@ -231,7 +231,7 @@ func TestUpdateMealEntryRejectsInvalidNutrients(t *testing.T) {
 		req  UpdateMealEntryRequest
 		want string
 	}{
-		{UpdateMealEntryRequest{}, "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins or meal_datetime"},
+		{UpdateMealEntryRequest{}, "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins, fiber or meal_datetime"},
 		{UpdateMealEntryRequest{Carbs: ptr(101)}, "carbs must be between 0 and 100 (grams per 100 g)"},
 		{UpdateMealEntryRequest{Fats: ptr(-0.5), Weight: ptr(50)}, "fats must be between 0 and 100 (grams per 100 g)"},
 		{UpdateMealEntryRequest{IngredientID: intPtr(95), Proteins: ptr(100.01)}, "proteins must be between 0 and 100 (grams per 100 g)"},

@@ -19,6 +19,8 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
   const actualFats = entry.fats ? (entry.fats * entry.weight / 100) : null;
   const actualCarbs = entry.carbs ? (entry.carbs * entry.weight / 100) : null;
   const actualProteins = entry.proteins ? (entry.proteins * entry.weight / 100) : null;
+  // Fibre of 0 is a known value (shown as 0.0); only an absent value is unknown
+  const actualFiber = (entry.fiber !== null && entry.fiber !== undefined) ? (entry.fiber * entry.weight / 100) : null;
 
   return (
     <li className="bg-white p-3 mb-2 rounded-md border border-gray-200 shadow-sm transition-all duration-200 cursor-pointer hover:bg-gray-50 hover:border-blue-400 hover:shadow-lg hover:-translate-y-0.5" onClick={() => onEdit(entry)}>
@@ -30,15 +32,18 @@ export default function EntryListItem({ entry, onEdit }: EntryListItemProps) {
         <strong className="font-semibold w-[25%] text-right flex-shrink-0 whitespace-nowrap text-gray-800">{entry.calories} {t('dashboard.kcal')}</strong>
       </div>
       <div className="flex flex-wrap gap-2 text-base text-gray-600 md:flex-nowrap md:gap-4 sm:gap-1">
-        <span className="flex-shrink-0">{t('dashboard.weight')}: {entry.weight}g</span>
+        <span className="flex-shrink-0">{t('dashboard.weight')}: {entry.weight} {t('common.g')}</span>
         {(entry.fats !== null && entry.fats !== undefined) && (
-          <span className="flex-shrink-0">{t('dashboard.fatsConsumed')}: {actualFats?.toFixed(1)}g</span>
+          <span className="flex-shrink-0">{t('dashboard.fatsConsumed')}: {actualFats?.toFixed(1)} {t('common.g')}</span>
         )}
         {(entry.carbs !== null && entry.carbs !== undefined) && (
-          <span className="flex-shrink-0">{t('dashboard.carbsConsumed')}: {actualCarbs?.toFixed(1)}g</span>
+          <span className="flex-shrink-0">{t('dashboard.carbsConsumed')}: {actualCarbs?.toFixed(1)} {t('common.g')}</span>
         )}
         {(entry.proteins !== null && entry.proteins !== undefined) && (
-          <span className="flex-shrink-0">{t('dashboard.proteinsConsumed')}: {actualProteins?.toFixed(1)}g</span>
+          <span className="flex-shrink-0">{t('dashboard.proteinsConsumed')}: {actualProteins?.toFixed(1)} {t('common.g')}</span>
+        )}
+        {actualFiber !== null && (
+          <span className="flex-shrink-0">{t('dashboard.fiberConsumed')}: {actualFiber.toFixed(1)} {t('common.g')}</span>
         )}
       </div>
     </li>

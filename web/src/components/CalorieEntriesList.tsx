@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EntryListItem from './EntryListItem';
+import FiberTotal from './FiberTotal';
+import { sumFiber } from '@/utils/fiber';
 
 interface CalorieEntriesListProps {
   entries: any[];
@@ -103,6 +105,9 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
             .map((dateKey, index) => {
               const isExpanded = !hasMultipleDates || expandedDates.has(dateKey);
               const dailyTotals = calculateDailyTotals(entriesByDate[dateKey]);
+              // Fibre is shown when at least one entry of the day has a known value, also when the total is 0
+              const fiberTotals = sumFiber(entriesByDate[dateKey]);
+              const hasNutrientTotals = dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0 || fiberTotals.known > 0;
               
               return (
                 <div key={dateKey} className={`rounded-lg p-4 mb-6 border shadow-md relative transition-all duration-200 hover:translate-x-0.5 ${
@@ -140,17 +145,18 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                     </div>
                     
                     {/* Show nutrient summary in header when collapsed */}
-                    {!isExpanded && (dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
-                      <div className="flex md:flex-row md:gap-6 sm:flex-wrap sm:gap-2 text-sm mt-2 opacity-80">
+                    {!isExpanded && hasNutrientTotals && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 md:flex-row md:gap-6 sm:gap-2 text-sm mt-2 opacity-80">
                         {dailyTotals.fats > 0 && (
-                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)} {t('common.g')}</span>
                         )}
                         {dailyTotals.carbs > 0 && (
-                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)} {t('common.g')}</span>
                         )}
                         {dailyTotals.proteins > 0 && (
-                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                          <span className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)} {t('common.g')}</span>
                         )}
+                        <FiberTotal totals={fiberTotals} className="md:flex-1 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-white/30 sm:rounded sm:text-xs sm:leading-tight" />
                       </div>
                     )}
                   </div>
@@ -171,17 +177,19 @@ export default function CalorieEntriesList({ entries, onEdit }: CalorieEntriesLi
                             <span className="text-gray-700">{t('dashboard.total')}:</span>
                             <span className="text-green-600">{dailyTotals.calories} {t('dashboard.kcal')}</span>
                           </div>
-                          {(dailyTotals.fats > 0 || dailyTotals.carbs > 0 || dailyTotals.proteins > 0) && (
+                          {hasNutrientTotals && (
                             <div className="flex flex-wrap gap-2 text-sm md:gap-2 sm:gap-1">
                               {dailyTotals.fats > 0 && (
-                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.fatsConsumed')}: {dailyTotals.fats.toFixed(1)} {t('common.g')}</span>
                               )}
                               {dailyTotals.carbs > 0 && (
-                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.carbsConsumed')}: {dailyTotals.carbs.toFixed(1)} {t('common.g')}</span>
                               )}
                               {dailyTotals.proteins > 0 && (
-                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)}g</span>
+                                <span className="flex-shrink-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight">{t('dashboard.proteinsConsumed')}: {dailyTotals.proteins.toFixed(1)} {t('common.g')}</span>
                               )}
+                              {/* May shrink and wrap: with the understated hint it is wider than a phone screen */}
+                              <FiberTotal totals={fiberTotals} className="min-w-0 md:bg-transparent md:p-0 md:rounded-none md:text-inherit md:leading-normal sm:flex-[0_0_calc(50%-0.25rem)] sm:text-center sm:p-1 sm:bg-green-100 sm:rounded sm:text-xs sm:leading-tight" />
                             </div>
                           )}
                         </div>

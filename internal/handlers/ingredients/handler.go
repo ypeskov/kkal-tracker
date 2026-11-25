@@ -31,6 +31,7 @@ type CreateRequest struct {
 	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
 	Carbs       *float64 `json:"carbs,omitempty" validate:"omitempty,min=0"`
 	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
+	Fiber       *float64 `json:"fiber,omitempty" validate:"omitempty,min=0,max=100"`
 }
 
 type UpdateRequest struct {
@@ -39,6 +40,7 @@ type UpdateRequest struct {
 	Fats        *float64 `json:"fats,omitempty" validate:"omitempty,min=0"`
 	Carbs       *float64 `json:"carbs,omitempty" validate:"omitempty,min=0"`
 	Proteins    *float64 `json:"proteins,omitempty" validate:"omitempty,min=0"`
+	Fiber       *float64 `json:"fiber,omitempty" validate:"omitempty,min=0,max=100"`
 }
 
 // DuplicateNameResponse is the 409 answer to a create or rename to a name the user already has
@@ -109,13 +111,18 @@ func (h *Handler) CreateIngredient(c *echo.Context) error {
 		Fats:        req.Fats,
 		Carbs:       req.Carbs,
 		Proteins:    req.Proteins,
+		Fiber:       req.Fiber,
 	}
 
 	ingredient, err := h.ingredientService.CreateIngredient(serviceReq)
 	if err != nil {
 		var duplicateErr *ingredientservice.DuplicateIngredientError
-		if errors.As(err, &duplicateErr) {
+		var validationErr *ingredientservice.ValidationError
+		switch {
+		case errors.As(err, &duplicateErr):
 			return c.JSON(http.StatusConflict, duplicateNameResponse(duplicateErr))
+		case errors.As(err, &validationErr):
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
 		}
 		h.logger.Error("Failed to create user ingredient", "error", err, "user_id", userID)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
@@ -154,14 +161,18 @@ func (h *Handler) UpdateIngredient(c *echo.Context) error {
 		Fats:         req.Fats,
 		Carbs:        req.Carbs,
 		Proteins:     req.Proteins,
+		Fiber:        req.Fiber,
 	}
 
 	ingredient, err := h.ingredientService.UpdateIngredient(serviceReq)
 	if err != nil {
 		var duplicateErr *ingredientservice.DuplicateIngredientError
+		var validationErr *ingredientservice.ValidationError
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return echo.NewHTTPError(http.StatusNotFound, "Ingredient not found")
+		case errors.As(err, &validationErr):
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
 		case errors.As(err, &duplicateErr):
 			return c.JSON(http.StatusConflict, duplicateNameResponse(duplicateErr))
 		}

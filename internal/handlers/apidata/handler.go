@@ -43,6 +43,7 @@ type FoodEntry struct {
 	Fats         *float64  `json:"fats,omitempty"`
 	Carbs        *float64  `json:"carbs,omitempty"`
 	Proteins     *float64  `json:"proteins,omitempty"`
+	Fiber        *float64  `json:"fiber,omitempty"`
 	MealDatetime time.Time `json:"meal_datetime"`
 }
 
@@ -151,6 +152,7 @@ func (h *Handler) CreateIngredient(c *echo.Context) error {
 		Fats:        req.Fats,
 		Carbs:       req.Carbs,
 		Proteins:    req.Proteins,
+		Fiber:       req.Fiber,
 	})
 	if err != nil {
 		var validationErr *ingredientservice.ValidationError
@@ -194,6 +196,7 @@ func (h *Handler) UpdateIngredient(c *echo.Context) error {
 		Fats:         req.Fats,
 		Carbs:        req.Carbs,
 		Proteins:     req.Proteins,
+		Fiber:        req.Fiber,
 	})
 	if err != nil {
 		var validationErr *ingredientservice.ValidationError
@@ -268,6 +271,7 @@ func (h *Handler) CreateFood(c *echo.Context) error {
 			Fats:         item.Fats,
 			Carbs:        item.Carbs,
 			Proteins:     item.Proteins,
+			Fiber:        item.Fiber,
 		}
 		if item.NewIngredient != nil {
 			if item.NewIngredient.KcalPer100g == nil {
@@ -280,6 +284,7 @@ func (h *Handler) CreateFood(c *echo.Context) error {
 				Fats:        item.NewIngredient.Fats,
 				Carbs:       item.NewIngredient.Carbs,
 				Proteins:    item.NewIngredient.Proteins,
+				Fiber:       item.NewIngredient.Fiber,
 			}
 		}
 		serviceReq.Items[i] = serviceItem
@@ -345,6 +350,7 @@ func (h *Handler) UpdateFood(c *echo.Context) error {
 		Fats:         req.Fats,
 		Carbs:        req.Carbs,
 		Proteins:     req.Proteins,
+		Fiber:        req.Fiber,
 	}
 	if req.MealDatetime != "" {
 		mealDatetime, err := time.Parse(time.RFC3339, req.MealDatetime)
@@ -402,6 +408,7 @@ func mapIngredient(ingredient *models.UserIngredient) IngredientInfo {
 		Fats:        ingredient.Fats,
 		Carbs:       ingredient.Carbs,
 		Proteins:    ingredient.Proteins,
+		Fiber:       ingredient.Fiber,
 	}
 }
 
@@ -442,6 +449,7 @@ func mapFoodEntry(e *models.CalorieEntry) FoodEntry {
 		Fats:         e.Fats,
 		Carbs:        e.Carbs,
 		Proteins:     e.Proteins,
+		Fiber:        e.Fiber,
 		MealDatetime: e.MealDatetime,
 	}
 }

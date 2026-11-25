@@ -22,6 +22,7 @@ type apiIngredient struct {
 	Fats        *float64 `json:"fats"`
 	Carbs       *float64 `json:"carbs"`
 	Proteins    *float64 `json:"proteins"`
+	Fiber       *float64 `json:"fiber"`
 }
 
 // webIngredient is an ingredient in the shape of the website API (/api/ingredients)
@@ -33,6 +34,7 @@ type webIngredient struct {
 	Fats        *float64 `json:"fats"`
 	Carbs       *float64 `json:"carbs"`
 	Proteins    *float64 `json:"proteins"`
+	Fiber       *float64 `json:"fiber"`
 }
 
 func optional(v *float64) any {

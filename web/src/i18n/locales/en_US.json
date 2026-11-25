@@ -37,9 +37,12 @@
     "fats": "Fats (g/100g)",
     "carbs": "Carbs (g/100g)",
     "proteins": "Proteins (g/100g)",
+    "fiber": "Fiber (g/100g)",
     "fatsConsumed": "Fats",
     "carbsConsumed": "Carbs",
     "proteinsConsumed": "Proteins",
+    "fiberConsumed": "Fiber",
+    "fiberUnderstated": "understated, entries without data: {{count}}",
     "totalCalories": "Total kcal",
     "addEntry": "Add",
     "todayEntries": "Entries",
@@ -77,6 +80,8 @@
     "proteins": "Proteins",
     "carbs": "Carbs",
     "fats": "Fats",
+    "fiber": "Fiber",
+    "fiberPer100g": "Fiber, g/100 g",
     "noIngredients": "No ingredients found",
     "editIngredient": "Edit Ingredient",
     "addNewIngredient": "Add New Ingredient",
@@ -346,7 +351,8 @@
     "kg": "kg",
     "kcalPerDay": "kcal/day",
     "kcalPer100g": "kcal/100g",
-    "g": "g"
+    "g": "g",
+    "fiberInvalid": "Fiber: enter a number from 0 to 100 (g per 100 g)"
   },
   "weightGoal": {
     "title": "Weight Goal",

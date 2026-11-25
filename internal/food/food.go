@@ -21,7 +21,7 @@ func ValidKcalPer100g(kcalPer100g float64) bool {
 	return kcalPer100g >= 0 && kcalPer100g <= MaxKcalPer100g
 }
 
-// ValidNutrientPer100g checks fats, carbs or proteins in grams per 100 g
+// ValidNutrientPer100g checks fats, carbs, proteins or fiber in grams per 100 g
 func ValidNutrientPer100g(grams float64) bool {
 	return grams >= 0 && grams <= MaxNutrientPer100g
 }

@@ -8,9 +8,16 @@ All routes are under `/api`.
   - `POST /api/auth/register` - registration (additionally: 3 attempts, then 1 per 20 min per IP)
   - `GET /api/auth/activate/:token` - activate the account from the email link
   - `GET /api/auth/me` - current user (requires auth)
-- `/api/calories/*` - calorie entry CRUD (GET, POST, PUT /:id, DELETE /:id)
+- `/api/calories/*` - calorie entry CRUD (GET, POST, PUT /:id, DELETE /:id). An entry takes its nutrients per 100 g
+  from the request: `fats?`, `carbs?`, `proteins?`, `fiber?` (dietary fibre). `PUT` replaces all values (a nutrient
+  that is not sent is cleared). `fiber` is checked 0–100 on `POST` and `PUT` (out of range → 400, nothing stored);
+  not sent = unknown, `0` is a value; responses omit `fiber` when it is unknown. The macros are not range-checked.
+  `POST` for a food name that is not in the ingredient list creates the ingredient with the sent nutrients and fibre
 - `/api/ingredients/*` - ingredient management (GET, GET /:id, POST, PUT /:id, DELETE /:id); `PUT` replaces all
-  values (nutrients that are not sent are cleared). `POST` and `PUT /:id` return 409
+  values (nutrients that are not sent are cleared, `fiber` too). Body: `{name, kcalPer100g, fats?, carbs?, proteins?,
+  fiber?}`; `fiber` is dietary fibre in grams per 100 g, checked 0–100 on `POST` and `PUT` (out of range → 400,
+  nothing stored; the macros only must not be negative), not sent = unknown, `0` is a value; responses omit `fiber`
+  when it is unknown. `POST` and `PUT /:id` return 409
   `{message, existing_ingredient}` (`existing_ingredient` in the shape of `GET /:id`) when the user already has another
   ingredient with the same name, ignoring case, spacing, invisible characters and `ё`/`е`
 - `/api/weight/*` - weight history (GET, POST, PUT /:id, DELETE /:id)
@@ -40,7 +47,9 @@ All routes are under `/api`.
 - `/api/ai/*` - AI analysis (rate limited: 2 req/min)
   - `GET /api/ai/status` - AI service status
   - `POST /api/ai/analyze` - run an analysis
-- `/api/export` - data export (POST, weight/food as Excel or email)
+- `/api/export` - data export (POST, weight/food as Excel or email). The food sheet has one row per entry: date,
+  time, food, weight, calories, kcal per 100 g and fats / carbs / proteins / fibre per 100 g (columns G–J, an empty
+  cell for an unknown value)
 - `/api/api-keys/*` - API key management (JWT auth)
   - `POST /api/api-keys` - create a key (returns the full key once)
   - `GET /api/api-keys` - list the user's keys (prefixes only)
@@ -58,32 +67,47 @@ All routes are under `/api`.
     `{"message": "Too many requests, please try again later"}` over the limit; 500
     `{"message": "Failed to prepare the skill"}` on any internal failure (a key created for a failed download is deleted)
 - `/api/v1/*` - external API (`X-API-Key` header, rate limited per IP: burst of 20, then 1 req/sec)
-  - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD`
-  - `GET /api/v1/ingredients` - all user ingredients with `times_used` and `last_used`
+  - `fiber` (dietary fibre, grams per 100 g, 0–100) is carried next to `fats` / `carbs` / `proteins` on ingredients
+    and food entries and follows the rules of the macros everywhere below. Unknown is not zero: a response omits the
+    key when the value is unknown and has `"fiber": 0` for a known zero. Calories never depend on it, and the server
+    totals only calories: fibre grams (`fiber × weight / 100`) are summed by the client
+  - `GET /api/v1/data?type=weight|food|both&from=YYYY-MM-DD&to=YYYY-MM-DD` - food entries are `{id, food, calories,
+    weight, kcal_per_100g, fats?, carbs?, proteins?, fiber?, meal_datetime}`, nutrients per 100 g
+  - `GET /api/v1/ingredients` - all user ingredients with `times_used` and `last_used`: `{id, name, kcal_per_100g,
+    fats?, carbs?, proteins?, fiber?, times_used, last_used?}`
   - `POST /api/v1/ingredients` - add an ingredient to the list without a diary entry: `{name, kcal_per_100g, fats?, carbs?,
-    proteins?}`. The same limits and name cleaning as `new_ingredient` of `POST /food` (`kcal_per_100g` required, 0–900;
-    macros 0–100, `null` or not sent = unknown; name up to 200 characters after cleaning). 400 names the field
+    proteins?, fiber?}`. The same limits and name cleaning as `new_ingredient` of `POST /food` (`kcal_per_100g` required, 0–900;
+    macros and `fiber` 0–100, `null` or not sent = unknown; name up to 200 characters after cleaning). 400 names the field
     (`name is required`, `kcal_per_100g is required`, `<field> must be between ...`). Returns 201 with the ingredient
-    as a row of `GET /ingredients` (`{id, name, kcal_per_100g, fats?, carbs?, proteins?, times_used, last_used?}`; the
+    as a row of `GET /ingredients` (`{id, name, kcal_per_100g, fats?, carbs?, proteins?, fiber?, times_used, last_used?}`; the
     statistics are matched by name, so diary entries that already have exactly this name count); 409
-    `{message, existing_ingredient}` when the user already has an ingredient with the same name (ignoring case,
-    spacing, invisible characters and `ё`/`е`). No diary entry is created
-  - `POST /api/v1/food` - store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?, fats?, carbs?, proteins?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?}, weight, one_off?}]}`.
-    On an `ingredient_id` item, `kcal_per_100g` (0–900) and `fats`/`carbs`/`proteins` (grams per 100 g, 0–100) override
-    the ingredient's values for this entry only; values that are not sent are copied from the ingredient (macros may be
-    null). The ingredient does not change. Out of range → 400 `items[<i>]: <field> must be between 0 and 100 (grams per
-    100 g)`; any of these fields at the top level of a `new_ingredient` item → 400 `items[<i>]: <field> of a new food
-    belongs inside new_ingredient`. A rejected item rejects the whole meal
-  - `PUT /api/v1/food/:id` - change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, fats?, carbs?, proteins?, meal_datetime?}`;
-    fields that are not sent (or `null`) keep their values, calories are recalculated (macros do not affect them).
-    `ingredient_id` first copies the name, calories and all three macros from that ingredient, then the overrides sent
-    in the same request (`kcal_per_100g`, `fats`, `carbs`, `proteins`) are applied on top. A macro cannot be reset to
-    null, `0` means none. Same limits as `POST /food`; 400 with nothing changed on a violation or when nothing is sent.
+    `{message, existing_ingredient}` (with `fiber` when the existing ingredient has it) when the user already has an
+    ingredient with the same name (ignoring case, spacing, invisible characters and `ё`/`е`). No diary entry is created
+  - `POST /api/v1/food` - store a meal: `{meal_datetime?, items: [{ingredient_id, weight, kcal_per_100g?, fats?, carbs?, proteins?, fiber?} | {new_ingredient: {name, kcal_per_100g, fats?, carbs?, proteins?, fiber?}, weight, one_off?}]}`.
+    On an `ingredient_id` item, `kcal_per_100g` (0–900) and `fats`/`carbs`/`proteins`/`fiber` (grams per 100 g, 0–100)
+    override the ingredient's values for this entry only; values that are not sent are copied from the ingredient
+    (macros and fibre may be null, and stay null in the entry). The ingredient does not change. Out of range → 400
+    `items[<i>]: <field> must be between 0 and 100 (grams per 100 g)`; any of these fields at the top level of a
+    `new_ingredient` item → 400 `items[<i>]: <field> of a new food belongs inside new_ingredient`. The nutrients of
+    `new_ingredient` (0–100, 400 `items[<i>]: new_ingredient.<field> must be between ...`) are stored on the entry and,
+    unless `one_off`, on the new ingredient. The fields are checked in the order fats, carbs, proteins, fiber. A
+    rejected item rejects the whole meal. Returns 201 `{entries, total_calories, day, day_total_calories?}`; each
+    entry has its nutrients per 100 g (`fats?`, `carbs?`, `proteins?`, `fiber?`)
+  - `PUT /api/v1/food/:id` - change a food entry: `{weight?, ingredient_id?, kcal_per_100g?, fats?, carbs?, proteins?, fiber?, meal_datetime?}`;
+    fields that are not sent (or `null`) keep their values, calories are recalculated (macros and fibre do not affect
+    them). `ingredient_id` first copies the name, calories, all three macros and the fibre from that ingredient
+    (a value the ingredient does not have becomes unknown in the entry), then the overrides sent in the same request
+    (`kcal_per_100g`, `fats`, `carbs`, `proteins`, `fiber`) are applied on top. A macro or the fibre cannot be reset
+    to null, `0` means none. Same limits as `POST /food`; 400 with nothing changed on a violation or when nothing is
+    sent (`nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins, fiber or
+    meal_datetime`).
     Returns `{entry, day, day_total_calories?}`; the ingredient does not change
   - `DELETE /api/v1/food/:id` - delete a food entry
-  - `PUT /api/v1/ingredients/:id` - change an ingredient of the list: `{name?, kcal_per_100g?, fats?, carbs?, proteins?}`;
+  - `PUT /api/v1/ingredients/:id` - change an ingredient of the list: `{name?, kcal_per_100g?, fats?, carbs?, proteins?, fiber?}`;
     fields that are not sent (or `null`) keep their values, the sent ones are checked against the limits of `POST /food`
-    (`kcal_per_100g` 0–900, macros 0–100, name up to 200 characters after cleaning). Returns `{ingredient}`;
+    (`kcal_per_100g` 0–900, macros and `fiber` 0–100, name up to 200 characters after cleaning). A macro or the fibre
+    cannot be reset to null, `0` means none; a body with nothing to change → 400 `nothing to change: send name,
+    kcal_per_100g, fats, carbs, proteins or fiber`. Returns `{ingredient}`;
     409 `{message, existing_ingredient}` when another ingredient of the user has the same name (ignoring case, spacing,
     invisible characters and `ё`/`е`), 404 for a missing or foreign ingredient. Diary entries do not change
   - `DELETE /api/v1/ingredients/:id` - delete an ingredient of the list (204); diary entries stay

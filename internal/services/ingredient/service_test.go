@@ -119,18 +119,20 @@ func (r *fakeIngredientRepo) GetUserIngredientByID(userID, ingredientID int) (*m
 }
 
 func (r *fakeIngredientRepo) CreateUserIngredient(userID int, name string, kcalPer100g float64,
-	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	if err := r.startWrite(); err != nil {
 		return nil, err
 	}
 	if r.nameTaken(userID, 0, name) {
 		return nil, errUniqueName
 	}
-	return r.get(userID, r.insert(userID, name, kcalPer100g, fats, carbs, proteins)), nil
+	id := r.insert(userID, name, kcalPer100g, fats, carbs, proteins)
+	r.ingredients[id].Fiber = fiber
+	return r.get(userID, id), nil
 }
 
 func (r *fakeIngredientRepo) UpdateUserIngredient(userID, ingredientID int, name string, kcalPer100g float64,
-	fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+	fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	if err := r.startWrite(); err != nil {
 		return nil, err
 	}
@@ -140,6 +142,7 @@ func (r *fakeIngredientRepo) UpdateUserIngredient(userID, ingredientID int, name
 	if ingredient := r.get(userID, ingredientID); ingredient != nil {
 		r.ingredients[ingredientID] = &models.UserIngredient{
 			ID: ingredientID, UserID: userID, Name: name, KcalPer100g: kcalPer100g, Fats: fats, Carbs: carbs, Proteins: proteins,
+			Fiber: fiber,
 		}
 	}
 	return r.GetUserIngredientByID(userID, ingredientID)

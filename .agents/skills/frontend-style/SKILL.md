@@ -49,7 +49,7 @@ Data visualization pages (Reports, charts) — full width, same padding:
   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
 />
 ```
-Numeric inputs (weight, calories, fats, carbs, proteins) use the integrated calculator:
+Numeric inputs (weight, calories, fats, carbs, proteins, fibre) use the integrated calculator:
 ```tsx
 import CalculatorInput from '@/components/CalculatorInput';
 

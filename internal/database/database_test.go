@@ -450,7 +450,7 @@ func TestCleanupMigrationRemovesOrphans(t *testing.T) {
 		t.Fatalf("violations before the cleanup = %d, want 8", n)
 	}
 
-	if err := migrator.Up(); err != nil {
+	if err := migrator.UpTo(cleanupVersion); err != nil {
 		t.Fatalf("failed to run the cleanup migration: %v", err)
 	}
 
@@ -487,7 +487,7 @@ func TestCleanupMigrationRemovesOrphans(t *testing.T) {
 	if after := dumpAll(t, db); !mapsEqual(after, cleaned) {
 		t.Errorf("down changed data")
 	}
-	if err := migrator.Up(); err != nil {
+	if err := migrator.UpTo(cleanupVersion); err != nil {
 		t.Fatalf("failed to run the cleanup migration again: %v", err)
 	}
 	if after := dumpAll(t, db); !mapsEqual(after, cleaned) {
@@ -588,5 +588,93 @@ SELECT 1;
 	}
 	if n := count(t, app, "SELECT COUNT(*) FROM children"); n != 2 {
 		t.Errorf("children after the rebuild = %d, want 2", n)
+	}
+}
+
+// The fibre migration adds a nullable column to the three tables with nutrients without touching the stored rows,
+// and its rollback removes the columns and nothing else
+func TestFiberMigrationAddsAndRemovesTheColumns(t *testing.T) {
+	const fiberVersion = 20261124193203
+	fiberTables := []string{"global_ingredients", "user_ingredients", "calorie_entries"}
+
+	migrator, _ := newMigrator(t)
+	if err := migrator.UpTo(cleanupVersion); err != nil {
+		t.Fatalf("failed to migrate to the version before the fibre migration: %v", err)
+	}
+	db := migrator.db
+
+	globalID := insertGlobalIngredient(t, db, "Apple")
+	userID := insertUser(t, db, "owner@example.com")
+	insertUserRows(t, db, userID, globalID, "before")
+	mustExec(t, db, `INSERT INTO user_ingredients (user_id, name, kcal_per_100g, fats, carbs, proteins) VALUES (?, 'Bread', 250, 1, 50, 8)`,
+		userID)
+	before := dumpAll(t, db)
+
+	hasFiber := func(table string) bool {
+		t.Helper()
+		return count(t, db, "SELECT COUNT(*) FROM pragma_table_info('"+table+"') WHERE name = 'fiber'") == 1
+	}
+
+	if err := migrator.UpTo(fiberVersion); err != nil {
+		t.Fatalf("up = %v, want no error (it includes the foreign key check)", err)
+	}
+	for _, table := range fiberTables {
+		if !hasFiber(table) {
+			t.Fatalf("%s has no fiber column after the migration", table)
+		}
+		// Nullable REAL without a default: every existing row is unknown
+		column := dump(t, db, "SELECT type, \"notnull\", dflt_value FROM pragma_table_info('"+table+"') WHERE name = 'fiber'")
+		if want := []string{"REAL|0|<nil>"}; !slices.Equal(column, want) {
+			t.Errorf("%s.fiber = %q, want %q", table, column, want)
+		}
+		if n := count(t, db, "SELECT COUNT(*) FROM "+table+" WHERE fiber IS NOT NULL"); n != 0 {
+			t.Errorf("%s: %d existing rows got a fibre value, want none", table, n)
+		}
+		if n := count(t, db, "SELECT COUNT(*) FROM "+table); n != len(before[table]) {
+			t.Errorf("%s: %d rows after the migration, want %d", table, n, len(before[table]))
+		}
+	}
+	// The other columns of the existing rows are untouched: each row only gained a NULL at the end
+	for table, rows := range dumpAll(t, db) {
+		for i, row := range rows {
+			want := before[table][i]
+			if slices.Contains(fiberTables, table) {
+				want += "|<nil>"
+			}
+			if row != want {
+				t.Errorf("%s row %d after up = %q, want %q", table, i, row, want)
+			}
+		}
+	}
+
+	// Values written after the migration, including a zero
+	mustExec(t, db, `UPDATE user_ingredients SET fiber = 2.5 WHERE name = 'Bread'`)
+	mustExec(t, db, `UPDATE calorie_entries SET fiber = 0`)
+	mustExec(t, db, `UPDATE global_ingredients SET fiber = 10.6`)
+
+	if err := migrator.Down(); err != nil {
+		t.Fatalf("down = %v, want no error (it includes the foreign key check)", err)
+	}
+	if version, err := goose.GetDBVersion(db); err != nil || version != cleanupVersion {
+		t.Fatalf("version after down = %d (%v), want %d", version, err, cleanupVersion)
+	}
+	for _, table := range fiberTables {
+		if hasFiber(table) {
+			t.Errorf("%s still has the fiber column after the rollback", table)
+		}
+	}
+	if after := dumpAll(t, db); !mapsEqual(after, before) || !mapsEqual(before, after) {
+		t.Errorf("the rollback changed other data:\n got %q\nwant %q", after, before)
+	}
+	if violations := foreignKeyViolations(t, db); len(violations) != 0 {
+		t.Errorf("foreign_key_check after the rollback = %q, want empty", violations)
+	}
+
+	// And forward again, as the release will do on a database that was rolled back
+	if err := migrator.Up(); err != nil {
+		t.Fatalf("up after the rollback = %v", err)
+	}
+	if !hasFiber("calorie_entries") {
+		t.Error("calorie_entries has no fiber column after the second up")
 	}
 }

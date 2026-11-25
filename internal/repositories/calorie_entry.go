@@ -26,7 +26,7 @@ func NewCalorieEntryRepository(db *sql.DB, logger *slog.Logger, dialect Dialect)
 
 func (r *CalorieEntryRepositoryImpl) Create(userID int,
 	food string, calories int, weight float64, kcalPer100g float64, fats, carbs,
-	proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+	proteins, fiber *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
 
 	r.logger.Debug("Creating calorie entry",
 		slog.Int("user_id", userID),
@@ -39,7 +39,7 @@ func (r *CalorieEntryRepositoryImpl) Create(userID int,
 	}
 
 	now := time.Now().UTC()
-	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now)
+	result, err := r.db.Exec(query, userID, food, calories, weight, kcalPer100g, fats, carbs, proteins, fiber, mealDatetime, now)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (r *CalorieEntryRepositoryImpl) CreateMeal(userID int, entries []models.New
 	for _, e := range entries {
 		var ingredient *models.UserIngredient
 		if e.SaveAsIngredient {
-			result, err := tx.Exec(ingredientQuery, userID, e.Food, e.KcalPer100g, e.Fats, e.Carbs, e.Proteins)
+			result, err := tx.Exec(ingredientQuery, userID, e.Food, e.KcalPer100g, e.Fats, e.Carbs, e.Proteins, e.Fiber)
 			if err != nil {
 				return nil, err
 			}
@@ -100,13 +100,14 @@ func (r *CalorieEntryRepositoryImpl) CreateMeal(userID int, entries []models.New
 				Fats:        e.Fats,
 				Carbs:       e.Carbs,
 				Proteins:    e.Proteins,
+				Fiber:       e.Fiber,
 				CreatedAt:   now,
 				UpdatedAt:   now,
 			}
 		}
 
 		result, err := tx.Exec(entryQuery, userID, e.Food, e.Calories, e.Weight, e.KcalPer100g,
-			e.Fats, e.Carbs, e.Proteins, mealDatetime, now)
+			e.Fats, e.Carbs, e.Proteins, e.Fiber, mealDatetime, now)
 		if err != nil {
 			return nil, err
 		}
@@ -126,6 +127,7 @@ func (r *CalorieEntryRepositoryImpl) CreateMeal(userID int, entries []models.New
 				Fats:         e.Fats,
 				Carbs:        e.Carbs,
 				Proteins:     e.Proteins,
+				Fiber:        e.Fiber,
 				MealDatetime: mealDatetime,
 				UpdatedAt:    now,
 				CreatedAt:    now,
@@ -161,6 +163,7 @@ func (r *CalorieEntryRepositoryImpl) GetByID(id int) (*models.CalorieEntry, erro
 		&entry.Fats,
 		&entry.Carbs,
 		&entry.Proteins,
+		&entry.Fiber,
 		&entry.MealDatetime,
 		&entry.UpdatedAt,
 		&entry.CreatedAt,
@@ -200,6 +203,7 @@ func (r *CalorieEntryRepositoryImpl) GetByUserID(userID int) ([]*models.CalorieE
 			&entry.Fats,
 			&entry.Carbs,
 			&entry.Proteins,
+			&entry.Fiber,
 			&entry.MealDatetime,
 			&entry.UpdatedAt,
 			&entry.CreatedAt,
@@ -246,6 +250,7 @@ func (r *CalorieEntryRepositoryImpl) GetByUserIDAndDateRange(userID int, dateFro
 			&entry.Fats,
 			&entry.Carbs,
 			&entry.Proteins,
+			&entry.Fiber,
 			&entry.MealDatetime,
 			&entry.UpdatedAt,
 			&entry.CreatedAt,
@@ -259,7 +264,7 @@ func (r *CalorieEntryRepositoryImpl) GetByUserIDAndDateRange(userID int, dateFro
 	return entries, nil
 }
 
-func (r *CalorieEntryRepositoryImpl) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
+func (r *CalorieEntryRepositoryImpl) Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64, fats, carbs, proteins, fiber *float64, mealDatetime time.Time) (*models.CalorieEntry, error) {
 	r.logger.Debug("Updating calorie entry",
 		slog.Int("id", id),
 		slog.Int("user_id", userID),
@@ -271,7 +276,7 @@ func (r *CalorieEntryRepositoryImpl) Update(id, userID int, food string, calorie
 	}
 
 	now := time.Now().UTC()
-	result, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, mealDatetime, now, id, userID)
+	result, err := r.db.Exec(query, food, calories, weight, kcalPer100g, fats, carbs, proteins, fiber, mealDatetime, now, id, userID)
 	if err != nil {
 		return nil, err
 	}

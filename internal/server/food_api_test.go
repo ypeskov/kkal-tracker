@@ -27,6 +27,7 @@ type foodAPIEntry struct {
 	Fats              *float64 `json:"fats"`
 	Carbs             *float64 `json:"carbs"`
 	Proteins          *float64 `json:"proteins"`
+	Fiber             *float64 `json:"fiber"`
 	MealDatetime      string   `json:"meal_datetime"`
 	IngredientID      *int     `json:"ingredient_id"`
 	IngredientCreated bool     `json:"ingredient_created"`
@@ -603,7 +604,7 @@ func TestFoodAPIEditsMacrosOfAnEntry(t *testing.T) {
 		{`{"carbs": 101}`, "carbs must be between 0 and 100 (grams per 100 g)"},
 		{`{"fats": -0.5, "weight": 50}`, "fats must be between 0 and 100 (grams per 100 g)"},
 		{`{"ingredient_id": ` + fmt.Sprint(breadID) + `, "proteins": 100.01}`, "proteins must be between 0 and 100 (grams per 100 g)"},
-		{`{}`, "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins or meal_datetime"},
+		{`{}`, "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins, fiber or meal_datetime"},
 		{`{"fats": null}`, "nothing to change"},
 	} {
 		expectError(t, doRaw(client, http.MethodPut, entryPath, tt.body), http.StatusBadRequest, tt.want)

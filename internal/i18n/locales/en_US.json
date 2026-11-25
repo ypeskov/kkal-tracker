@@ -21,7 +21,8 @@
       "kcal_per100": "Kcal/100g",
       "fats": "Fats (g)",
       "carbs": "Carbs (g)",
-      "proteins": "Proteins (g)"
+      "proteins": "Proteins (g)",
+      "fiber": "Fiber (g)"
     }
   }
 }

@@ -152,19 +152,24 @@ type totalsRow struct {
 	Fats     int   `json:"fats"`
 	Carbs    int   `json:"carbs"`
 	Proteins int   `json:"proteins"`
+	Fiber    int   `json:"fiber"`
+}
+
+// totalsFood is an entry listed in without_macros or without_fiber
+type totalsFood struct {
+	ID     int    `json:"id"`
+	Food   string `json:"food"`
+	InMeal bool   `json:"in_meal"`
 }
 
 type totalsOutput struct {
-	Day            string     `json:"day"`
-	Meal           *totalsRow `json:"meal"`
-	DayTotal       totalsRow  `json:"day_total"`
-	MissingMealIDs []int      `json:"missing_meal_ids"`
-	WithoutMacros  []struct {
-		ID     int    `json:"id"`
-		Food   string `json:"food"`
-		InMeal bool   `json:"in_meal"`
-	} `json:"without_macros"`
-	Check struct {
+	Day            string       `json:"day"`
+	Meal           *totalsRow   `json:"meal"`
+	DayTotal       totalsRow    `json:"day_total"`
+	MissingMealIDs []int        `json:"missing_meal_ids"`
+	WithoutMacros  []totalsFood `json:"without_macros"`
+	WithoutFiber   []totalsFood `json:"without_fiber"`
+	Check          struct {
 		Meal *string `json:"meal"`
 		Day  *string `json:"day"`
 	} `json:"check"`
@@ -220,7 +225,7 @@ func checkTotalsRow(t *testing.T, name string, got *totalsRow, want totalsRow) {
 		return
 	}
 	if !slices.Equal(got.EntryIDs, want.EntryIDs) || got.Entries != want.Entries || got.Kcal != want.Kcal ||
-		got.Fats != want.Fats || got.Carbs != want.Carbs || got.Proteins != want.Proteins {
+		got.Fats != want.Fats || got.Carbs != want.Carbs || got.Proteins != want.Proteins || got.Fiber != want.Fiber {
 		t.Errorf("%s row = %+v, want %+v", name, *got, want)
 	}
 }
@@ -281,7 +286,7 @@ func TestSkillClientTotals(t *testing.T) {
 		output, stdout := env.totals(args...)
 
 		if keys := objectKeys(t, []byte(stdout)); !slices.Equal(keys,
-			[]string{"day", "meal", "day_total", "missing_meal_ids", "without_macros", "check"}) {
+			[]string{"day", "meal", "day_total", "missing_meal_ids", "without_macros", "without_fiber", "check"}) {
 			t.Errorf("output keys = %q", keys)
 		}
 		var rows struct {
@@ -291,10 +296,10 @@ func TestSkillClientTotals(t *testing.T) {
 		if err := json.Unmarshal([]byte(stdout), &rows); err != nil {
 			t.Fatal(err)
 		}
-		if keys := objectKeys(t, rows.Meal); !slices.Equal(keys, []string{"entry_ids", "kcal", "fats", "carbs", "proteins"}) {
+		if keys := objectKeys(t, rows.Meal); !slices.Equal(keys, []string{"entry_ids", "kcal", "fats", "carbs", "proteins", "fiber"}) {
 			t.Errorf("meal keys = %q", keys)
 		}
-		if keys := objectKeys(t, rows.DayTotal); !slices.Equal(keys, []string{"entries", "kcal", "fats", "carbs", "proteins"}) {
+		if keys := objectKeys(t, rows.DayTotal); !slices.Equal(keys, []string{"entries", "kcal", "fats", "carbs", "proteins", "fiber"}) {
 			t.Errorf("day_total keys = %q", keys)
 		}
 
@@ -309,6 +314,20 @@ func TestSkillClientTotals(t *testing.T) {
 		}
 		if w := output.WithoutMacros; len(w) != 1 || w[0].ID != coffee || w[0].Food != "Кофе" || w[0].InMeal {
 			t.Errorf("without_macros = %+v, want only the coffee, not in the meal", w)
+		}
+		// None of these entries has fibre: both rows have 0 and every entry of the day is listed
+		if output.Meal.Fiber != 0 || output.DayTotal.Fiber != 0 || len(output.WithoutFiber) != 4 {
+			t.Errorf("fiber = %d / %d, without_fiber = %+v; want 0 / 0 and all 4 entries",
+				output.Meal.Fiber, output.DayTotal.Fiber, output.WithoutFiber)
+		}
+		inMeal := 0
+		for _, entry := range output.WithoutFiber {
+			if entry.InMeal {
+				inMeal++
+			}
+		}
+		if inMeal != 3 {
+			t.Errorf("without_fiber = %+v, want the 3 entries of the meal marked in_meal", output.WithoutFiber)
 		}
 		checkResult(t, "meal", output.Check.Meal, "ok")
 		checkResult(t, "day", output.Check.Day, "ok")
@@ -357,7 +376,8 @@ func TestSkillClientTotals(t *testing.T) {
 		output, stdout := env.totals("--day", "2026-03-20")
 		checkTotalsRow(t, "day", &output.DayTotal, totalsRow{})
 		if output.Meal != nil || output.MissingMealIDs == nil || len(output.MissingMealIDs) != 0 ||
-			output.WithoutMacros == nil || len(output.WithoutMacros) != 0 {
+			output.WithoutMacros == nil || len(output.WithoutMacros) != 0 ||
+			output.WithoutFiber == nil || len(output.WithoutFiber) != 0 {
 			t.Errorf("empty day output = %s", stdout)
 		}
 	})
@@ -426,7 +446,8 @@ func TestSkillClientTotals(t *testing.T) {
 		}
 
 		_, stderr, code = env.run("edit", fmt.Sprint(b))
-		if code != 1 || !strings.Contains(stderr, "--fats") || !strings.Contains(stderr, "--carbs") || !strings.Contains(stderr, "--proteins") {
+		if code != 1 || !strings.Contains(stderr, "--fats") || !strings.Contains(stderr, "--carbs") ||
+			!strings.Contains(stderr, "--proteins") || !strings.Contains(stderr, "--fiber") {
 			t.Errorf("edit without options: exit code %d, stderr %q; want 1 and the macro options listed", code, stderr)
 		}
 		if requests := env.takeRequests(); len(requests) != 0 {

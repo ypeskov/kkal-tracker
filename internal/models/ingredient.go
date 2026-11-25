@@ -11,6 +11,7 @@ type GlobalIngredient struct {
 	Fats        *float64          `json:"fats,omitempty"`
 	Carbs       *float64          `json:"carbs,omitempty"`
 	Proteins    *float64          `json:"proteins,omitempty"`
+	Fiber       *float64          `json:"fiber,omitempty"`
 	Names       map[string]string `json:"names"` // language_code -> name
 	CreatedAt   time.Time         `json:"created_at"`
 	UpdatedAt   time.Time         `json:"updated_at"`
@@ -25,6 +26,7 @@ type UserIngredient struct {
 	Fats               *float64  `json:"fats,omitempty"`
 	Carbs              *float64  `json:"carbs,omitempty"`
 	Proteins           *float64  `json:"proteins,omitempty"`
+	Fiber              *float64  `json:"fiber,omitempty"`
 	GlobalIngredientID *int      `json:"global_ingredient_id,omitempty"`
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`

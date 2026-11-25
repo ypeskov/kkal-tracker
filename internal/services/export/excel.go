@@ -142,6 +142,7 @@ func (g *ExcelGenerator) writeFoodSheet(f *excelize.File, sheetName string, data
 		{"G", "export.columns.fats", 12},
 		{"H", "export.columns.carbs", 12},
 		{"I", "export.columns.proteins", 12},
+		{"J", "export.columns.fiber", 14},
 	}
 
 	for _, col := range columns {
@@ -153,7 +154,7 @@ func (g *ExcelGenerator) writeFoodSheet(f *excelize.File, sheetName string, data
 	headerStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
 	})
-	f.SetCellStyle(sheetName, "A1", "I1", headerStyle)
+	f.SetCellStyle(sheetName, "A1", "J1", headerStyle)
 
 	// Write data
 	for i, entry := range data {
@@ -174,6 +175,10 @@ func (g *ExcelGenerator) writeFoodSheet(f *excelize.File, sheetName string, data
 		}
 		if entry.Proteins != nil {
 			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), *entry.Proteins)
+		}
+		// Fibre per 100 g: an unknown value leaves the cell empty, a known zero is written as 0
+		if entry.Fiber != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), *entry.Fiber)
 		}
 	}
 

@@ -8,7 +8,7 @@ Current version: see [`version.txt`](version.txt).
 
 ## Features
 
-- **Food diary**: entries with name, weight and kcal per 100 g; calories and macros are calculated automatically
+- **Food diary**: entries with name, weight and kcal per 100 g; calories, macros and dietary fibre are calculated automatically
 - **Ingredient list**: every user has a personal ingredient list, copied on registration from the global one in the user's language
 - **Weight tracking**: weight history with charts, a weight goal with a target date and progress
 - **Health metrics**: BMI, BMR and TDEE from the profile (age, height, gender, activity level)
@@ -227,7 +227,7 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
   "meal_datetime": "2026-10-02T13:30:00+03:00",
   "items": [
     {"ingredient_id": 75, "weight": 150},
-    {"new_ingredient": {"name": "Hummus", "kcal_per_100g": 240, "fats": 17, "carbs": 12, "proteins": 8}, "weight": 60},
+    {"new_ingredient": {"name": "Hummus", "kcal_per_100g": 240, "fats": 17, "carbs": 12, "proteins": 8, "fiber": 6}, "weight": 60},
     {"new_ingredient": {"name": "Restaurant pasta", "kcal_per_100g": 180}, "weight": 350, "one_off": true}
   ]
 }
@@ -238,8 +238,9 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 - `one_off: true` writes the food to the diary without adding it to the ingredient list.
 - `meal_datetime` is optional and takes RFC 3339 with a time zone offset.
 - A meal is atomic: all items are stored or none. Calories are calculated on the server.
-- `ingredient_id` items may override `kcal_per_100g`, `fats`, `carbs` and `proteins` (grams per 100 g) for this entry only, e.g. values read from a label; the ingredient itself does not change.
-- `PUT /api/v1/food/:id` takes `weight`, `ingredient_id`, `kcal_per_100g`, `fats`, `carbs`, `proteins`, `meal_datetime`; fields that are not sent keep their values, calories are recalculated. With `ingredient_id`, the name, calories and macros are copied from that ingredient first, the overrides sent in the same request go on top.
+- `fiber` is dietary fibre in grams per 100 g (0–100), carried next to `fats`, `carbs` and `proteins` on ingredients and entries. A value that is not sent is unknown, which is not the same as `0`; responses omit unknown values.
+- `ingredient_id` items may override `kcal_per_100g`, `fats`, `carbs`, `proteins` and `fiber` (grams per 100 g) for this entry only, e.g. values read from a label; the ingredient itself does not change.
+- `PUT /api/v1/food/:id` takes `weight`, `ingredient_id`, `kcal_per_100g`, `fats`, `carbs`, `proteins`, `fiber`, `meal_datetime`; fields that are not sent keep their values, calories are recalculated. With `ingredient_id`, the name, calories, macros and fibre are copied from that ingredient first, the overrides sent in the same request go on top.
 
 ### Agent skills
 
@@ -248,7 +249,7 @@ A meal is a list of items. Each item refers to an existing ingredient by `ingred
 - `kkal-tracker-food-log/` is the only skill in the repository, a template: `SKILL.md` and the client `scripts/kkal_client.py` (Python standard library only). Edit the skill only here, never an installed copy.
 - Users get a configured skill from **Settings → AI → Download skill**: a zip ready to upload to Claude. The download fills in everything that differs between installations: the server's `APP_URL` as the base URL, a new API key in place of the `API_KEY_HERE` placeholder of `scripts/kkal_client.py` (the file has mode 0600 in the zip), and on a server with `ENVIRONMENT=development` the `kkal-tracker-food-log-dev` name, description and DEV banner. The two template files are embedded into the binary (`skills/embed.go`).
 - The client uses the key embedded by the download; `KKAL_API_KEY` and `KKAL_BASE_URL` override the key and the server address for manual checks.
-- After logging a meal the skill shows calories, fats, carbs and proteins of the meal and of the day; the client command `totals` adds them up from the diary.
+- After logging a meal the skill shows calories, fats, carbs, proteins and fibre of the meal and of the day; the client command `totals` adds them up from the diary and lists the entries without fibre data (`without_fiber`), by which the fibre total is understated.
 
 ## Project Structure
 

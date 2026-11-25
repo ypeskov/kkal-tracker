@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreateIngredientData } from '@/api/ingredients';
 import CalculatorInput from './CalculatorInput';
+import { parseFiberInput } from '@/utils/fiber';
 // Modal.css imports removed - using Tailwind CSS
 
 interface AddIngredientModalProps {
@@ -27,9 +28,23 @@ export default function AddIngredientModal({
   const [proteins, setProteins] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fats, setFats] = useState('');
+  const [fiber, setFiber] = useState('');
+  const [fiberInvalid, setFiberInvalid] = useState(false);
+
+  const handleFiberChange = (value: string) => {
+    setFiber(value);
+    setFiberInvalid(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // An empty field is unknown (not sent), 0 is a value; out of range is rejected here, not by the server
+    const fiberValue = parseFiberInput(fiber);
+    if (fiberValue === null) {
+      setFiberInvalid(true);
+      return;
+    }
 
     const data: CreateIngredientData = {
       name: name.trim(),
@@ -37,6 +52,7 @@ export default function AddIngredientModal({
       proteins: proteins ? parseFloat(proteins) : undefined,
       carbs: carbs ? parseFloat(carbs) : undefined,
       fats: fats ? parseFloat(fats) : undefined,
+      fiber: fiberValue,
     };
 
     onCreate(data);
@@ -83,8 +99,8 @@ export default function AddIngredientModal({
             />
           </div>
 
-          {/* Mobile: Fats+Carbs in 2 cols, Proteins separate | Desktop: all 3 in one row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Fats+Carbs and Proteins+Fibre in 2 cols: the fibre label with its unit does not fit 4 in a row */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="mb-4">
               <label htmlFor="fats" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fats')}</label>
               <CalculatorInput
@@ -107,8 +123,7 @@ export default function AddIngredientModal({
               />
             </div>
 
-            {/* On mobile spans 1 col (50% width), on desktop takes 1 col */}
-            <div className="mb-4 col-span-1 md:col-span-1">
+            <div className="mb-4">
               <label htmlFor="proteins" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.proteins')}</label>
               <CalculatorInput
                 id="proteins"
@@ -118,7 +133,22 @@ export default function AddIngredientModal({
                 placeholder={t('foodList.optional')}
               />
             </div>
+
+            <div className="mb-4">
+              <label htmlFor="fiber" className="block mb-1 text-gray-600 text-sm font-medium">{t('foodList.fiberPer100g')}</label>
+              <CalculatorInput
+                id="fiber"
+                value={fiber}
+                onChange={handleFiberChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-10 text-sm transition-colors placeholder-gray-400"
+                placeholder={t('foodList.optional')}
+              />
+            </div>
           </div>
+
+          {fiberInvalid && (
+            <p role="alert" className="mb-4 text-sm text-red-600">{t('common.fiberInvalid')}</p>
+          )}
 
           {errorMessage && (
             <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">

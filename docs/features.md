@@ -5,6 +5,20 @@
   when the current user cannot be loaded) and login clear the client caches (TanStack Query cache, the ingredient
   cache in sessionStorage), so nothing of the previous account is shown or used in the same tab
 - **Calorie Tracking**: food entries with name, weight, kcal/100g, auto-calculated totals
+  - An entry keeps its own nutrients per 100 g: fats, carbs, proteins and dietary fibre (`fiber`). Each of them may be
+    unknown (NULL), which is not the same as 0: a known zero (meat has no fibre) counts as data, an unknown value
+    means the totals are understated. Entries and ingredients from before the fibre field have unknown fibre
+    (no backfill). Calories never depend on fibre
+  - Website forms: the ingredient modals and the diary add / edit entry forms have a fibre field after proteins
+    (optional, 0–100 g per 100 g, checked in the form). An empty field is unknown, `0` is stored and shown as 0
+    (the fats / carbs / proteins fields of the diary forms still drop a 0). The add entry form prefills fibre from
+    the selected ingredient; the edit entry form loads the entry's value and sends it back, because the update
+    replaces all values. The Food List table has a fibre column (`-` for unknown)
+  - Day view: an entry line shows its fibre grams (`fiber × weight / 100`) when the value is known. The day total
+    (collapsed header and expanded footer) and the total of the filtered range show fibre after proteins when at
+    least one entry of the group has a known value, also when the sum is 0.0; when some entries of the group have
+    no fibre data the total carries the hint "understated, entries without data: N"; when no entry has a value,
+    fibre is not shown at all. The macro totals are unchanged (hidden when 0, an unknown value counts as 0)
 - **Dashboard**: today's entries with the total calorie count, weight goal card
 - **Weight Management**: weight history over time with charts
 - **Weight Goals**: target weight with optional target date and a start date, progress with visual indicators.
@@ -12,8 +26,9 @@
   latest weight on or before the start date. The report chart shows a trend line: a least-squares fit through the
   initial weight and every weigh-in after the start day (`trend` in the goal progress), extended to the target date
 - **Health Metrics**: BMI, BMR, TDEE based on the user profile (age, gender, activity level)
-- **Ingredient Database**: global ingredients with multilingual names and nutritional data, copied into the user's
-  own list on registration and managed on the Food List page
+- **Ingredient Database**: global ingredients with multilingual names and nutritional data (kcal, fats, carbs,
+  proteins, fibre per 100 g; the seed has no fibre values), copied into the user's own list on registration and
+  managed on the Food List page
   - Ingredient names are unique per user ignoring case, spacing, invisible characters and `ё`/`е`: creating or renaming
     an ingredient to such a name on the Food List page (`POST` / `PUT /api/ingredients`) or through the API
     (`/api/v1`: `new_ingredient` of a meal, `POST` / `PUT /api/v1/ingredients`) is rejected with 409 and the existing
@@ -43,7 +58,9 @@
   - Analysis periods of 7, 14, 30, 90 days, optional specific question
   - Answers in the user's language
   - Rate limited: 2 requests per minute
-- **Data Export**: weight and food data as Excel files (download or email delivery)
+- **Data Export**: weight and food data as Excel files (download or email delivery). The food sheet lists the
+  entries with fats, carbs, proteins and fibre per 100 g (columns G–J); an unknown value is an empty cell, a known
+  zero is 0
 - **API Key Data Access**: programmatic access to weight/food data
   - Key management UI in Settings (create, revoke, delete)
   - SHA-256 hashed storage, the full key is shown only once at creation
@@ -62,9 +79,16 @@
     command and bumped in every change of the template (`SKILL.md` or the client). Every download renders the skill
     from the running release, so a release ships the new skill; an installed copy stays as it was until the user
     downloads it again
-  - After logging a meal the skill replies with the items and a table of calories, fats, carbs and proteins (columns
-    Ккал, Ж, У, Б) for the meal and for the day. Calories come from the server, the grams from the client command
-    `totals`, which adds up the entries of the diary day and checks them against the server's calorie totals
+  - After logging a meal the skill replies with the items and a table of calories, fats, carbs, proteins and fibre
+    (columns Ккал, Ж, У, Б, Клетчатка) for the meal and for the day. Calories come from the server, the grams from
+    the client command `totals`, which adds up the entries of the diary day and checks them against the server's
+    calorie totals
+  - `totals` counts an unknown nutrient as 0 and lists what makes the sums understated: `without_macros` (entries
+    with no fats, carbs or proteins at all) and `without_fiber` (entries whose fibre is unknown; an entry with fibre
+    0 is not listed). When `without_fiber` is not empty the skill says that the fibre is understated and names
+    those foods; a row in which no entry has fibre shows `—` instead of 0
+  - For a new food the skill estimates the fibre per 100 g together with calories and macros, and takes it from
+    the label when the label states it
   - The AI tab explains the skill and shows the install steps for claude.ai (code execution and network access to the
     site's own domain, Settings → Capabilities → Skills → Upload skill) and Claude Code (unzip into
     `~/.claude/skills/`), the note that every download adds a key, and a warning that the zip holds a secret key.
@@ -76,15 +100,16 @@
     the existing ingredient
   - `one_off: true` writes a new food to the diary without adding it to the ingredient list (restaurant dishes etc.)
   - A meal is atomic (all items or none); calories are calculated on the server
-  - Per-entry overrides: an `ingredient_id` item, or `PUT /api/v1/food/:id`, can set `kcal_per_100g`, `fats`, `carbs`
-    and `proteins` for this entry only (e.g. values from a label); the ingredient stays as it is
-  - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, macros, time),
+  - Per-entry overrides: an `ingredient_id` item, or `PUT /api/v1/food/:id`, can set `kcal_per_100g`, `fats`, `carbs`,
+    `proteins` and `fiber` for this entry only (e.g. values from a label); the ingredient stays as it is. Without an
+    override the entry copies the ingredient's values, unknown ones stay unknown
+  - `PUT /api/v1/food/:id` corrects an entry (weight, another ingredient, calorie value, macros, fibre, time),
     `DELETE /api/v1/food/:id` removes it
   - The agent can add an ingredient to the list without logging anything (`POST /api/v1/ingredients`, the skill
     command `add-ingredient`), e.g. a product from a label photo; the day total does not change
   - The agent can correct ingredients of the list (`PUT /api/v1/ingredients/:id`, only the sent fields change) and
     delete them (`DELETE /api/v1/ingredients/:id`)
-  - Diary entries keep their own copy of the food name, calories and macros: editing or deleting an ingredient does not
+  - Diary entries keep their own copy of the food name, calories, macros and fibre: editing or deleting an ingredient does not
     change logged entries. `PUT /api/v1/food/:id {"ingredient_id": <same id>}` copies the corrected values into an entry.
     Usage statistics are matched by name, so a renamed ingredient starts from `times_used: 0`
 - **Email Service**: activation emails and export delivery

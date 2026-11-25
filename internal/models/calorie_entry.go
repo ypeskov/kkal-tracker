@@ -15,6 +15,7 @@ type CalorieEntry struct {
 	Fats         *float64  `json:"fats,omitempty"`
 	Carbs        *float64  `json:"carbs,omitempty"`
 	Proteins     *float64  `json:"proteins,omitempty"`
+	Fiber        *float64  `json:"fiber,omitempty"`
 	MealDatetime time.Time `json:"meal_datetime"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -29,6 +30,7 @@ type NewMealEntry struct {
 	Fats        *float64
 	Carbs       *float64
 	Proteins    *float64
+	Fiber       *float64
 	// SaveAsIngredient also adds the food to the user's ingredient list
 	SaveAsIngredient bool
 }

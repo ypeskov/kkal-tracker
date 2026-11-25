@@ -26,14 +26,14 @@ type UserRepository interface {
 // CalorieEntryRepository defines the contract for calorie entry data access
 type CalorieEntryRepository interface {
 	Create(userID int, food string, calories int, weight float64, kcalPer100g float64,
-		fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
+		fats, carbs, proteins, fiber *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
 	// CreateMeal stores all entries of one meal, and the new ingredients they bring, in a single transaction
 	CreateMeal(userID int, entries []models.NewMealEntry, mealDatetime time.Time) ([]models.CreatedMealEntry, error)
 	GetByID(id int) (*models.CalorieEntry, error)
 	GetByUserID(userID int) ([]*models.CalorieEntry, error)
 	GetByUserIDAndDateRange(userID int, dateFrom, dateTo string) ([]*models.CalorieEntry, error)
 	Update(id, userID int, food string, calories int, weight float64, kcalPer100g float64,
-		fats, carbs, proteins *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
+		fats, carbs, proteins, fiber *float64, mealDatetime time.Time) (*models.CalorieEntry, error)
 	Delete(id, userID int) error
 }
 
@@ -57,16 +57,16 @@ type IngredientRepository interface {
 	GetUserIngredientByName(userID int, name string) (*models.UserIngredient, error)
 	GetUserIngredientByID(userID int, ingredientID int) (*models.UserIngredient, error)
 	CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64,
-		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+		fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error)
 	CreateUserIngredient(userID int, name string, kcalPer100g float64,
-		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+		fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error)
 	UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64,
-		fats, carbs, proteins *float64) (*models.UserIngredient, error)
+		fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error)
 	DeleteUserIngredient(userID int, ingredientID int) error
 	CopyGlobalIngredientsToUser(userID int, languageCode string) error
 
 	// CreateGlobalIngredient Global ingredients (admin)
-	CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins *float64,
+	CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins, fiber *float64,
 		names map[string]string) (*models.GlobalIngredient, error)
 	GetGlobalIngredientByID(id int) (*models.GlobalIngredient, error)
 }

@@ -1,6 +1,7 @@
 package calories
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -75,11 +76,16 @@ func (h *Handler) CreateEntry(c *echo.Context) error {
 		Fats:         req.Fats,
 		Carbs:        req.Carbs,
 		Proteins:     req.Proteins,
+		Fiber:        req.Fiber,
 		MealDatetime: mealDatetime,
 	}
 
 	result, err := h.calorieService.CreateEntry(serviceReq)
 	if err != nil {
+		var validationErr *calorieservice.EntryValidationError
+		if errors.As(err, &validationErr) {
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
+		}
 		h.logger.Error("Failed to create calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
@@ -138,11 +144,16 @@ func (h *Handler) UpdateEntry(c *echo.Context) error {
 		Fats:         req.Fats,
 		Carbs:        req.Carbs,
 		Proteins:     req.Proteins,
+		Fiber:        req.Fiber,
 		MealDatetime: mealDatetime,
 	}
 
 	entry, err := h.calorieService.UpdateEntry(serviceReq)
 	if err != nil {
+		var validationErr *calorieservice.EntryValidationError
+		if errors.As(err, &validationErr) {
+			return echo.NewHTTPError(http.StatusBadRequest, validationErr.Error())
+		}
 		h.logger.Error("Failed to update calorie entry", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}

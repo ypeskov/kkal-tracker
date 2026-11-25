@@ -5,6 +5,8 @@ export interface Ingredient {
   fats?: number
   carbs?: number
   proteins?: number
+  // Dietary fibre, grams per 100 g; absent when unknown (0 is a known zero)
+  fiber?: number
   user_id?: number
   created_at?: string
   updated_at?: string
@@ -16,6 +18,8 @@ export interface CreateIngredientData {
   fats?: number
   carbs?: number
   proteins?: number
+  // Dietary fibre, grams per 100 g; absent when unknown (0 is a known zero)
+  fiber?: number
 }
 
 export interface UpdateIngredientData {
@@ -24,6 +28,8 @@ export interface UpdateIngredientData {
   fats?: number
   carbs?: number
   proteins?: number
+  // Dietary fibre, grams per 100 g; absent when unknown (0 is a known zero)
+  fiber?: number
 }
 
 // Thrown on HTTP 409: another ingredient of the user already has this name (compared ignoring case, spacing and ё/е)

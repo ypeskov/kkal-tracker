@@ -8,6 +8,8 @@ interface CalorieEntry {
   fats?: number
   carbs?: number
   proteins?: number
+  // Dietary fibre, grams per 100 g; absent when unknown (0 is a known zero)
+  fiber?: number
   calories: number
   meal_datetime: string
 }

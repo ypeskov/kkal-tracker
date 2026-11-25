@@ -51,6 +51,7 @@ func (r *IngredientRepositoryImpl) GetAllUserIngredients(userID int) ([]*models.
 			&ingredient.Fats,
 			&ingredient.Carbs,
 			&ingredient.Proteins,
+			&ingredient.Fiber,
 			&ingredient.GlobalIngredientID,
 			&ingredient.CreatedAt,
 			&ingredient.UpdatedAt,
@@ -97,6 +98,7 @@ func (r *IngredientRepositoryImpl) GetUserIngredientsWithUsage(userID int) ([]*m
 			&ingredient.Fats,
 			&ingredient.Carbs,
 			&ingredient.Proteins,
+			&ingredient.Fiber,
 			&ingredient.GlobalIngredientID,
 			&ingredient.CreatedAt,
 			&ingredient.UpdatedAt,
@@ -128,6 +130,7 @@ func (r *IngredientRepositoryImpl) GetUserIngredientByName(userID int, name stri
 		&ingredient.Fats,
 		&ingredient.Carbs,
 		&ingredient.Proteins,
+		&ingredient.Fiber,
 		&ingredient.GlobalIngredientID,
 		&ingredient.CreatedAt,
 		&ingredient.UpdatedAt,
@@ -141,7 +144,7 @@ func (r *IngredientRepositoryImpl) GetUserIngredientByName(userID int, name stri
 }
 
 // CreateOrUpdateUserIngredient Create or update user ingredient (check first, then insert/update)
-func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Creating or updating user ingredient",
 		slog.Int("user_id", userID),
 		slog.String("name", name),
@@ -155,7 +158,7 @@ func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name
 		if loadErr != nil {
 			return nil, loadErr
 		}
-		_, updateErr := r.db.Exec(updateQuery, kcalPer100g, fats, carbs, proteins, userID, name)
+		_, updateErr := r.db.Exec(updateQuery, kcalPer100g, fats, carbs, proteins, fiber, userID, name)
 		if updateErr != nil {
 			return nil, updateErr
 		}
@@ -167,7 +170,7 @@ func (r *IngredientRepositoryImpl) CreateOrUpdateUserIngredient(userID int, name
 	if err != nil {
 		return nil, err
 	}
-	_, err = r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
+	_, err = r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins, fiber)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +230,7 @@ func (r *IngredientRepositoryImpl) CopyGlobalIngredientsToUser(userID int, langu
 }
 
 // Admin functions for global ingredients
-func (r *IngredientRepositoryImpl) CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins *float64, names map[string]string) (*models.GlobalIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateGlobalIngredient(kcalPer100g float64, fats, carbs, proteins, fiber *float64, names map[string]string) (*models.GlobalIngredient, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return nil, err
@@ -240,7 +243,7 @@ func (r *IngredientRepositoryImpl) CreateGlobalIngredient(kcalPer100g float64, f
 	if err != nil {
 		return nil, err
 	}
-	result, err := tx.Exec(insertQuery, kcalPer100g, fats, carbs, proteins, now, now)
+	result, err := tx.Exec(insertQuery, kcalPer100g, fats, carbs, proteins, fiber, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +285,7 @@ func (r *IngredientRepositoryImpl) GetGlobalIngredientByID(id int) (*models.Glob
 		&ingredient.Fats,
 		&ingredient.Carbs,
 		&ingredient.Proteins,
+		&ingredient.Fiber,
 		&ingredient.CreatedAt,
 		&ingredient.UpdatedAt,
 	)
@@ -341,6 +345,7 @@ func (r *IngredientRepositoryImpl) GetUserIngredientByID(userID int, ingredientI
 		&ingredient.Fats,
 		&ingredient.Carbs,
 		&ingredient.Proteins,
+		&ingredient.Fiber,
 		&ingredient.GlobalIngredientID,
 		&ingredient.CreatedAt,
 		&ingredient.UpdatedAt,
@@ -354,7 +359,7 @@ func (r *IngredientRepositoryImpl) GetUserIngredientByID(userID int, ingredientI
 }
 
 // CreateUserIngredient Create a new user ingredient
-func (r *IngredientRepositoryImpl) CreateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) CreateUserIngredient(userID int, name string, kcalPer100g float64, fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Creating user ingredient",
 		slog.Int("user_id", userID),
 		slog.String("name", name),
@@ -364,7 +369,7 @@ func (r *IngredientRepositoryImpl) CreateUserIngredient(userID int, name string,
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins)
+	result, err := r.db.Exec(insertQuery, userID, name, kcalPer100g, fats, carbs, proteins, fiber)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +384,7 @@ func (r *IngredientRepositoryImpl) CreateUserIngredient(userID int, name string,
 }
 
 // UpdateUserIngredient Update an existing user ingredient
-func (r *IngredientRepositoryImpl) UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64, fats, carbs, proteins *float64) (*models.UserIngredient, error) {
+func (r *IngredientRepositoryImpl) UpdateUserIngredient(userID int, ingredientID int, name string, kcalPer100g float64, fats, carbs, proteins, fiber *float64) (*models.UserIngredient, error) {
 	r.logger.Debug("Updating user ingredient",
 		slog.Int("user_id", userID),
 		slog.Int("ingredient_id", ingredientID),
@@ -390,7 +395,7 @@ func (r *IngredientRepositoryImpl) UpdateUserIngredient(userID int, ingredientID
 	if err != nil {
 		return nil, err
 	}
-	_, err = r.db.Exec(updateQuery, name, kcalPer100g, fats, carbs, proteins, userID, ingredientID)
+	_, err = r.db.Exec(updateQuery, name, kcalPer100g, fats, carbs, proteins, fiber, userID, ingredientID)
 	if err != nil {
 		return nil, err
 	}

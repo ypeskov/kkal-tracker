@@ -10,7 +10,8 @@ export default function IngredientsTable({ ingredients, onRowClick }: Ingredient
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    // Six columns do not fit a phone width: the table scrolls horizontally inside its card
+    <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
       <table className="w-full border-collapse">
         <thead className="bg-gray-100">
           <tr>
@@ -29,12 +30,15 @@ export default function IngredientsTable({ ingredients, onRowClick }: Ingredient
             <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">
               {t('foodList.proteins')}
             </th>
+            <th className="p-4 md:p-4 text-left font-semibold text-gray-600 md:text-sm text-xs uppercase tracking-wide border-b-2 border-gray-300">
+              {t('foodList.fiber')}
+            </th>
           </tr>
         </thead>
         <tbody>
           {ingredients.length === 0 ? (
             <tr>
-              <td colSpan={5} className="text-center text-gray-500 italic py-10 text-base">
+              <td colSpan={6} className="text-center text-gray-500 italic py-10 text-base">
                 {t('foodList.noIngredients')}
               </td>
             </tr>
@@ -59,6 +63,9 @@ export default function IngredientsTable({ ingredients, onRowClick }: Ingredient
                 </td>
                 <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">
                   {ingredient.proteins ?? '-'}
+                </td>
+                <td className="p-4 md:p-4 p-2.5 text-gray-800 text-sm md:text-sm text-xs">
+                  {ingredient.fiber ?? '-'}
                 </td>
               </tr>
             ))

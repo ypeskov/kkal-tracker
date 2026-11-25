@@ -61,13 +61,17 @@ func (s *Service) CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, erro
 		return nil, errors.New("food name is required")
 	}
 
+	if err := validateEntryFiber(req.Fiber); err != nil {
+		return nil, err
+	}
+
 	newIngredientCreated := false
 
 	// Check if ingredient exists, if not create it
 	_, err := s.ingredientRepo.GetUserIngredientByName(req.UserID, req.Food)
 	if err != nil {
 		// Ingredient doesn't exist, create it
-		_, createErr := s.ingredientRepo.CreateOrUpdateUserIngredient(req.UserID, req.Food, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins)
+		_, createErr := s.ingredientRepo.CreateOrUpdateUserIngredient(req.UserID, req.Food, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber)
 		if createErr != nil {
 			s.logger.Error("Failed to create user ingredient", "error", createErr, "user_id", req.UserID, "food", req.Food)
 			// Don't fail the calorie entry creation if ingredient creation fails
@@ -77,7 +81,7 @@ func (s *Service) CreateEntry(req *CreateEntryRequest) (*CreateEntryResult, erro
 		}
 	}
 
-	entry, err := s.calorieRepo.Create(req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.MealDatetime)
+	entry, err := s.calorieRepo.Create(req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber, req.MealDatetime)
 	if err != nil {
 		s.logger.Error("Failed to create calorie entry", "error", err, "user_id", req.UserID)
 		return nil, err
@@ -160,9 +164,10 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 				Fats:        ingredient.Fats,
 				Carbs:       ingredient.Carbs,
 				Proteins:    ingredient.Proteins,
+				Fiber:       ingredient.Fiber,
 			}
-			if field := overrideNutrients(item.Fats, item.Carbs, item.Proteins,
-				&entry.Fats, &entry.Carbs, &entry.Proteins); field != "" {
+			if field := overrideNutrients(item.Fats, item.Carbs, item.Proteins, item.Fiber,
+				&entry.Fats, &entry.Carbs, &entry.Proteins, &entry.Fiber); field != "" {
 				return nil, itemError(i, "%s must be between 0 and %g (grams per 100 g)", field, food.MaxNutrientPer100g)
 			}
 
@@ -170,7 +175,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			if item.KcalPer100g != nil {
 				return nil, itemError(i, "kcal_per_100g of a new food belongs inside new_ingredient")
 			}
-			if field := firstSet(item.Fats, item.Carbs, item.Proteins); field != "" {
+			if field := firstSet(item.Fats, item.Carbs, item.Proteins, item.Fiber); field != "" {
 				return nil, itemError(i, "%s of a new food belongs inside new_ingredient", field)
 			}
 			newFood := item.NewIngredient
@@ -187,7 +192,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 			nutrients := []struct {
 				field string
 				value *float64
-			}{{"fats", newFood.Fats}, {"carbs", newFood.Carbs}, {"proteins", newFood.Proteins}}
+			}{{"fats", newFood.Fats}, {"carbs", newFood.Carbs}, {"proteins", newFood.Proteins}, {"fiber", newFood.Fiber}}
 			for _, n := range nutrients {
 				if n.value != nil && !food.ValidNutrientPer100g(*n.value) {
 					return nil, itemError(i, "new_ingredient.%s must be between 0 and %g (grams per 100 g)", n.field, food.MaxNutrientPer100g)
@@ -210,6 +215,7 @@ func (s *Service) CreateMeal(req *CreateMealRequest) (*CreateMealResult, error) 
 				Fats:             newFood.Fats,
 				Carbs:            newFood.Carbs,
 				Proteins:         newFood.Proteins,
+				Fiber:            newFood.Fiber,
 				SaveAsIngredient: !item.OneOff,
 			}
 
@@ -268,9 +274,9 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 	s.logger.Debug("UpdateMealEntry called", "entry_id", req.EntryID, "user_id", req.UserID)
 
 	if req.Weight == nil && req.IngredientID == nil && req.KcalPer100g == nil && req.MealDatetime == nil &&
-		firstSet(req.Fats, req.Carbs, req.Proteins) == "" {
+		firstSet(req.Fats, req.Carbs, req.Proteins, req.Fiber) == "" {
 		return nil, &EntryValidationError{
-			Message: "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins or meal_datetime"}
+			Message: "nothing to change: send weight, ingredient_id, kcal_per_100g, fats, carbs, proteins, fiber or meal_datetime"}
 	}
 
 	entry, err := s.calorieRepo.GetByID(req.EntryID)
@@ -302,6 +308,7 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 		entry.Fats = ingredient.Fats
 		entry.Carbs = ingredient.Carbs
 		entry.Proteins = ingredient.Proteins
+		entry.Fiber = ingredient.Fiber
 	}
 	if req.KcalPer100g != nil {
 		if !food.ValidKcalPer100g(*req.KcalPer100g) {
@@ -309,7 +316,8 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 		}
 		entry.KcalPer100g = *req.KcalPer100g
 	}
-	if field := overrideNutrients(req.Fats, req.Carbs, req.Proteins, &entry.Fats, &entry.Carbs, &entry.Proteins); field != "" {
+	if field := overrideNutrients(req.Fats, req.Carbs, req.Proteins, req.Fiber,
+		&entry.Fats, &entry.Carbs, &entry.Proteins, &entry.Fiber); field != "" {
 		return nil, &EntryValidationError{
 			Message: fmt.Sprintf("%s must be between 0 and %g (grams per 100 g)", field, food.MaxNutrientPer100g)}
 	}
@@ -326,7 +334,7 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 	}
 
 	updated, err := s.calorieRepo.Update(req.EntryID, req.UserID, entry.Food, entryCalories(entry.Weight, entry.KcalPer100g),
-		entry.Weight, entry.KcalPer100g, entry.Fats, entry.Carbs, entry.Proteins, mealDatetime)
+		entry.Weight, entry.KcalPer100g, entry.Fats, entry.Carbs, entry.Proteins, entry.Fiber, mealDatetime)
 	if errors.Is(err, repositories.ErrNotFound) {
 		return nil, ErrEntryNotFound
 	}
@@ -347,14 +355,15 @@ func (s *Service) UpdateMealEntry(req *UpdateMealEntryRequest) (*UpdateMealEntry
 	return result, nil
 }
 
-// overrideNutrients replaces the entry's fats, carbs and proteins with the values that were sent (not nil).
+// overrideNutrients replaces the entry's fats, carbs, proteins and fiber with the values that were sent (not nil).
 // If a sent value is out of range, nothing is replaced and the name of its field is returned.
-func overrideNutrients(fats, carbs, proteins *float64, entryFats, entryCarbs, entryProteins **float64) (invalidField string) {
+func overrideNutrients(fats, carbs, proteins, fiber *float64,
+	entryFats, entryCarbs, entryProteins, entryFiber **float64) (invalidField string) {
 	overrides := []struct {
 		field  string
 		value  *float64
 		target **float64
-	}{{"fats", fats, entryFats}, {"carbs", carbs, entryCarbs}, {"proteins", proteins, entryProteins}}
+	}{{"fats", fats, entryFats}, {"carbs", carbs, entryCarbs}, {"proteins", proteins, entryProteins}, {"fiber", fiber, entryFiber}}
 
 	for _, o := range overrides {
 		if o.value != nil && !food.ValidNutrientPer100g(*o.value) {
@@ -369,8 +378,8 @@ func overrideNutrients(fats, carbs, proteins *float64, entryFats, entryCarbs, en
 	return ""
 }
 
-// firstSet returns the name of the first of fats, carbs and proteins that was sent, or "" when none was
-func firstSet(fats, carbs, proteins *float64) string {
+// firstSet returns the name of the first of fats, carbs, proteins and fiber that was sent, or "" when none was
+func firstSet(fats, carbs, proteins, fiber *float64) string {
 	switch {
 	case fats != nil:
 		return "fats"
@@ -378,8 +387,20 @@ func firstSet(fats, carbs, proteins *float64) string {
 		return "carbs"
 	case proteins != nil:
 		return "proteins"
+	case fiber != nil:
+		return "fiber"
 	}
 	return ""
+}
+
+// validateEntryFiber checks the fibre of a diary entry of the website (grams per 100 g); nil is unknown and valid.
+// The other nutrients of these entries are deliberately not range-checked.
+func validateEntryFiber(fiber *float64) error {
+	if fiber != nil && !food.ValidNutrientPer100g(*fiber) {
+		return &EntryValidationError{
+			Message: fmt.Sprintf("fiber must be between 0 and %g (grams per 100 g)", food.MaxNutrientPer100g)}
+	}
+	return nil
 }
 
 func validItemWeight(weight float64) bool {
@@ -497,7 +518,11 @@ func (s *Service) UpdateEntry(req *UpdateEntryRequest) (*models.CalorieEntry, er
 		return nil, errors.New("food name is required")
 	}
 
-	entry, err := s.calorieRepo.Update(req.EntryID, req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.MealDatetime)
+	if err := validateEntryFiber(req.Fiber); err != nil {
+		return nil, err
+	}
+
+	entry, err := s.calorieRepo.Update(req.EntryID, req.UserID, req.Food, req.Calories, req.Weight, req.KcalPer100g, req.Fats, req.Carbs, req.Proteins, req.Fiber, req.MealDatetime)
 	if err != nil {
 		s.logger.Error("Failed to update calorie entry", "error", err, "entry_id", req.EntryID, "user_id", req.UserID)
 		return nil, err
